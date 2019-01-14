@@ -35,9 +35,11 @@ html {
 .ide-toolbar {
   line-height: normal;
   height: 40px;
+  user-select: none;
 }
 .ide-toolbar .ide-icon {
   float: left;
+  width: 41px;
   height: 40px;
   padding: 5px;
 }
@@ -77,6 +79,9 @@ html {
 }
 .ide-drawer {
   width: 35px;
+  user-select: none;
+  border-width: 0;
+  border-style: solid;
 }
 .ide-drawer .bar {
   position: absolute;
@@ -96,6 +101,7 @@ html {
   left: 0;
   margin: 0;
   padding: 0;
+  border-right-width: 1px;
 }
 .ide-drawer.left .bar {
   transform: rotate(-90deg);
@@ -111,6 +117,7 @@ html {
   left: auto;
   margin: 0;
   padding: 0;
+  border-left-width: 1px;
 }
 .ide-drawer.right .bar {
   transform: rotate(90deg);
@@ -134,10 +141,8 @@ html {
   margin: 0;
   padding: 0;
   width: 200px;
-  border: 1px solid red;
 }
 .ide-main-panel {
-  border: 1px solid red;
   position: absolute;
   top: 0;
   right: 0;
@@ -145,6 +150,7 @@ html {
   left: 235px;
   margin: 0;
   padding: 0;
+  border: 1px solid black;
 }
 .ide-main-panel .ide-tab-bar {
   position: absolute;
@@ -154,21 +160,23 @@ html {
   left: 0;
   margin: 0;
   padding: 0;
-  height: 25px;
-  border: 1px solid red;
+  height: 30px;
+  border-bottom: 1px solid black;
 }
 .ide-main-panel .ide-tab-bar .tab-bar-item {
-  border: 1px solid red;
   display: inline-block;
-  padding: 3px 5px;
+  line-height: 30px;
+  padding: 0 15px;
+  vertical-align: middle;
+  cursor: default;
 }
 .ide-main-panel .ide-tab-content {
-  border: 1px solid red;
   position: absolute;
-  top: 25px;
+  top: 30px;
   right: 0;
   bottom: 0;
   left: 0;
   margin: 0;
   padding: 0;
+  padding: 15px;
 }

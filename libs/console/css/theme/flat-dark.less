@@ -1,7 +1,9 @@
 ﻿@color-text: #fff;
-@color-bg: #333;
+@color-bg: #222;
+@color-panel: #333;
 @color-border: #555;
-@color-hover: rgba(255,255,255,0.1);
+@color-hover: #666;
+@color-active: #555;
 
 body {
     font-family: Helvetica,Arial,sans-serif;
@@ -14,7 +16,7 @@ body {
 }
 
 .ide-toolbar {
-    background-color: @color-bg;
+    background-color: @color-panel;
     border-bottom: 1px solid @color-border;
 
     .ide-settings:hover {
@@ -31,9 +33,35 @@ body {
 }
 
 .ide-drawer {
-    background-color: @color-bg;
+    background-color: @color-panel;
+    border-color: @color-border;
 
     .bar-item:hover {
         background-color: @color-hover;
+    }
+
+    .panel {
+        background-color: @color-bg;
+    }
+}
+
+.ide-main-panel {
+    background-color: @color-bg;
+    border-color: @color-border;
+
+    .ide-tab-bar {
+        border-color: @color-border;
+
+        .tab-bar-item {
+            background-color: @color-panel;
+
+            &:hover {
+                background-color: @color-hover;
+            }
+
+            &.active {
+                background-color: @color-active;
+            }
+        }
     }
 }

@@ -12,17 +12,37 @@
   border-bottom: 1px solid #555;
 }
 .ide-toolbar .ide-settings:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #666;
 }
 .ide-menu {
   border-bottom: #555;
 }
 .ide-menu .ide-menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #666;
 }
 .ide-drawer {
   background-color: #333;
+  border-color: #555;
 }
 .ide-drawer .bar-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #666;
+}
+.ide-drawer .panel {
+  background-color: #222;
+}
+.ide-main-panel {
+  background-color: #222;
+  border-color: #555;
+}
+.ide-main-panel .ide-tab-bar {
+  border-color: #555;
+}
+.ide-main-panel .ide-tab-bar .tab-bar-item {
+  background-color: #333;
+}
+.ide-main-panel .ide-tab-bar .tab-bar-item:hover {
+  background-color: #666;
+}
+.ide-main-panel .ide-tab-bar .tab-bar-item.active {
+  background-color: #555;
 }

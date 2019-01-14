@@ -48,9 +48,11 @@ body, html {
 .ide-toolbar {
     line-height: normal;
     height: @height-toolbar;
+    user-select: none;
 
     .ide-icon {
         float: left;
+        width: @height-toolbar + 1;
         height: @height-toolbar;
         padding: 5px;
     }
@@ -86,6 +88,9 @@ body, html {
 
 .ide-drawer {
     width: @width-drawer;
+    user-select: none;
+    border-width: 0;
+    border-style: solid;
 
     .bar {
         .absolute(0, 0, auto, auto);
@@ -94,6 +99,7 @@ body, html {
 
     &.left {
         .absolute(0, auto, 0, 0);
+        border-right-width: 1px;
 
         .bar {
             transform: rotate(-90deg);
@@ -105,6 +111,7 @@ body, html {
 
     &.right {
         .absolute(0, 0, 0);
+        border-left-width: 1px;
 
         .bar {
             transform: rotate(90deg);
@@ -126,28 +133,30 @@ body, html {
     .panel {
         .absolute(0, auto, 0, @width-drawer);
         width: 200px;
-        border: 1px solid red;
     }
 }
 
 .ide-main-panel {
-    .b;
-    .absolute(0, 0, 0,@width-drawer + @width-panel);
+    @height-tabs: 30px;
+    .absolute(0, 0, 0, @width-drawer + @width-panel);
+    border: 1px solid black;
 
     .ide-tab-bar {
         .absolute(0,0,auto,0);
-        height: 25px;
-        .b;
+        height: @height-tabs;
+        border-bottom: 1px solid black;
 
         .tab-bar-item {
-            .b;
             display: inline-block;
-            padding: 3px 5px;
+            line-height: @height-tabs;
+            padding: 0 15px;
+            vertical-align: middle;
+            cursor: default;
         }
     }
 
     .ide-tab-content {
-        .b;
-        .absolute(25px,0,0,0);
+        .absolute(@height-tabs,0,0,0);
+        padding: 15px;
     }
 }
