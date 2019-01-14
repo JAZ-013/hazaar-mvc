@@ -431,6 +431,7 @@
     <Folder Include="libs\console\" />
     <Folder Include="libs\console\cache\" />
     <Folder Include="libs\console\css\" />
+    <Folder Include="libs\console\css\theme\" />
     <Folder Include="libs\console\images\" />
     <Folder Include="libs\console\js\" />
     <Folder Include="libs\console\application\" />
@@ -506,6 +507,11 @@
     <Folder Include="tests" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="compilerconfig.json" />
+    <Content Include="compilerconfig.json.defaults">
+      <SubType>Content</SubType>
+      <DependentUpon>compilerconfig.json</DependentUpon>
+    </Content>
     <Content Include="composer.json" />
     <Content Include="docs\advanced\ajax-streaming.md" />
     <Content Include="docs\advanced\dav.md" />
@@ -562,12 +568,19 @@
     <Content Include="libs\console\application\metrics.phtml" />
     <Content Include="libs\console\application\mvc_items.phtml" />
     <Content Include="libs\console\css\layout.css" />
+    <Content Include="libs\console\css\layout.less" />
+    <Content Include="libs\console\css\layout.min.css" />
     <Content Include="libs\console\css\login.css" />
     <Content Include="libs\console\css\phpinfo.css" />
     <Content Include="libs\console\application\config.phtml" />
+    <Content Include="libs\console\css\theme\flat-dark.css" />
+    <Content Include="libs\console\css\theme\flat-dark.less" />
+    <Content Include="libs\console\css\theme\flat-dark.min.css">
+      <SubType>Content</SubType>
+      <DependentUpon>libs\console\css\theme\flat-dark.css</DependentUpon>
+    </Content>
     <Content Include="libs\console\images\hazaar-bg.jpg" />
     <Content Include="libs\console\images\hazaar-icon-lg.png" />
-    <Content Include="libs\console\menu.phtml" />
     <Content Include="libs\console\js\metrics.js" />
     <Content Include="libs\console\js\config.js" />
     <Content Include="libs\console\js\encrypt.js" />
@@ -582,7 +595,6 @@
     <Content Include="libs\console\cache\settings.phtml" />
     <Content Include="libs\console\images\hazaar-icon-white.png" />
     <Content Include="libs\console\images\hazaar-logo.png" />
-    <Content Include="libs\console\index.phtml" />
     <Content Include="libs\console\layout.phtml" />
     <Content Include="libs\css\fileicons.css" />
     <Content Include="libs\css\filebrowser.css" />

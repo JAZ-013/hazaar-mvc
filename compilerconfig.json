@@ -1,0 +1,10 @@
+﻿[
+  {
+    "outputFile": "libs/console/css/layout.css",
+    "inputFile": "libs/console/css/layout.less"
+  },
+  {
+    "outputFile": "libs/console/css/theme/flat-dark.css",
+    "inputFile": "libs/console/css/theme/flat-dark.less"
+  }
+]

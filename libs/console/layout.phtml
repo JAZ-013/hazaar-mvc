@@ -6,69 +6,36 @@
 
     <?=$this->import(); ?>
 
-    <link href="https://fonts.googleapis.com/css?family=Julius+Sans+One|Open+Sans|Quicksand" rel="stylesheet" />
-
 </head>
 <body>
-    <div class="container">
-        <div class="hazaar-layout">
-            <div class="sidebar">
-                <div class="sidebar-header">
-                    <div class="sidebar-logo"></div>
-                    <a class="sidebar-brand" href="<?=$this->url();?>">
-                        Hazaar Admin
-                    </a>
-                    <div class="sidebar-sub" title="APPLICATION_ENV">
-                        <?=APPLICATION_ENV;?>
-                    </div>
-                </div>
-                <div class="sidebar-user-info">
-                    <?=$this->html->i()->class('fa fa-user-circle fa-4x sidebar-user-img');?>
-                    <div class="sidebar-user-name">
-                        <?=$this->user['fullname'];?>
-                    </div>
-                    <div class="sidebar-user-role">
-                        <?=$this->user['group'];?>
-                    </div>
-                </div>
-                <nav class="sidebar-nav">
-                    <?=$this->partial('menu', array('items' => $this->navitems));?>
-                </nav>
-            </div>
-            <div class="main-panel">
-                <div class="main-topbar">
-                    <div class="main-label">
-                        <?=$this->getActiveMenu();?>
-                    </div>
-                    <ul class="navbar navbar-right navbar-buttons">
-                        <li>
-                            <a href="<?=$this->application->url();?>" target="_blank">
-                                <i class="fa fa-undo"></i>
-                                Back to App
-                            </a>
-                        </li>
-                        <li>
-                            <a href="<?=$this->url('logout');?>">
-                                <i class="fa fa-sign-out"></i>
-                                Logout
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="main">
-                    <?php
-                    if(is_array($this->notices)){
-                        foreach($this->notices as $notice)
-                            echo $this->html->div(array(
-                                $this->html->i()->class('fa fa-' . ake($notice, 'icon', 'bell')),
-                                ake($notice, 'msg')
-                            ))->class(trim('notice ' . ake($notice, 'class')));
 
-                    } ?>
-                    <div class="main-content">
-                        <?=$this->layout();?>
-                    </div>
+    <div class="ide">
+        <div class="ide-toolbar">
+            <img src="file/console/images/hazaar-icon-white.png" class="ide-icon"></img>
+            <div class="ide-brand">Hazaar MVC Console</div>
+            <div class="ide-menu">
+                <div class="ide-menu-item">File</div>
+                <div class="ide-menu-item">Edit</div>
+                <div class="ide-menu-item">View</div>
+                <div class="ide-menu-item">Help</div>
+            </div>
+            <div class="ide-settings">
+                <i class="fa fa-cog"></i>
+            </div>
+        </div>
+        <div class="ide-main">
+            <div class="ide-drawer left">
+                <div class="bar">
+                    <div class="bar-item">File Manager</div>
+                    <div class="bar-item">Project</div>
                 </div>
+                <div class="panel"></div>
+            </div>
+            <div class="ide-main-panel">
+                <div class="ide-tab-bar">
+                    <div class="tab-bar-item">hazaar.js</div>
+                </div>
+                <div class="ide-tab-content">Content here...</div>
             </div>
         </div>
     </div>

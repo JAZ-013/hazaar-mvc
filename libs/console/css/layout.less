@@ -1,0 +1,153 @@
+﻿@color-hazaar: #554d7c;
+
+@height-toolbar: 40px;
+
+@width-drawer: 35px;
+@width-panel: 200px;
+
+.b {
+    border: 1px solid red;
+}
+
+.absolute(@top: auto, @right: auto, @bottom: auto, @left: auto) {
+    position: absolute;
+    top: @top;
+    right: @right;
+    bottom: @bottom;
+    left: @left;
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    .absolute(0,0,0,0);
+}
+
+.ide {
+    .absolute(0,0,0,0);
+}
+
+.ide-toolbar {
+    .absolute(0, 0, auto, 0);
+}
+
+.ide-tool() {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+}
+
+.ide-tool-item() {
+    padding: 13px 9px 0 9px;
+}
+
+.ide-toolbar {
+    line-height: normal;
+    height: @height-toolbar;
+
+    .ide-icon {
+        float: left;
+        height: @height-toolbar;
+        padding: 5px;
+    }
+
+    .ide-brand {
+        .ide-tool;
+        .ide-tool-item;
+    }
+
+    .ide-settings {
+        float: right;
+
+        .fa {
+            padding: 6px;
+            font-size: 28px;
+        }
+    }
+}
+
+.ide-menu {
+    .ide-tool;
+
+    .ide-menu-item {
+        .ide-tool;
+        .ide-tool-item;
+        cursor: default;
+    }
+}
+
+.ide-main {
+    .absolute(40px,0,0,0);
+}
+
+.ide-drawer {
+    width: @width-drawer;
+
+    .bar {
+        .absolute(0, 0, auto, auto);
+        white-space: nowrap;
+    }
+
+    &.left {
+        .absolute(0, auto, 0, 0);
+
+        .bar {
+            transform: rotate(-90deg);
+            transform-origin: bottom right;
+            margin-top: -@width-drawer;
+            height: @width-drawer;
+        }
+    }
+
+    &.right {
+        .absolute(0, 0, 0);
+
+        .bar {
+            transform: rotate(90deg);
+        }
+    }
+
+    .bar-item {
+        padding: 0 15px;
+        line-height: @width-drawer;
+        vertical-align: middle;
+        display: inline-block;
+        cursor: default;
+
+        &:hover {
+            background-color: #999;
+        }
+    }
+
+    .panel {
+        .absolute(0, auto, 0, @width-drawer);
+        width: 200px;
+        border: 1px solid red;
+    }
+}
+
+.ide-main-panel {
+    .b;
+    .absolute(0, 0, 0,@width-drawer + @width-panel);
+
+    .ide-tab-bar {
+        .absolute(0,0,auto,0);
+        height: 25px;
+        .b;
+
+        .tab-bar-item {
+            .b;
+            display: inline-block;
+            padding: 3px 5px;
+        }
+    }
+
+    .ide-tab-content {
+        .b;
+        .absolute(25px,0,0,0);
+    }
+}

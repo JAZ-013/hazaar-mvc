@@ -1,0 +1,39 @@
+﻿@color-text: #fff;
+@color-bg: #333;
+@color-border: #555;
+@color-hover: rgba(255,255,255,0.1);
+
+body {
+    font-family: Helvetica,Arial,sans-serif;
+    background-color: #000;
+    color: @color-text;
+    font-size: 13px;
+    line-height: normal;
+    -webkit-font-smoothing: auto;
+    -moz-osx-font-smoothing: auto;
+}
+
+.ide-toolbar {
+    background-color: @color-bg;
+    border-bottom: 1px solid @color-border;
+
+    .ide-settings:hover {
+        background-color: @color-hover;
+    }
+}
+
+.ide-menu {
+    border-bottom: @color-border;
+
+    .ide-menu-item:hover {
+        background-color: @color-hover;
+    }
+}
+
+.ide-drawer {
+    background-color: @color-bg;
+
+    .bar-item:hover {
+        background-color: @color-hover;
+    }
+}
