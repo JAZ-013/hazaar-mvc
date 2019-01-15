@@ -46,3 +46,6 @@
 .ide-main-panel .ide-tab-bar .tab-bar-item.active {
   background-color: #555;
 }
+.ide-tree .tree-node:hover {
+  color: #666;
+}
