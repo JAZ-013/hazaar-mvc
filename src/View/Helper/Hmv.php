@@ -292,7 +292,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                     $input = $this->html->table()->class($this->container_class);
 
-                    $input->add($this->renderInputs($item, $name));
+                    $input->add($this->renderInputs($item, $name, $export_all));
 
                 }
 
@@ -347,13 +347,14 @@ class Hmv extends \Hazaar\View\Helper {
 
                         $table = $this->html->table()->class($this->container_class);
 
-                        $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']'), $delTR);
+                        $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']', $export_all), $delTR);
 
                     }
 
                     $table = $this->html->table()->class($this->container_class);
 
-                    $input[] = $table->add($this->renderInputs($object->append($key, array()), $name . '[]'), $delTR)->addClass($this->newitem_class);
+                    $input[] = $table->add($this->renderInputs($object->append($key, array()), $name . '[]', $export_all), $delTR)
+                        ->addClass($this->newitem_class);
 
                     $input[] = $this->html->span()->class('btnNewItem');
 
