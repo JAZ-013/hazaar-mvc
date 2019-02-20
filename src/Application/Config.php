@@ -134,13 +134,16 @@ class Config extends \Hazaar\Map {
             return false;
 
         //Load any override files we have found
-        if(count($options) > 0){
+        if(count($options) > 0 && $config->final !== true){
 
             foreach($options as $o){
 
                 if(!$o) continue;
 
                 $this->loadConfigOptions(array($this->env => $o), $config);
+
+                if($config->final === true)
+                    break;
 
             }
 
