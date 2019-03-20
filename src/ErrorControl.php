@@ -114,19 +114,20 @@ function exception_handler($e) {
 
 function shutdown_handler() {
 
-    $error_notices = array(
-        1,
-        4,
-        16,
-        64,
-        256
-    );
+    if(headers_sent())
+        return;
 
-    $error = error_get_last();
+    if($error = error_get_last()){
 
-    if(in_array($error['type'], $error_notices)) {
+        $ignored_errors = array(
+            E_CORE_WARNING,
+            E_COMPILE_WARNING,
+            E_USER_WARNING,
+            E_RECOVERABLE_ERROR
+        );
 
-        errorAndDie($error, debug_backtrace());
+        if(is_array($error) && !in_array($error['type'], $ignored_errors))
+            errorAndDie($error, debug_backtrace());
 
     }
 

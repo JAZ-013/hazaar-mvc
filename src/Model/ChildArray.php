@@ -252,7 +252,9 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
-        elseif($this->allow_undefined === true && $this->type === 'any')
+        elseif($this->type === 'model')
+            $value = new ChildModel('any', $value);
+        elseif($this->allow_undefined === true && $this->type === 'any' )
             $value = is_array($value) ? new ChildArray('any', $value) : new ChildModel('any', $value);
         else
             DataTypeConverter::convertType($value, $this->type);

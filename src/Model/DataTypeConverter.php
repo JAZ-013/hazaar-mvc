@@ -46,11 +46,11 @@ abstract class DataTypeConverter  {
      *
      * @throws Exception\InvalidDataType
      * @throws \Exception
-     * @return mixed
+     * @return void
      */
     protected static function convertType(&$value, $type) {
 
-        if($value === null || $type === null) return $value;
+        if($value === null || $type === null) return;
 
         if(array_key_exists($type, DataTypeConverter::$type_aliases))
             $type = DataTypeConverter::$type_aliases[$type];
@@ -79,7 +79,7 @@ abstract class DataTypeConverter  {
                  * The special type 'mixed' specifically allow
                  */
                 if ($type === 'mixed' || $type === 'model')
-                    return $value;
+                    return;
 
                 if($type === 'text' )
                     $type = 'string';
@@ -87,7 +87,7 @@ abstract class DataTypeConverter  {
                 if($value instanceof DataBinderValue){
 
                     if($value->value === null)
-                        return $value;
+                        return;
 
                     $o = $value;
 
@@ -119,7 +119,7 @@ abstract class DataTypeConverter  {
 
                     $value = null;
 
-                } elseif (!@settype($value, $type)) {
+                } elseif (!$value instanceof \stdClass && !@settype($value, $type)) {
 
                     throw new Exception\InvalidDataType($type, get_class($value));
 
@@ -146,7 +146,20 @@ abstract class DataTypeConverter  {
 
                 try {
 
-                    $value = new $type($value);
+                    if(is_bool($value)){
+
+                        $value = ($value === true) ? new $type() : null;
+
+                    }else{
+
+                        $reflector = new \ReflectionClass($type);
+
+                        if(!is_array($value) || $reflector->isSubclassOf('Hazaar\Model\Strict'))
+                            $value = array($value);
+
+                        $value = $reflector->newInstanceArgs($value);
+
+                    }
 
                 }
                 catch(\Exception $e) {
@@ -163,7 +176,7 @@ abstract class DataTypeConverter  {
 
         }
 
-        return $value;
+        return;
 
     }
 

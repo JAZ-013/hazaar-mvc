@@ -61,17 +61,37 @@ class Smarty {
 
     public $allow_globals = true;
 
-    function __construct($content){
+    function __construct($content = null){
 
-        $this->loadFromString($content);
+        if($content)
+            $this->loadFromString($content);
 
     }
 
+    /**
+     * Load the SMARTy template from a supplied string
+     * 
+     * @param mixed $content The template source code
+     */
     public function loadFromString($content) {
 
         $this->__content = (string)$content;
 
         $this->__compiled_content = null;
+
+    }
+
+    /**
+     * Read the template from a file
+     * 
+     * @param mixed $file Can be either a Hazaar\File object or a string to a file on disk.
+     */
+    public function loadFromFile($file){
+
+        if(!$file instanceof \Hazaar\File)
+            $file = new \Hazaar\File($file);
+
+        $this->loadFromString($file->get_contents());
 
     }
 
@@ -82,6 +102,13 @@ class Smarty {
 
     }
 
+    /**
+     * Render the template with the supplied parameters and return the rendered content
+     * 
+     * @param mixed $params Parameters to use when embedding variables in the rendered template.
+     * 
+     * @return string
+     */
     public function render($params = array()) {
 
         $app = \Hazaar\Application::getInstance();
@@ -228,6 +255,14 @@ class Smarty {
 
     }
 
+    /**
+     * Compile the template ready for rendering
+     * 
+     * This will normally happen automatically when calling Hazaar\Template\Smarty::render() but can be called
+     * separately if needed.  The compiled template content is returned and can be stored externally.
+     * 
+     * @return string The compiled template
+     */
     public function compile(){
 
         $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);

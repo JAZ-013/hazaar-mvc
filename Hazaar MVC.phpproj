@@ -96,6 +96,7 @@
     <Compile Include="src\Controller\Response\Packer\CSS.php" />
     <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
     <Compile Include="src\File\Metric.php" />
+    <Compile Include="src\File\PDF.php" />
     <Compile Include="src\File\TempDir.php" />
     <Compile Include="src\File\Temp.php" />
     <Compile Include="src\Mail\Adapter.php" />
@@ -417,7 +418,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="docs\" />
-    <Folder Include="docs\advanced\databases\" />
     <Folder Include="docs\advanced\view-helpers\" />
     <Folder Include="docs\getting_started\" />
     <Folder Include="docs\getting_started\web\" />
@@ -428,7 +428,6 @@
     <Folder Include="docs\advanced\" />
     <Folder Include="docs\tutorial\" />
     <Folder Include="docs\reference\" />
-    <Folder Include="docs\advanced\warlock\" />
     <Folder Include="libs\" />
     <Folder Include="libs\console\" />
     <Folder Include="libs\console\cache\" />
@@ -517,8 +516,6 @@
     <Content Include="docs\advanced\caching\backends.md" />
     <Content Include="docs\advanced\caching\frontends.md" />
     <Content Include="docs\advanced\caching\overview.md" />
-    <Content Include="docs\advanced\databases\mongodb.md" />
-    <Content Include="docs\advanced\databases\relational.md" />
     <Content Include="docs\advanced\filesystem_browser.md" />
     <Content Include="docs\advanced\helper-functions.md" />
     <Content Include="docs\advanced\view-helpers\textile.md" />
@@ -555,10 +552,6 @@
     <Content Include="docs\reference\http-status-codes.md" />
     <Content Include="docs\reference\errorcodes.md" />
     <Content Include="docs\reference\configs.md" />
-    <Content Include="docs\advanced\warlock\delayed-exec.md" />
-    <Content Include="docs\advanced\warlock\realtime-signalling.md" />
-    <Content Include="docs\advanced\warlock\kvstore.md" />
-    <Content Include="docs\advanced\warlock\services.md" />
     <Content Include="docs\advanced\xmlrpc.md" />
     <Content Include="docs\test-page.md" />
     <Content Include="libs\console\application\metrics.phtml" />

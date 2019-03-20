@@ -14,6 +14,8 @@ class Dir {
 
     private $allow_hidden = FALSE;
 
+    private $__media_uri;
+
     function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
 
         if(!is_string($path))
@@ -234,6 +236,9 @@ class Dir {
 
         }
 
+        if($this->backend->is_dir($this->fixPath($this->path, $file)))
+            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager);
+
         return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
 
     }
@@ -259,9 +264,9 @@ class Dir {
      * @param bool $relative Return a path relative to the search path, default is to return absolute paths.
      * @return array    Returns an array of matches files.
      */
-    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $start = NULL) {
+    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE) {
 
-        $start = rtrim($this->path . ($start ? '/' . ltrim($start, DIRECTORY_SEPARATOR . '/.') : '' ), $this->backend->separator) . $this->backend->separator;
+        $start = rtrim($this->path, $this->backend->separator) . $this->backend->separator;
 
         $list = array();
 
@@ -270,15 +275,10 @@ class Dir {
 
         foreach($dir as $file) {
 
-            if(($show_hidden === FALSE && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
+            if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
                 continue;
 
-            if($this->backend->is_dir($start . $file)) {
-
-                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $file))
-                    $list = array_merge($list, $subdir);
-
-            }
+            $item = $start . $file;
 
             if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
 
@@ -288,7 +288,17 @@ class Dir {
             } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                 continue;
 
-            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager, $this->path);
+            if($this->backend->is_dir($item)) {
+
+                $dir = new \Hazaar\File\Dir($item, $this->backend, $this->manager);
+
+                if($subdir = $dir->find($pattern, $show_hidden, $case_sensitive))
+                    $list = array_merge($list, $subdir);
+
+                $list[] = $dir;
+
+            }else
+                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $this->path);
 
         }
 
@@ -396,8 +406,8 @@ class Dir {
     /**
      * Download a file from a URL directly to the directory and return a new File object
      *
-     * This is useful for download large files as this method will write the file directly to storage.  Currently,
-     * only local storage is supported as this uses OS file access.
+     * This is useful for download large files as this method will write the file directly
+     * to storage.  Currently, only local storage is supported as this uses OS file access.
      *
      * @param mixed $source_url The source URL of the file to download
      * @param mixed $timeout The download timeout after which an exception will be thrown
@@ -410,26 +420,68 @@ class Dir {
 
         $file->open('w+');
 
-        $ch = curl_init(str_replace(" ","%20", $source_url));
+        $url = str_replace(" ","%20", $source_url);
 
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        if(function_exists('curl_version')){
 
-        curl_setopt($ch, CURLOPT_FILE, $file->get_resource());
+            $ch = curl_init($url);
 
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch, CURLOPT_FILE, $file->get_resource());
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
-        if(!curl_exec($ch))
-            throw new \Exception(curl_error($ch));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
-        curl_close($ch);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+            if(!curl_exec($ch))
+                throw new \Exception(curl_error($ch));
+
+            curl_close($ch);
+
+        }elseif(ini_get('allow_url_fopen') ) {
+
+            $options = array(
+                'http' => array(
+                    'method'  => 'GET',
+                    'timeout' => $timeout,
+                    'follow_location' => 1
+                )
+            );
+
+            if(!($result = file_get_contents($url, false, stream_context_create($options))))
+                throw new \Exception('Download failed.  Zero bytes received.');
+
+            $file->write($result);
+
+        }
 
         $file->close();
 
         return $file;
+
+    }
+
+    public function media_uri($set_path = null){
+
+        if($set_path !== null){
+
+            if(!$set_path instanceof \Hazaar\Http\Uri)
+                $set_path = new \Hazaar\Http\Uri($set_path);
+
+            $this->__media_uri = $set_path;
+
+        }
+
+        if($this->__media_uri)
+            return $this->__media_uri;
+
+        if(!$this->manager)
+            return null;
+
+        return $this->manager->uri($this->fullpath());
 
     }
 

@@ -137,7 +137,7 @@ class Cdnjs extends \Hazaar\View\Helper {
      */
     public function load($name, $version = null, $files = null, $priority = 0){
 
-        if(in_array($name, $this->libraries))
+        if(array_key_exists($name, $this->libraries))
             return null;
 
         $info = null;

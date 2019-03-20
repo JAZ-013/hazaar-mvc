@@ -214,7 +214,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
 
-                        $value = DataTypeConverter::convertType($value, $type);
+                        DataTypeConverter::convertType($value, $type);
 
                     }
 
@@ -270,15 +270,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         foreach($this->fields as $key => $def){
 
-            $type = ake($def, 'type');
+            if(($value = ake($this->values, $key)) === null)
+                continue;
 
-            if($type == 'array'){
+            if(($value instanceof Strict && $value->hasValues() === false)
+                || ($value instanceof ChildArray && $value->count() === 0))
+                continue;
 
-                if(count(ake($this->values, $key, array())) > 0)
-                    return true;
-
-            }elseif(ake($this->values, $key) !== null)
-                return true;
+            return true;
 
         }
 
@@ -372,14 +371,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any pre-read callbacks
          */
-        if ($exec_filters && is_array($def) && array_key_exists('read', $def)){
-
+        if ($exec_filters && is_array($def) && array_key_exists('read', $def))
             $value = $this->execCallback($def['read'], $value, $key);
-
-            if($type = ake($def, 'type'))
-                $this->convertType($value, $type);
-
-        }
 
         return $value;
 
@@ -817,8 +810,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                                 if(ake($this->values[$key], $subKey) instanceof Strict)
                                     $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
 
-                                else
-                                    $this->values[$key][$subKey] = $this->convertType($subValue, $type);
+                                else{
+
+                                    $this->convertType($subValue, $type);
+
+                                    $this->values[$key][$subKey] = $subValue;
+
+                                }
 
                             }
 

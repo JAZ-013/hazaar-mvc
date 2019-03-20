@@ -28,7 +28,7 @@ class Filebrowser extends \Hazaar\View\Helper {
 
         $this->requires('jQuery', array('ui' => TRUE));
 
-        $this->requires('fontawesome');
+        $this->requires('fontawesome', array('version' => '4.7.0'));
 
         $this->options = new \Hazaar\Map(array(
                                              'connect'    => $this->application->url('media'),

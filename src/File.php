@@ -2,6 +2,12 @@
 
 namespace Hazaar;
 
+define('FILE_FILTER_IN', 0);
+
+define('FILE_FILTER_OUT', 1);
+
+define('FILE_FILTER_SET', 2);
+
 class File {
 
     protected $backend;
@@ -37,6 +43,11 @@ class File {
     private $encrypted = false;
 
     private $__media_uri;
+
+    /*
+     * Content filters
+     */
+    private $filters = array();
 
     function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null, $relative_path = null) {
 
@@ -94,6 +105,39 @@ class File {
     public function backend(){
 
         return strtolower((new \ReflectionClass($this->backend))->getShortName());
+
+    }
+
+    public function getBackend(){
+
+        return $this->backend;
+
+    }
+
+    public function getManager(){
+
+        return $this->manager;
+
+    }
+
+    /**
+     * Content filters
+     */
+
+    public function registerFilter($type, $callable){
+
+        if(!array_key_exists($type, $this->filters))
+            $this->filters[$type] = array();
+
+        if(is_string($callable))
+            $callable = array($this, $callable);
+
+        if(!is_callable($callable))
+            return false;
+
+        $this->filters[$type][] = $callable;
+
+        return true;
 
     }
 
@@ -338,9 +382,13 @@ class File {
     public function get_contents($offset = -1, $maxlen = NULL) {
 
         if($this->contents)
-            return $this->filter($this->contents);
+            return $this->contents;
 
-        return $this->filter($this->backend->read($this->source_file, $offset, $maxlen));
+        $this->contents = $this->backend->read($this->source_file, $offset, $maxlen);
+
+        $this->filter_in($this->contents);
+
+        return $this->contents;
 
     }
 
@@ -360,8 +408,10 @@ class File {
         if(!is_resource($this->source_file))
             $content_type = $this->mime_content_type();
 
-        if(! $content_type)
+        if(!$content_type)
             $content_type = 'text/text';
+
+        $this->filter_out($data);
 
         return $this->backend->write($this->source_file, $data, $content_type, $overwrite);
 
@@ -376,6 +426,13 @@ class File {
      * @param mixed $bytes The data to set as the content
      */
     public function set_contents($bytes) {
+
+        if(array_key_exists(FILE_FILTER_SET, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_SET] as $filter)
+                call_user_func_array($filter, array(&$bytes));
+
+        }
 
         $this->contents = $bytes;
 
@@ -426,7 +483,7 @@ class File {
      */
     public function save() {
 
-        return $this->put_contents(($this->encrypted ? $this->encrypt(false) : $this->contents), TRUE);
+        return $this->put_contents($this->contents, TRUE);
 
     }
 
@@ -1113,12 +1170,18 @@ class File {
      * is encrypted and automatically decrypts it if an encryption key is available.
      *
      * @param mixed $content
-     * @return mixed
      */
-    private function filter($content){
+    protected function filter_in(&$content){
 
         if(is_array($content))
             $content = implode("\n", $content);
+
+        if(array_key_exists(FILE_FILTER_IN, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_IN] as $filter)
+                call_user_func($filter, $content);
+
+        }
 
         $bom = substr($content, 0, 3);
 
@@ -1146,31 +1209,52 @@ class File {
 
         }
 
-        return $content;
+        return true;
+
+    }
+
+    /**
+     * Internal content filter
+     *
+     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
+     * is encrypted and automatically decrypts it if an encryption key is available.
+     *
+     * @param mixed $content
+     */
+    protected function filter_out(&$content){
+
+        if(array_key_exists(FILE_FILTER_OUT, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_OUT] as $filter)
+                call_user_func_array($filter, array(&$content));
+
+        }
+
+        if($this->encrypted === true){
+
+            $bom = pack('H*','BADA55');
+
+            if(substr($content, 0, 3) === $bom)
+                return false;
+
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
+
+            $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+
+            $content = $bom . $iv . $data;
+
+        }
+
+        return true;
 
     }
 
     public function encrypt($write = true){
 
-        $bom = pack('H*','BADA55');
-
-        $content = $this->get_contents();
-
-        if(substr($content, 0, 3) == $bom)
-            return $this->contents;
-
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
-
-        $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
-
-        $this->contents = $bom . $iv . $data;
+        $this->encrypted = true;
 
         if($write)
             $this->save();
-
-        $this->encrypted = true;
-
-        return $this->contents;
 
     }
 
