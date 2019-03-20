@@ -202,11 +202,8 @@ class Client {
                  * If we have a content-length and the buffer len is greater or equal to it, dump out as we have all our
                  * content.
                  */
-                if($response->bytes_remaining > 0 && $response->bytes_remaining < $buffer_size) {
-
+                if($response->bytes_remaining > 0 && $response->bytes_remaining < $buffer_size)
                     $buffer_size = $response->bytes_remaining;
-
-                }
 
                 //If the socket is now EOF then break out
                 if(feof($sck_fd))

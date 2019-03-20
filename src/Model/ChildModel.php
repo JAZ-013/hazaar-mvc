@@ -28,10 +28,32 @@ class ChildModel extends Strict {
      */
     function __construct($field_definition, $values = array()) {
 
-        parent::loadDefinition($field_definition);
+        if(is_string($field_definition) && $field_definition === 'any'){
+
+            $this->ignore_undefined = false;
+
+            $this->allow_undefined = true;
+
+        }else
+            parent::loadDefinition($field_definition);
 
         if ($values)
             $this->populate($values);
+
+    }
+
+    public function set($key, $value, $exec_filters = true){
+
+        if($this->allow_undefined === true && (is_array($value) || $value instanceof \stdClass)){
+
+            if(is_array($value) && !is_assoc($value))
+                $value = new ChildArray('any', $value);
+            else
+                $value = new ChildModel('any', $value);
+
+        }
+
+        return parent::set($key, $value, $exec_filters);
 
     }
 

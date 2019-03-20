@@ -35,11 +35,17 @@ class Error extends \Hazaar\Controller\Action {
 
     private $status_codes = array();
 
+    function __construct($name, $application){
+
+        parent::__construct($name, $application, false);
+
+    }
+
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
-            if(!($this->response = $request->getResponseType())){
+            if(!($this->response = $this->application->getResponseType())){
 
                 $h = apache_request_headers();
 
@@ -207,57 +213,12 @@ class Error extends \Hazaar\Controller\Action {
 
     final public function __run() {
 
-        if (method_exists($this, $this->response)) {
-
-            $response = call_user_func(array(
-                $this,
-                $this->response
-            ));
-
-            $response->setController($this);
-        } elseif (method_exists($this, 'run')) {
-
+        if ($this->response && method_exists($this, $this->response))
+            $response = call_user_func(array($this, $this->response));
+        elseif (method_exists($this, 'run'))
             $response = $this->run();
-
-            $response->setController($this);
-        } else {
-
-            switch ($this->response) {
-
-                case 'json' :
-
-                    $response = $this->json();
-
-                    break;
-
-                case 'xmlrpc' :
-
-                    $response = $this->xmlrpc();
-
-                    break;
-
-                case 'text' :
-
-                    $response = $this->text();
-
-                    break;
-
-                case 'runner' :
-
-                    echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
-
-                    exit($this->errno);
-
-                case 'html' :
-                default :
-
-                    $response = $this->html();
-
-                    break;
-
-            }
-
-        }
+        else
+            $response = $this->html();
 
         if(!$response instanceof \Hazaar\Controller\Response){
 
@@ -278,7 +239,15 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
+        $response->setController($this);
+
         return $response;
+
+    }
+
+    public function __shutdown(){
+
+        $this->report();
 
     }
 
@@ -291,7 +260,15 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    public function json(){
+    private function runner(){
+
+        echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
+
+        exit($this->errno);
+
+    }
+
+    private function json(){
 
         $error = array(
             'ok' => FALSE,
@@ -320,7 +297,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    public function xmlrpc(){
+    private function xmlrpc(){
 
         $xml = new \SimpleXMLElement('<xml/>');
 
@@ -360,7 +337,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    public function text(){
+    private function text(){
 
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
@@ -394,7 +371,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    public function html(){
+    private function html(){
 
         $response = new Response\Html($this->code);
 
@@ -424,6 +401,101 @@ class Error extends \Hazaar\Controller\Action {
         $response->setContent($view->render($this));
 
         return $response;
+
+    }
+
+    /**
+     * Report the error to the Hazaar error tracker API.
+     *
+     * This looks for the most unobtrusive way to report the error.  Using either CURL or file_get_contents
+     * if one of them is available.  If not, then we don't bother doing this at all.
+     */
+    private function report(){
+
+        $check_path = ROOT_PATH
+            . DIRECTORY_SEPARATOR . 'vendor'
+            . DIRECTORY_SEPARATOR . 'hazaarlabs';
+
+        if(substr($this->errfile, 0, strlen($check_path)) !== $check_path || $this->code < 500)
+            return false;
+
+        $type = 'error';
+
+        switch($this->type){
+            case ERR_TYPE_EXCEPTION:
+
+                $type = 'exception';
+
+                break;
+
+            case ERR_TYPE_SHUTDOWN:
+
+                $type = 'shutdown';
+
+                break;
+
+            case ERR_TYPE_ERROR:
+            default:
+
+                $type = 'error';
+
+                break;
+
+        }
+
+        $url = 'http://api.hazaarmvc.com/api/report/' . $type;
+
+        $data = json_encode(array(
+            'status' => $this->code,
+            'error' => array(
+                'type' => $this->errno,
+                'status' => $this->status,
+                'line' => $this->errline,
+                'file' => $this->errfile,
+                'context' => $this->errcontext,
+                'str' => $this->errstr
+            ),
+            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+            'config' => $this->application->config->toArray()
+        ));
+
+        if(ini_get('allow_url_fopen') ) {
+
+            $options = array(
+                    'http' => array(
+                    'header'  => "Content-type: application/json\r\n",
+                    'method'  => 'POST',
+                    'content' => $data,
+                )
+            );
+
+            $result = file_get_contents($url, false, stream_context_create($options));
+
+            return ($result);
+
+        }elseif(function_exists('curl_version')){
+
+            /**
+             * POST error data to the Hazaar error tracker
+             */
+            $ch = curl_init($url);
+
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data))
+            );
+
+            return curl_exec($ch);
+
+        }
+
+        return false;
 
     }
 

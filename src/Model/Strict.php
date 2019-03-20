@@ -5,6 +5,13 @@ namespace Hazaar\Model;
 abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
     /**
+     * Stored arguments provided to the constructor
+     *
+     * @var array
+     */
+    protected $args;
+
+    /**
      * Undefined values will be ignored. This is checked first.
      * @var bool
      */
@@ -67,9 +74,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     function __construct() {
 
-        $args = func_get_args();
+        $this->args = func_get_args();
 
-        $data = array_shift($args);
+        $data = array_shift($this->args);
+
+        if($data instanceof Strict)
+            $data = $data->values;
 
         $field_definition = $this->__init();
 
@@ -84,12 +94,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->prepare($data);
 
         if (is_array($data) && count($data) > 0)
-            $this->populate($data);
+            $this->populate($data, false);
 
         $this->loaded = true;
 
         if (method_exists($this, 'construct'))
-            call_user_func_array(array($this, 'construct'), $args);
+            call_user_func_array(array($this, 'construct'), $this->args);
 
     }
 
@@ -147,13 +157,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @param mixed $data The array of data.
      *
-     * @param mixed $exec_filters Execute any callback filters.  For populate this is disabled by default.
+     * @param mixed $exec_filters Execute any callback filters.
      *
      * @return boolean
      */
-    public function populate($data, $exec_filters = false) {
+    public function populate($data, $exec_filters = true) {
 
-        if (!(\Hazaar\Map::is_array($data) || $data instanceof \stdClass))
+        if (!\Hazaar\Map::is_array($data))
             return false;
 
         foreach($data as $key => $value)
@@ -197,14 +207,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                             $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model' && array_key_exists('items', $def)) {
+                    }elseif($type == 'model') {
 
-                        $value = new ChildModel($def['items'], $value);
+                        $value = new ChildModel(ake($def, 'items', 'any'), $value);
 
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
 
-                        $value = DataTypeConverter::convertType($value, $type);
+                        DataTypeConverter::convertType($value, $type);
 
                     }
 
@@ -260,15 +270,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         foreach($this->fields as $key => $def){
 
-            $type = ake($def, 'type');
+            if(($value = ake($this->values, $key)) === null)
+                continue;
 
-            if($type == 'array'){
+            if(($value instanceof Strict && $value->hasValues() === false)
+                || ($value instanceof ChildArray && $value->count() === 0))
+                continue;
 
-                if(count(ake($this->values, $key, array())) > 0)
-                    return true;
-
-            }elseif(ake($this->values, $key) !== null)
-                return true;
+            return true;
 
         }
 
@@ -362,14 +371,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any pre-read callbacks
          */
-        if ($exec_filters && is_array($def) && array_key_exists('read', $def)){
-
+        if ($exec_filters && is_array($def) && array_key_exists('read', $def))
             $value = $this->execCallback($def['read'], $value, $key);
-
-            if($type = ake($def, 'type'))
-                $this->convertType($value, $type);
-
-        }
 
         return $value;
 
@@ -465,6 +468,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          */
         if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
+
+        if(array_key_exists('prepare', $def))
+            $value = $this->execCallback($def['prepare'], $value, $key);
 
         /*
          * Run any pre-update callbacks
@@ -621,10 +627,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $old_value = null;
 
-        if (ake($def, 'type') == 'model') {
+        if (array_key_exists($key, $this->values) && $this->values[$key] instanceof ChildModel){
 
-            if ($this->values[$key] instanceof ChildModel)
-                $this->values[$key]->populate($value);
+            $this->values[$key]->populate($value, $exec_filters);
 
         } else {
 
@@ -757,13 +762,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = call_user_func_array($callback, $params);
 
-        } elseif ($cb_def instanceof \Closure) {
+        } elseif (is_callable($cb_def)) {
 
-            $value = $cb_def($value, $key);
-
-        } elseif (is_string($cb_def)) {
-
-            $value = $cb_def($value, $key);
+            $value = call_user_func($cb_def, $value, $key);
 
         }
 
@@ -783,7 +784,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if ($this->ignore_undefined && !array_key_exists($key, $this->values))
                     continue;
 
-                if (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
+                $def = ake($this->fields, $key);
+
+                if($exec_filters && ($extend = ake($def, 'extend'))){
+
+                    if(is_callable($extend)){
+
+                        //Do not execute callbacks because we are executing 'extend' instead.
+                        $this->set($key, $extend($value, $this->values[$key]), false);
+
+                    }
+
+                }elseif (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
 
                     $this->values[$key]->extend($value, $exec_filters, $ignore_keys);
 
@@ -791,24 +803,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     if(is_array($value)){
 
-                        $def = ake($this->fields, $key);
-
                         if($type = ake($def, 'arrayOf')){
 
-                            if($extend = ake($def, 'extend')){
+                            foreach($value as $subKey => $subValue){
 
-                                if(is_callable($extend))
-                                    $this->set($key, $extend($value, $this->values[$key]));
+                                if(ake($this->values[$key], $subKey) instanceof Strict)
+                                    $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
 
-                            }else{
+                                else{
 
-                                foreach($value as $subKey => $subValue){
+                                    $this->convertType($subValue, $type);
 
-                                    if(ake($this->values[$key], $subKey) instanceof Strict)
-                                        $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
-
-                                    else
-                                        $this->values[$key][$subKey] = $this->convertType($subValue, $type);
+                                    $this->values[$key][$subKey] = $subValue;
 
                                 }
 

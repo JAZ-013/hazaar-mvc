@@ -15,6 +15,10 @@ class Select extends Block {
 
     private $use_options_index_as_value = true;
 
+    private $nullable = false;
+
+    private $placeholder = null;
+
     /**
      * @detail      The HTML select constructor.
      *
@@ -164,6 +168,24 @@ class Select extends Block {
 
     }
 
+    public function nullable($boolean = true, $placeholder = null){
+
+        $this->nullable = $boolean;
+
+        if($placeholder !== null)
+            $this->placeholder = $placeholder;
+
+        return $this;
+
+    }
+
+    public function renderObject() {
+
+        if($this->nullable == true)
+            $this->prepend(new Option($this->placeholder, 'null'));
+
+        return parent::renderObject();
+
+    }
+
 }
-
-

@@ -2,6 +2,12 @@
 
 namespace Hazaar;
 
+define('FILE_FILTER_IN', 0);
+
+define('FILE_FILTER_OUT', 1);
+
+define('FILE_FILTER_SET', 2);
+
 class File {
 
     protected $backend;
@@ -37,6 +43,11 @@ class File {
     private $encrypted = false;
 
     private $__media_uri;
+
+    /*
+     * Content filters
+     */
+    private $filters = array();
 
     function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null, $relative_path = null) {
 
@@ -94,6 +105,39 @@ class File {
     public function backend(){
 
         return strtolower((new \ReflectionClass($this->backend))->getShortName());
+
+    }
+
+    public function getBackend(){
+
+        return $this->backend;
+
+    }
+
+    public function getManager(){
+
+        return $this->manager;
+
+    }
+
+    /**
+     * Content filters
+     */
+
+    public function registerFilter($type, $callable){
+
+        if(!array_key_exists($type, $this->filters))
+            $this->filters[$type] = array();
+
+        if(is_string($callable))
+            $callable = array($this, $callable);
+
+        if(!is_callable($callable))
+            return false;
+
+        $this->filters[$type][] = $callable;
+
+        return true;
 
     }
 
@@ -338,9 +382,13 @@ class File {
     public function get_contents($offset = -1, $maxlen = NULL) {
 
         if($this->contents)
-            return $this->filter($this->contents);
+            return $this->contents;
 
-        return $this->filter($this->backend->read($this->source_file, $offset, $maxlen));
+        $this->contents = $this->backend->read($this->source_file, $offset, $maxlen);
+
+        $this->filter_in($this->contents);
+
+        return $this->contents;
 
     }
 
@@ -360,8 +408,10 @@ class File {
         if(!is_resource($this->source_file))
             $content_type = $this->mime_content_type();
 
-        if(! $content_type)
+        if(!$content_type)
             $content_type = 'text/text';
+
+        $this->filter_out($data);
 
         return $this->backend->write($this->source_file, $data, $content_type, $overwrite);
 
@@ -376,6 +426,13 @@ class File {
      * @param mixed $bytes The data to set as the content
      */
     public function set_contents($bytes) {
+
+        if(array_key_exists(FILE_FILTER_SET, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_SET] as $filter)
+                call_user_func_array($filter, array(&$bytes));
+
+        }
 
         $this->contents = $bytes;
 
@@ -426,7 +483,7 @@ class File {
      */
     public function save() {
 
-        return $this->put_contents(($this->encrypted ? $this->encrypt(false) : $this->contents), TRUE);
+        return $this->put_contents($this->contents, TRUE);
 
     }
 
@@ -541,6 +598,21 @@ class File {
 
     }
 
+    /**
+     * Copy the file to another folder
+     *
+     * @param mixed $destination The destination folder to copy the file into
+     * @param mixed $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                              destination does not exist an error will be thrown.
+     * @param mixed $dstBackend The destination backend.  Defaults to the same backend as the source.
+     *
+     * @throws \Exception
+     *
+     * @throws File\Exception\SourceNotFound
+     * @throws File\Exception\TargetNotFound
+     *
+     * @return mixed
+     */
     public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
@@ -647,11 +719,32 @@ class File {
     /**
      * Return the CSV content as a parsed array
      *
+     * @param mixed $use_header_row Indicates if a header row should be parsed and used to build an associative array.  In this case the
+     *                              keys in the returned array will be the values from the first row, which is normally a header row.
+     *
      * @return array
      */
-    public function readCSV(){
+    public function readCSV($use_header_row = false){
 
-        return array_map('str_getcsv', $this->toArray("\n"));
+        $data = array_map('str_getcsv', $this->toArray("\n"));
+
+        if($use_header_row === true){
+
+            $headers = array_shift($data);
+
+            foreach($data as &$row){
+
+                if(count($headers) !== count($row))
+                    continue;
+
+                $row = array_combine($headers, $row);
+
+            }
+
+        }
+
+        return $data;
+
 
     }
 
@@ -660,7 +753,9 @@ class File {
         if(!is_array($filenames))
             $filenames = array($filenames);
 
-        if($target !== null && !$target instanceof \Hazaar\File\Dir)
+        if($target === null)
+            $target = new File\TempDir();
+        elseif(!$target instanceof \Hazaar\File\Dir)
             $target = new \Hazaar\File\Dir($target, $this->backend, $this->manager);
 
         $files = array();
@@ -677,25 +772,23 @@ class File {
             if(!in_array(basename($name), $filenames))
                 continue;
 
-            if($target === null){
+            $file = $target->get($name);
 
-                $file = new \Hazaar\File(basename($name));
+            $dir = new \Hazaar\File\Dir($file->dirname());
 
-            }else{
+            if(!$dir->exists())
+                $dir->create(true);
 
-                $file = $target->get($name);
+            $block_size = max(bytes_str(ini_get('memory_limit')) / 2, 1024000);
 
-                $dir = new \Hazaar\File\Dir($file->dirname());
+            $zip_entry_size = zip_entry_filesize($zip_entry);
 
-                if(!$dir->exists())
-                    $dir->create();
+            $file->open('w');
 
-            }
+            for($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
+                $file->write(zip_entry_read($zip_entry, $block_size));
 
-            if($target)
-                $file->put_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
-            else
-                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+            $file->close();
 
             $files[] = $file;
 
@@ -738,6 +831,12 @@ class File {
             return $this->handle;
 
         return $this->handle = fopen($this->backend->resolvePath($this->source_file), $mode);
+
+    }
+
+    public function get_resource(){
+
+        return $this->handle;
 
     }
 
@@ -832,10 +931,19 @@ class File {
      */
     public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!$this->handle)
-            return null;
+        if($this->handle)
+            return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
-        return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
+        if(!is_array($this->contents)){
+
+            $this->contents = explode("\n", $this->contents);
+
+            $line = reset($this->contents);
+
+        }elseif(!($line = next($this->contents)))
+            return false;
+
+        return str_getcsv($line, $delimiter, $enclosure, $escape);
 
     }
 
@@ -852,14 +960,19 @@ class File {
      * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
      * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
      *
-     * @return \integer|null
+     * @return integer|null
      */
     public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!($this->handle && is_array($fields)))
-            return null;
+        if($this->handle && is_array($fields))
+            return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
-        return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
+        if(!is_array($this->contents))
+            $this->contents = array();
+
+        $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
+
+        return strlen($line);
 
     }
 
@@ -1057,9 +1170,18 @@ class File {
      * is encrypted and automatically decrypts it if an encryption key is available.
      *
      * @param mixed $content
-     * @return mixed
      */
-    private function filter($content){
+    protected function filter_in(&$content){
+
+        if(is_array($content))
+            $content = implode("\n", $content);
+
+        if(array_key_exists(FILE_FILTER_IN, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_IN] as $filter)
+                call_user_func($filter, $content);
+
+        }
 
         $bom = substr($content, 0, 3);
 
@@ -1087,31 +1209,52 @@ class File {
 
         }
 
-        return $content;
+        return true;
+
+    }
+
+    /**
+     * Internal content filter
+     *
+     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
+     * is encrypted and automatically decrypts it if an encryption key is available.
+     *
+     * @param mixed $content
+     */
+    protected function filter_out(&$content){
+
+        if(array_key_exists(FILE_FILTER_OUT, $this->filters)){
+
+            foreach($this->filters[FILE_FILTER_OUT] as $filter)
+                call_user_func_array($filter, array(&$content));
+
+        }
+
+        if($this->encrypted === true){
+
+            $bom = pack('H*','BADA55');
+
+            if(substr($content, 0, 3) === $bom)
+                return false;
+
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
+
+            $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+
+            $content = $bom . $iv . $data;
+
+        }
+
+        return true;
 
     }
 
     public function encrypt($write = true){
 
-        $bom = pack('H*','BADA55');
-
-        $content = $this->get_contents();
-
-        if(substr($content, 0, 3) == $bom)
-            return $this->contents;
-
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
-
-        $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
-
-        $this->contents = $bom . $iv . $data;
+        $this->encrypted = true;
 
         if($write)
             $this->save();
-
-        $this->encrypted = true;
-
-        return $this->contents;
 
     }
 

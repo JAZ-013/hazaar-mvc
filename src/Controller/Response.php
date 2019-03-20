@@ -280,7 +280,7 @@ abstract class Response implements Response\_Interface {
 
         }
 
-        if(!$this->headers_set) {
+        if(php_sapi_name() !== 'cli' && $this->headers_set !== true) {
 
             if(headers_sent())
                 throw new Exception\HeadersSent();

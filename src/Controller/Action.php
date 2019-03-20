@@ -107,6 +107,10 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
                 $response = $html;
 
+            }elseif($response instanceof \Hazaar\File){
+
+                $response = new Response\File($response);
+
             }else{
 
                 $response = new Response\Json($response);

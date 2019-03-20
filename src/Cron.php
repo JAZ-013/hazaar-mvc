@@ -41,15 +41,20 @@ class Cron {
      */
     private $ranges = array(
         IDX_MINUTE  => array('min' => 0,
-                             'max' => 59),    // Minutes
+                             'max' => 59,
+                             'name' => 'i'),    // Minutes
         IDX_HOUR    => array('min' => 0,
-                             'max' => 23),    // Hours
+                             'max' => 23,
+                             'name' => 'G'),    // Hours
         IDX_DAY     => array('min' => 1,
-                             'max' => 31),    // Days
+                             'max' => 31,
+                             'name' => 'd'),    // Days
         IDX_MONTH   => array('min' => 1,
-                             'max' => 12),    // Months
+                             'max' => 12,
+                             'name' => 'm'),    // Months
         IDX_WEEKDAY => array('min' => 0,
-                             'max' => 7)    // Weekdays
+                             'max' => 7,
+                             'name' => 'w')    // Weekdays
     );
 
     /**
@@ -64,7 +69,8 @@ class Cron {
         '@weekly'   => '0 0 * * 0',
         '@midnight' => '0 0 * * *',
         '@daily'    => '0 0 * * *',
-        '@hourly'   => '0 * * * *'
+        '@hourly'   => '0 * * * *',
+        '@reboot'   => 'now'
     );
 
     /**
@@ -105,7 +111,10 @@ class Cron {
 
     function __construct($expression) {
 
-        $this->pcron = $this->parse($expression);
+        $this->pcron = is_int($expression) ? $expression : $this->parse($expression);
+
+        if($this->pcron === false)
+            throw new \Exception('Invalid CRON time expression');
 
     }
 
@@ -116,9 +125,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|null
      */
     public function getNextOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return null;
 
         $next = $this->getTimestamp($timestamp);
 
@@ -135,9 +147,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|null
      */
     public function getLastOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return null;
 
         // Convert timestamp to array
         $last = $this->getTimestamp($timestamp);
@@ -157,9 +172,17 @@ class Cron {
      *
      * @param    bool  $next  true = nextOccurence, false = lastOccurence
      *
-     * @return   int
+     * @return   int|null
      */
     private function calculateDateTime($rtime, $next = TRUE) {
+
+        if(is_int($this->pcron)){
+
+            $timestamp = mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
+
+            return ($next === true) ? (($this->pcron >= $timestamp) ? $this->pcron : null) : (($this->pcron < $timestamp) ? $this->pcron : null);
+
+        }
 
         // Initialize vars
         $calc_date = TRUE;
@@ -167,7 +190,7 @@ class Cron {
         $cron = ($next ? $this->pcron : $this->arrayReverse($this->pcron));
 
         if(! $cron)
-            return FALSE;
+            return null;
 
         // OK, lets see if the day/month/weekday of the reference-date exist in our
         // $cron-array.
@@ -325,7 +348,7 @@ class Cron {
 
             }
 
-            return FALSE;
+            return null;
 
         }
 
@@ -353,22 +376,13 @@ class Cron {
      */
     private function getTimestamp($timestamp = NULL) {
 
-        if(is_null($timestamp)) {
+        if(is_null($timestamp))
+            $timestamp = time();
 
-            $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', time()));
-
-        } else {
-
-            $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
-
-        }
+        $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
 
         // Remove leading zeros (or we'll get in trouble ;-)
-        foreach($arr as $key => $value) {
-
-            $arr[$key] = (int)ltrim($value, '0');
-
-        }
+        array_walk($arr, function(&$value){ $value = intval($value); });
 
         return $arr;
 
@@ -446,7 +460,7 @@ class Cron {
      *
      * @return       mixed
      */
-    public function parse($expression) {
+    private function parse($expression) {
 
         // First of all we cleanup the expression and remove all duplicate tabs/spaces/etc.
         $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression)));
@@ -461,18 +475,24 @@ class Cron {
 
         }
 
+        if($expression === 'now')
+            return intval(floor(time() / 60) * 60);
+
         // Next basic check... do we have 5 segments?
         $cron = explode(' ', $expression);
 
-        if(count($cron) <> 5) {
-
+        if(count($cron) !== 5)
             return FALSE;
 
-        } else {
+        $dummy = array();
 
-            // Yup, 5 segments... lets see if we can work with them
-            foreach($cron as $idx => $segment)
-                $dummy[$idx] = $this->expandSegment($idx, $segment);
+        // Yup, 5 segments... lets see if we can work with them
+        foreach($cron as $idx => $segment){
+
+            if(($value = $this->expandSegment($idx, $segment)) === false)
+                return false;
+
+            $dummy[$idx] = $value;
 
         }
 
@@ -502,13 +522,12 @@ class Cron {
         }
 
         // Replace wildcards
-        if(substr($segment, 0, 1) == '*') {
+        $token = substr($segment, 0, 1);
 
-            $segment = preg_replace('/^\*(\/\d+)?$/i',
-                $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1',
-                $segment);
-
-        }
+        if($token === '*')
+            $segment = preg_replace('/^\*(\/\d+)?$/i', $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1', $segment);
+        elseif($token === '?')
+            $segment = preg_replace('/^\?(\/\d+)?$/i', date($this->ranges[$idx]['name']) . '$1', $segment);
 
         // Make sure that nothing unparsed is left :)
         $dummy = preg_replace('/[0-9\-\/\,]/', '', $segment);

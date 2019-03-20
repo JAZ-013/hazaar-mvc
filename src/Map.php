@@ -200,6 +200,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     static public function is_array($array) {
 
         return (is_array($array)
+            || $array instanceof \stdClass
             || $array instanceof \ArrayAccess
             || $array instanceof \ArrayIterator
             || $array instanceof \Iterator);
@@ -237,7 +238,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
                 /*
                  * Here we want to specifically look for a REAL array so we can convert it to a Map
                  */
-                if(is_array($value)) {
+                if(is_array($value) || $value instanceof \stdClass) {
 
                     $value = new Map($value, NULL, $this->filter);
 
@@ -643,7 +644,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
                     /*
                      * Here we want to specifically look for a REAL array so we can convert it to a Map
                      */
-                    if(is_array($elem)) {
+                    if(is_array($elem) || $elem instanceof \stdClass) {
 
                         $elem = new Map($elem, NULL, $this->filter);
 
@@ -724,7 +725,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         /*
          * Here we want to specifically look for a REAL array so we can convert it to a Map
          */
-        if(is_array($value)) {
+        if(is_array($value) || $value instanceof \stdClass) {
 
             $value = new Map($value, NULL, $this->filter);
 
@@ -767,7 +768,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         /*
          * Here we want to specifically look for a REAL array so we can convert it to a Map
          */
-        if(is_array($value)) {
+        if(is_array($value) || $value instanceof \stdClass) {
 
             $value = new Map($value, NULL, $this->filter);
 
@@ -1040,7 +1041,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         /*
          * Here we want to specifically look for a REAL array so we can convert it to a Map
          */
-        if(is_array($value))
+        if(is_array($value) || $value instanceof \stdClass)
             $value = new Map($value, NULL, $this->filter);
 
         $value = $this->execFilter($key, $value, 'in');

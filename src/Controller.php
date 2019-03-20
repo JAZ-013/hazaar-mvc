@@ -138,13 +138,7 @@ abstract class Controller implements Controller\_Interface {
 
             } else {
 
-                if(substr(trim($args[0]), 0, 1) == '/') {
-
-                    $args[0] = $this->getAction() . $args[0];
-
-                }
-
-                $method = $args[0];
+                $method = ltrim($args[0], '/');
 
             }
 

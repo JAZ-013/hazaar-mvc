@@ -21,19 +21,22 @@ namespace Hazaar\Cache\Backend;
  * * cache_dir - The directory to store cache files in.  Default is to use a 'cache' directory in the application .runtime directory.
  * * file_prefix - This is an optional prefix to apply to the cache files.  Useful if you want to separate your cache files.  Default: no prefix
  * * use_zlib - Enable or disable zlib compression on the cache files.  This can slow things down quite a bit more, but is useful when you
+ * * encode_fs - Encodes the filesystem files using an md5 hash to obscure file namespaces on disk
  * are caching very large things.  I wouldn't bother using it under normal circumstances.  Default: false.
  *
  * @since 1.0.0
  */
 class File extends \Hazaar\Cache\Backend {
 
-    private   $zlib   = FALSE;
+    private   $zlib   = false;
 
     protected $weight = 4;
 
     private   $namespace;
 
     private   $cache_dir;
+
+    private   $store;
 
     private   $timeout_file;
 
@@ -52,25 +55,28 @@ class File extends \Hazaar\Cache\Backend {
         $this->namespace = $namespace;
 
         if($app = \Hazaar\Application::getInstance())
-            $cache_dir = $app->runtimePath('cache', TRUE);
+            $cache_dir = $app->runtimePath('cache', true);
         else
             $cache_dir = sys_get_temp_dir();
 
         $this->configure(array(
             'cache_dir'   => $cache_dir,
             'file_prefix' => NULL,
-            'use_zlib'    => FALSE,
-            'encode_fs'   => FALSE
+            'use_zlib'    => false,
+            'encode_fs'   => false
         ));
 
-        $this->cache_dir = $this->options->cache_dir
+        $cache_dir = $this->options->cache_dir
             . ( ($this->options->file_prefix ) ? DIRECTORY_SEPARATOR . $this->options->file_prefix : null )
-            . DIRECTORY_SEPARATOR . ($this->options->encode_fs ? md5($this->namespace) : $this->namespace);
+            . DIRECTORY_SEPARATOR;
 
-        if(!file_exists($this->cache_dir))
-            mkdir($this->cache_dir);
+        if(!file_exists($cache_dir))
+            mkdir($cache_dir);
 
-        $this->addCapabilities('store_objects', 'expire_val');
+        //Open the B-Tree database file
+        $this->store = new \Hazaar\Btree($cache_dir . ($this->options->encode_fs ? md5($this->namespace) : $this->namespace) . '.db');
+
+        $this->addCapabilities('store_objects', 'expire_val', 'array');
 
         if(in_array('zlib', get_loaded_extensions())){
 
@@ -86,12 +92,13 @@ class File extends \Hazaar\Cache\Backend {
         //If the lifetime value is greater than 0 then we support namespace timeouts.
         if($this->options->lifetime > 0){
 
-            $this->timeout_file = $this->cache_dir . DIRECTORY_SEPARATOR . '.timeout';
+            //$this->timeout_file = $this->cache_dir . DIRECTORY_SEPARATOR . '.timeout';
 
             $this->addCapabilities('expire_ns', 'keepalive');
 
-            //If the timeout file exists, load it and check if we need to drop the namespace.
-            $timeout = (file_exists($this->timeout_file) ? intval(file_get_contents($this->timeout_file)) : 0);
+            //If a timeout exists, load it and check if we need to drop the namespace.
+            if(!($timeout = $this->store->get('__namespace_timeout')))
+                $timeout = 0;
 
             //If the namespace has expired, drop it
             if(time() >= $timeout){
@@ -113,8 +120,8 @@ class File extends \Hazaar\Cache\Backend {
      */
     function __destruct(){
 
-        if($this->timeout_file && $this->timeout > 0)
-            file_put_contents($this->timeout_file, $this->timeout);
+        if($this->timeout > 0)
+            $this->store->set('__namespace_timeout', $this->timeout);
 
     }
 
@@ -125,14 +132,6 @@ class File extends \Hazaar\Cache\Backend {
 
     }
 
-
-    private function getAbsoluteFilename($key) {
-
-        $key = str_replace(array('/', '\\'), '_', $key);
-
-        return $this->cache_dir . DIRECTORY_SEPARATOR . ($this->options->encode_fs ? md5($key) : $key);
-
-    }
 
     /**
      * Load the key value from storage
@@ -145,45 +144,49 @@ class File extends \Hazaar\Cache\Backend {
      *
      * @return mixed
      */
-    private function load($key) {
+    private function load($key, &$cache = null) {
 
-        if(array_key_exists($key, $this->local))
-            return $this->local[$key];
+        if(!is_array($cache)){
+
+            if(!array_key_exists($key, $this->local))
+                $this->local[$key] = $this->store->get($key);
+
+            $cache =& $this->local[$key];
+
+        }
 
         $value = "\0";
 
-        $filename = $this->getAbsoluteFilename($key);
+        if($cache === null)
+            return $value;
 
-        if(file_exists($filename)) {
+        $expire = array_key_exists('expire', $cache) ? $cache['expire'] : null;
 
-            $cache = file_get_contents($filename);
+        if($expire && $expire < time()){
 
-            $byte = ord(substr($cache, 0, 1));
+            $this->store->remove($key);
 
-            if($byte == 120) {
+            $this->local[$key] = null;
+
+        }else{
+
+            if(array_key_exists('data', $cache))
+                $value = $cache['data'];
+
+            if(ord(substr($value, 0, 1)) === 120) {
 
                 if(! $this->zlib)
                     throw new Exception\NoZlib($key);
 
-                $cache = gzuncompress($cache);
+                $value = gzuncompress($value);
 
             }
-
-
-            $cache = unserialize($cache);
-
-            $expire = ake($cache, 'expire');
-
-            if($expire && $expire < time())
-                unlink($filename);
-            else
-                $value = $cache['data'];
 
         }
 
         $this->keepalive();
 
-        return $this->local[$key] = $value;
+        return $value;
 
     }
 
@@ -203,18 +206,16 @@ class File extends \Hazaar\Cache\Backend {
 
         $value = $this->load($key);
 
-        if($value !== "\0")
-            return $value;
+        if($value === "\0")
+            return false;
 
-        return FALSE;
+        return $value;
 
     }
 
     public function set($key, $value, $timeout = NULL) {
 
         $this->local[$key] = $value;
-
-        $filename = $this->getAbsoluteFilename($key);
 
         if($this->zlib && $this->options->use_zlib)
             $value = gzcompress($value, 9);
@@ -226,7 +227,7 @@ class File extends \Hazaar\Cache\Backend {
 
         $this->keepalive();
 
-        return (file_put_contents($filename, serialize($data)) > 0);
+        return $this->store->set($key, $data);
 
     }
 
@@ -234,44 +235,31 @@ class File extends \Hazaar\Cache\Backend {
 
         $this->keepalive();
 
-        $filename = $this->getAbsoluteFilename($key);
-
-        if(file_exists($filename)) {
-
-            unlink($filename);
-
-            return TRUE;
-
-        }
-
-        return FALSE;
+        return $this->store->remove($key);
 
     }
 
     public function clear() {
 
-        $dir = new \Hazaar\File\Dir($this->cache_dir);
-
-        if(!$dir->exists())
-            return false;
-
-        return $dir->empty();
+        return $this->store->reset_btree_file();
 
     }
 
     public function toArray(){
 
-        if($this->options->encode_fs)
-            return false;
-
         $array = array();
 
-        $dir = new \Hazaar\File\Dir($this->cache_dir);
+        $values = $this->store->range("\x00", "\xff");
 
-        $keys = $dir->toArray();
+        foreach($values as $key => $cache){
 
-        foreach($keys as $key)
-            $array[$key] = $this->get($key);
+            if(substr($key, 0, 2) === '__')
+                continue;
+
+            if(($value = $this->load($key, $cache)) !== "\0")
+                $array[$key] = $value;
+
+        }
 
         return $array;
 

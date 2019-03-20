@@ -102,9 +102,9 @@ You declare your class as normal, extending it from Hazaar\Extender, in line wit
 
 To declare a class as extendible, you simply extend the Hazaar\Extender abstract class and call it's `extend()` method with the name of the class you want to extend as the first parameter, and any other parameters to pass to the child class constructor. For safety reasons I suggest using `parent::extend()` to make sure you access the Extender method and not a local method.
 
-!!! Warning
+!!! Notice
 
-Any class that is declared as abstract is not allowed to be extended. This is in line with the rules of extending classes in PHP.
+Any class that is declared as abstract can still be extended using this method. Internally, a "wrapper class" is used to allow extending abstract classes.
 
 To extend the 'A' class and pass a string to the constructor:
 

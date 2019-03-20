@@ -149,6 +149,10 @@ var dataBinderValue = function (name, value, label, parent) {
     });
 };
 
+dataBinderValue.prototype.__name = function () {
+    return this._parent._attr_name(this._name);
+};
+
 dataBinderValue.prototype.toString = function () {
     return this.label || this.value || this.other;
 };
@@ -211,6 +215,10 @@ dataBinder.prototype._init = function (data, name, parent) {
     });
 };
 
+dataBinder.prototype.__name = function () {
+    return this._attr_name();
+};
+
 dataBinder.prototype.__nullify = function (value) {
     if (typeof value === 'string' && value === '') value = null;
     return value;
@@ -231,8 +239,8 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (value !== null && typeof value === 'object') value = new dataBinder(value, key, parent);
-        else value = new dataBinderValue(key, value, null, parent);
+        if (value !== null && typeof value === 'object' && value.constructor.name === 'Object') value = new dataBinder(value, key, parent);
+        else if (typeof value !== 'object') value = new dataBinderValue(key, value, null, parent);
     }
     return value;
 };
@@ -459,6 +467,14 @@ dataBinder.prototype.enabled = function (value) {
     return this._enabled = value;
 };
 
+dataBinder.prototype.compare = function (value) {
+    if (typeof value !== 'object' || !value instanceof dataBinder || value.constructor.name !== 'Object') return false;
+    for (x in value) if (!(x in this._attributes)
+        || (this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== value[x]) return false;
+    for (x in this._attributes) if (!(x in value)) return false;
+    return true;
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -482,6 +498,10 @@ dataBinderArray.prototype._init = function (data, name, parent) {
             }
         }
     });
+};
+
+dataBinderArray.prototype.__name = function () {
+    return this._attr_name();
 };
 
 dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
@@ -508,7 +528,6 @@ dataBinderArray.prototype._newitem = function (index, element) {
         item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
-    console.log(attr_name);
     return newitem;
 };
 
@@ -516,8 +535,8 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
     return this._parent.__convert_type(key, value, this);
 };
 
-dataBinderArray.prototype._update = function (attr_name, attr_element) {
-    var remove = this.indexOf(attr_element) < 0;
+dataBinderArray.prototype._update = function (attr_name, attr_element, do_update) {
+    var remove = this.indexOf(attr_element) < 0, attr_value = this;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = $(item);
         if (o.is('[data-toggle]')) {
@@ -525,10 +544,15 @@ dataBinderArray.prototype._update = function (attr_name, attr_element) {
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
         }
+        if (do_update === true) o.trigger('update', [attr_name, attr_value]);
     });
 };
 
-dataBinderArray.prototype.push = function (element) {
+dataBinderArray.prototype._trigger = function (name, obj) {
+    this._parent._trigger(this._attr_name(name), obj);
+};
+
+dataBinderArray.prototype.push = function (element, no_update) {
     var key = this._elements.length;
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         var trigger_name = this._trigger_name(this._attr_name(key));
@@ -541,31 +565,42 @@ dataBinderArray.prototype.push = function (element) {
             }
         });
     }
-    this._elements[key] = this.__convert_type(key, element);
-    if (this._elements[key] instanceof dataBinder) {
+    element = this.__convert_type(key, element);
+    this._elements[key] = element;
+    jQuery('[data-bind="' + this._attr_name() + '"]').trigger('push', [this._attr_name(), element, key]);
+    if (no_update !== true && this._elements[key] instanceof dataBinder) {
         jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
         this.resync();
-    } else this._update(this._attr_name(), this._elements[key]);
+    } else this._update(this._attr_name(), this._elements[key], true);
     return key;
 };
 
-dataBinderArray.prototype.indexOf = function (searchString) {
-    if (searchString instanceof dataBinderValue) searchString = searchString.value;
-    for (let i in this._elements) if (this._elements[i].value === searchString) return parseInt(i);
+dataBinderArray.prototype.indexOf = function (search) {
+    if (typeof search === 'function') {
+        for (x in this._elements) if (search(this._elements[x], x) === true) return parseInt(x);
+    } else {
+        if (search instanceof dataBinderValue) search = search.value;
+        for (let i in this._elements) {
+            if (this._elements[i] instanceof dataBinder && this._elements[i].compare(search) === true
+                || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i]) === search)
+                return parseInt(i);
+        }
+    }
     return -1;
 };
 
-dataBinderArray.prototype.remove = function (value) {
-    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value));
+dataBinderArray.prototype.remove = function (value, no_update) {
+    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value), no_update);
 };
 
-dataBinderArray.prototype.unset = function (index) {
+dataBinderArray.prototype.unset = function (index, no_update) {
     if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
     if (typeof element === 'undefined') return;
-    if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
+    if (no_update !== true && element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
-    this._update(this._attr_name(), element);
+    jQuery('[data-bind="' + this._attr_name() + '"]').trigger('pop', [this._attr_name(), element, index]);
+    this._update(this._attr_name(), element, true);
     return element;
 };
 
@@ -630,13 +665,18 @@ dataBinderArray.prototype.populate = function (elements) {
     }
 };
 
-dataBinderArray.prototype.filter = function (cb, saved) {
+dataBinderArray.prototype.filter = function (cb) {
     var list = [];
     for (let x in this._elements) {
         var value = this._elements[x] instanceof dataBinderValue ? this._elements[x].value : this._elements[x];
-        if (cb(value)) list.push(this_.elements[x]);
+        if (cb(value)) list.push(this._elements[x]);
     }
     return list;
+};
+
+dataBinderArray.prototype.reduce = function (cb) {
+    for (let x in this._elements) if (cb(this._elements[x]) === false) this._elements.splice(x, 1);
+    return this;
 };
 
 dataBinderArray.prototype.__nullify = function (value) {
@@ -650,9 +690,21 @@ dataBinderArray.prototype.watch = function (cb) {
 dataBinderArray.prototype.empty = function () {
     for (x in this._elements)
         this._elements[x].empty();
+    this._elements = [];
 };
 
 dataBinderArray.prototype.enabled = function (value) {
     if (typeof value !== 'boolean') return this._enabled;
     return this._enabled = value;
+};
+
+dataBinderArray.prototype.each = function (callback) {
+    for (x in this._elements) callback(this._elements[x]);
+};
+
+dataBinderArray.prototype.find = function (callback) {
+    var elements = [];
+    for (x in this._elements)
+        if (callback(this._elements[x]) === true) elements.push(this._elements[x]);
+    return elements;
 };

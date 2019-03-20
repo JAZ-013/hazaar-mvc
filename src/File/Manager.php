@@ -213,7 +213,7 @@ class Manager {
      */
     public function get($path) {
 
-        return new \Hazaar\File($path, $this->backend, $this);
+        return new \Hazaar\File('/' . ltrim($path, '/ '), $this->backend, $this);
 
     }
 

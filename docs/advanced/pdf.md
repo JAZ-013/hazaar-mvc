@@ -6,13 +6,47 @@ PDFs can be generated using a controller response. This approach has been used b
 class GetPDFController extends Hazaar\Controller\Action {
     public function index(){
         $pdf = new Hazaar\Controller\Response\PDF();
-        $pdf->setHtml("<h1>This is a test PDF</h1>");
+        $pdf->setContent("<h1>This is a test PDF</h1>");
         return $pdf;
     }
 }
 ```
 
 That's it! Then, when you navigate your browser to http://yourhost.com/GetPDF you will download a PDF file with the content This is a test PDF in header format. The HTML that can be rendered into a PDF can be as simple or as complex as you need it. The renderer will resolve images and stylesheets and render the PDF as accurately as possible.
+
+## Rendering from a file
+
+So say you have lots of HTML and you don't want embed that in your code.  Fair enough, just load it from a file that is stored somewhere like the view directory.
+
+```php
+class GetPDFController extends Hazaar\Controller\Action {
+    public function index(){
+        $pdf = new Hazaar\Controller\Response\PDF();
+        $content = file_get_contents(Hazaar\Loader::getFilePath(FILE_PATH_VIEW, 'pdf/testpdf.html'));
+        $pdf->setContent($content);
+        return $pdf;
+    }
+}
+```
+
+## Rendering from a template
+
+Now that you have gotten this far, you are bored with generating static PDFs and want to easily embed some data into your documents.  This is actually pretty easy using Hazaar MVCs built in SMARTy template engine.
+
+Here, we just load the template from a view file into a new SMARTy template object and render the output.
+
+```php
+class GetPDFController extends Hazaar\Controller\Action {
+    public function index(){
+        $pdf = new Hazaar\Controller\Response\PDF();
+        $content = file_get_contents(Hazaar\Loader::getFilePath(FILE_PATH_VIEW, 'pdf/testpdf.html'));
+        $template = new Hazaar\Template\Smarty($content);
+        $data = array('header' => 'This is a header!', 'string' => 'This is a string of text!');
+        $pdf->setContent($template->render($data);
+        return $pdf;
+    }
+}
+```
 
 ## Rendering a Web Page
 
@@ -23,7 +57,7 @@ If you take the above example you can modify it as below:
 class GetPDFController extends Hazaar\Controller\Action {
     public function index(){
         $pdf = new Hazaar\Controller\Response\PDF();
-        $pdf->setSourceUrl("http://www.google.com");
+        $pdf->setSource("http://www.google.com");
         return $pdf;
     }
 }

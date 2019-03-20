@@ -38,8 +38,6 @@ abstract class Request implements Request\_Interface {
      */
     private $path;
 
-    protected $response_type = null;
-
     function __construct() {
 
         $args = func_get_args();
@@ -52,29 +50,6 @@ abstract class Request implements Request\_Interface {
 
         if($this->base_path)
             $this->evaluate($this->base_path);
-
-    }
-
-    /**
-     * Returns the requested response type.
-     *
-     * The requested response type can be set in the request itself.  If it is not set, then the default will be 'html'
-     * or the X-Requested-With header will be checked to determine the response type.
-     *
-     * This method is used internally to determine the response type to send when one has not been explicitly used.  Normally
-     * the response type is determined by the Controller\Response object type returned by a controller action.
-     *
-     * @return string
-     */
-    public function getResponseType(){
-
-        return $this->response_type;
-
-    }
-
-    public function setResponseType($type){
-
-        $this->response_type = $type;
 
     }
 

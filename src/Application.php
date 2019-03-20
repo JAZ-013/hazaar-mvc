@@ -104,6 +104,8 @@ class Application {
 
     private $protocol;
 
+    protected $response_type = null;
+
     /**
      * @brief The main application constructor
      *
@@ -289,7 +291,7 @@ class Application {
             'app' => array(
                 'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
                 'defaultController' => 'Index',
-                'errorController' => 'Error',
+                'errorController' => null,
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
@@ -335,6 +337,12 @@ class Application {
     static public function setRoot($value){
 
         Application::$root = rtrim($value, '/') . '/';
+
+    }
+
+    static public function getRoot(){
+
+        return Application::$root;
 
     }
 
@@ -890,7 +898,7 @@ class Application {
 
             echo "<script>document.location = '$url';</script>";
 
-        } elseif(class_exists('Hazaar\Session')) {
+        } else {
 
             $sess = new \Hazaar\Session();
 
@@ -971,6 +979,29 @@ class Application {
     public function version() {
 
         return HAZAAR_VERSION;
+
+    }
+
+    /**
+     * Returns the requested response type.
+     *
+     * The requested response type can be set in the request itself.  If it is not set, then the default will be 'html'
+     * or the X-Requested-With header will be checked to determine the response type.
+     *
+     * This method is used internally to determine the response type to send when one has not been explicitly used.  Normally
+     * the response type is determined by the Controller\Response object type returned by a controller action.
+     *
+     * @return string
+     */
+    public function getResponseType(){
+
+        return $this->response_type;
+
+    }
+
+    public function setResponseType($type){
+
+        $this->response_type = $type;
 
     }
 

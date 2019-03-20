@@ -148,12 +148,12 @@ class BrowserConnector {
 
             while(($file = $dir->read()) != FALSE) {
 
-                if($file->is_dir())
+                if($file instanceof Dir)
                     $info['dirs']++;
 
             }
 
-        } elseif($file->is_file() && $file->is_readable() && preg_match_array($this->allowPreview, $info['mime'])) {
+        } elseif($file instanceof \Hazaar\File && $file->is_readable() && preg_match_array($this->allowPreview, $info['mime'])) {
 
             $info['previewLink'] = rtrim($this->url, '/') . '/' . $source->name . rtrim($file->dirname(), '/') . '/' . $file->basename() . '?width={$w}&height={$h}&crop=true';
 
@@ -183,7 +183,7 @@ class BrowserConnector {
 
                 while(($file = $dir->read()) !== FALSE) {
 
-                    if(! $file->is_dir())
+                    if(! $file instanceof Dir)
                         continue;
 
                     $tree[] = $this->info($source, $file);
@@ -259,7 +259,7 @@ class BrowserConnector {
 
         while(($file = $dir->read()) !== FALSE) {
 
-            if(! $file->is_file())
+            if(! $file instanceof \Hazaar\File)
                 continue;
 
             if(! $file->is_readable())
@@ -622,7 +622,7 @@ class BrowserConnector {
 
         $path = $this->path($target);
 
-        $list = $source->find('*' . $query . '*', $path, true);
+        $list = $source->find($query, $path, true);
 
         if(!is_array($list))
             throw new \Exception('Search failed!');

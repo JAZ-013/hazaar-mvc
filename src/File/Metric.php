@@ -75,7 +75,8 @@ class Metric {
 
     public function __destruct(){
 
-        fclose($this->h);
+        if(is_resource($this->h))
+            fclose($this->h);
 
     }
 

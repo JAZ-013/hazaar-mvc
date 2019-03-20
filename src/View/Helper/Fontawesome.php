@@ -39,7 +39,18 @@ class Fontawesome extends \Hazaar\View\Helper {
      */
     public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        $this->cdnjs->load('font-awesome', ake($args, 'version'));
+        $files = array();
+
+        if($version = ake($args, 'version')){
+
+            $ver = new \Hazaar\Version($version);
+
+            if($ver->compareTo('4.7.0') <= 0)
+                $files[] = 'css/font-awesome.css';
+
+        }
+
+        $this->cdnjs->load('font-awesome', ake($args, 'version'), $files);
 
     }
 

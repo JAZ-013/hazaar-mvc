@@ -615,7 +615,7 @@ class Loader {
 
 		} else {
 
-			$namepath = preg_split('/(\W|_)/', $class_name, NULL, PREG_SPLIT_NO_EMPTY);
+			$namepath = preg_split('/(\W|_)/', $class_name, -1, PREG_SPLIT_NO_EMPTY);
 
 			/*
              * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will

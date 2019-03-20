@@ -352,4 +352,21 @@ class Http extends \Hazaar\Application\Request {
 
     }
 
+    /**
+     * Get the remote IP address of the requesting host
+     * 
+     * This will try to determine the correct IP to return.  By default it will return the $_SERVER['REMOTE_ADDR']
+     * value, but if the connection is via a reverse proxy (such as Haproxy) then it will possibly have the standard
+     * X-Forwarded-For header, so if that header exists then that value will be returned.
+     * 
+     * @return mixed
+     */
+    public function getRemoteAddr(){
+
+        if(array_key_exists('X-Forwarded-For', $this->headers))
+            return $this->headers['X-Forwarded-For'];
+
+        return ake($_SERVER, 'REMOTE_ADDR');
+
+    }
 }

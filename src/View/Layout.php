@@ -241,12 +241,9 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
             }elseif(!$script instanceof \Hazaar\Application\Url){
 
-                if($this->_methodHandler instanceof \Hazaar\Controller
-                    && $this->_methodHandler->base_path)
-                    $script = $this->_methodHandler->base_path . '/'
-                        . $this->_methodHandler->getName()
-                        . '/file/' . $script;
-                else
+                if($this->_methodHandler instanceof \Hazaar\Controller && $this->_methodHandler->base_path)
+                    $script = $this->_methodHandler->base_path . '/' . $this->_methodHandler->getName() . '/file/' . $script;
+                elseif(is_string($script) && $script[0] !== '/')
                     $script = 'script/' . $script;
 
                 $script = $this->application->url($script);

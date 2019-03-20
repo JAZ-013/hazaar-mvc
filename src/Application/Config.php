@@ -51,7 +51,7 @@ class Config extends \Hazaar\Map {
      *
      * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
-    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
+    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_namespaces = false) {
 
         $config = null;
 
@@ -62,7 +62,7 @@ class Config extends \Hazaar\Map {
 
         if($this->source = trim($source_file)){
 
-            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths))
+            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths, $override_namespaces))
                 $this->loaded = ($config->count() > 0);
 
         }
@@ -80,7 +80,7 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load(&$source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
+    public function load(&$source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
 
         $options = array();
 
@@ -99,12 +99,12 @@ class Config extends \Hazaar\Map {
 
         foreach($search_sources as &$search_source){
 
-            $source_file = null;
+            $source = null;
 
             //If we have an extension, just use that file.
             if(strrpos($search_source, '.') !== false){
 
-                $source_file = \Hazaar\Loader::getFilePath($path_type, $search_source);
+                $source = \Hazaar\Loader::getFilePath($path_type, $search_source);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -114,7 +114,7 @@ class Config extends \Hazaar\Map {
 
                     $filename = $search_source . '.' . $ext;
 
-                    if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
+                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
 
                 }
@@ -122,30 +122,48 @@ class Config extends \Hazaar\Map {
             }
 
             //If the file doesn't exist, then skip it.
-            if($source_file)
-                $options[] = $this->loadSourceFile($source_file);
+            if($source)
+                $options[] = $this->loadSourceFile($source);
+
+        }
+
+        if(!count($options) > 0) return false;
+
+        $combined = array();
+
+        if($override_namespaces === true){
+
+            foreach($options as $o){
+
+                if(ake($combined, 'final') === true)
+                    break;
+
+                $combined = array_replace_recursive($combined, $o);
+
+            }
+
+        }else{
+
+            $combined = array_shift($options);
+
+            if(!array_key_exists($this->env, $combined))
+                $combined[$this->env] = array();
+
+            foreach($options as $o){
+
+                if(ake($combined[$this->env], 'final') === true)
+                    break;
+
+                $combined[$this->env] = array_replace_recursive($combined[$this->env], $o);
+
+            }
 
         }
 
         $config = new \Hazaar\Map($defaults);
 
-        //Load the main configuration file
-        $this->loadConfigOptions(array_shift($options), $config);
-
-        if(!$config->count() > 0) return false;
-
-        //Load any override files we have found
-        if(count($options) > 0){
-
-            foreach($options as $o){
-
-                if(!$o) continue;
-
-                $this->loadConfigOptions(array($this->env => $o), $config, $this->env);
-
-            }
-
-        }
+        if(!$this->loadConfigOptions($combined, $config))
+            return false;
 
         return $config;
 
@@ -329,7 +347,7 @@ class Config extends \Hazaar\Map {
 
     /**
      * Test if the current loaded source file is writable on the filesystem
-     * 
+     *
      * @return boolean
      */
     public function isWritable(){

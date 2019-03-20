@@ -20,30 +20,6 @@ class Local implements _Interface {
 
     }
 
-    public function __destruct(){
-
-        if(count($this->meta) > 0){
-
-            foreach($this->meta as $fullpath => $meta){
-
-                if($meta[1] !== true)
-                    continue;
-
-                $metadir = dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata';
-
-                if(!file_exists($metadir))
-                    mkdir($metadir, 0644, true);
-
-                $metafile = $metadir . DIRECTORY_SEPARATOR . basename($fullpath);
-
-                file_put_contents($metafile, json_encode($meta[0]));
-
-            }
-
-        }
-
-    }
-
     public function refresh($reset = false) {
 
         return true;
@@ -525,51 +501,54 @@ class Local implements _Interface {
 
     private function meta($fullpath) {
 
-        if(array_key_exists($fullpath, $this->meta))
-            return $this->meta[$fullpath][0];
+        $metafile = dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata';
 
-        $metafile =  dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata' . DIRECTORY_SEPARATOR . basename($fullpath);
+        if(array_key_exists($metafile, $this->meta))
+            return $this->meta[$metafile];
 
-        if(file_exists($metafile)){
+        $this->meta[$metafile] = $db = new \Hazaar\Btree(dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata');
 
-            $this->meta[$fullpath] = array(json_decode(file_get_contents($metafile), true), false);
+        if(!($meta = $db->get($fullpath))){
 
-            return $this->meta[$fullpath][0];
+            $meta = array();
+
+            /**
+             * Generate Image Meta
+             */
+            if(substr($this->mime_content_type($fullpath), 0, 5) == 'image') {
+
+                $size = getimagesize($fullpath);
+
+                $meta['width'] = $size[0];
+
+                $meta['height'] = $size[1];
+
+                $meta['bits'] = ake($size, 'bits');
+
+                $meta['channels'] = ake($size, 'channels');
+
+            }
+
+            $db->set($fullpath, $meta);
 
         }
 
-        $meta = array();
-
-        /**
-         * Generate Image Meta
-         */
-        if(substr($this->mime_content_type($fullpath), 0, 5) == 'image') {
-
-            $size = getimagesize($fullpath);
-
-            $meta['width'] = $size[0];
-
-            $meta['height'] = $size[1];
-
-            $meta['bits'] = ake($size, 'bits');
-
-            $meta['channels'] = ake($size, 'channels');
-
-        }
-
-        $this->meta[$fullpath] = array($meta, true);
-
-        return $meta;
+        return $db;
 
     }
 
-    public function set_meta($path, $values, $merge = true) {
+    public function set_meta($path, $values) {
 
         $fullpath = $this->resolvePath($path);
 
-        $meta = $this->meta($fullpath);
+        $db = $this->meta($fullpath);
 
-        $this->meta[$fullpath] = array(array_merge($meta, $values), true);
+        $meta = $db->get($fullpath);
+
+        if(is_array($meta) && is_array($values))
+            $values = array_merge($meta, $values);
+
+        $db->set($fullpath, $values);
 
         return true;
 
@@ -577,7 +556,11 @@ class Local implements _Interface {
 
     public function get_meta($path, $key = null) {
 
-        $meta = $this->meta($this->resolvePath($path));
+        $fullpath = $this->resolvePath($path);
+
+        $db = $this->meta($fullpath);
+
+        $meta = $db->get($fullpath);
 
         if($key)
             return ake($meta, $key);

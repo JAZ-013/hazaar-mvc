@@ -24,7 +24,7 @@ class Session extends \Hazaar\Cache {
 
     static private $session_id;
 
-    public function __construct($options = array(), $backend = NULL) {
+    public function __construct($options = array(), $backend = 'session') {
 
         if(!$options instanceof \Hazaar\Map){
 

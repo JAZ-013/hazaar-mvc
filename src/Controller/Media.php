@@ -24,7 +24,7 @@ class Media extends \Hazaar\Controller\Action {
 
     public function init($request) {
 
-        $this->request->getResponseType('json');
+        $this->application->getResponseType('json');
 
         if(class_exists('\Hazaar\Auth\Helper'))
             $this->auth = new \Hazaar\Auth\Helper();

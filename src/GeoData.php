@@ -55,18 +55,16 @@ class GeoData {
      *
      * @var \Hazaar\Btree
      */
-    private $db;
+    static private $db;
 
     function __construct($re_intialise = false){
 
         $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('geodata.db'));
 
-        $this->db = new \Hazaar\Btree($file);
+        GeoData::$db = new \Hazaar\Btree($file);
 
-        if($re_intialise === true || $this->db->get('__version__') !== GeoData::$version)
+        if($re_intialise === true || GeoData::$db->get('__version__') !== GeoData::$version)
             $this->__initialise();
-
-        return true;
 
     }
 
@@ -89,7 +87,7 @@ class GeoData {
 
         $data = array();
 
-        $this->db->reset_btree_file();
+        GeoData::$db->reset_btree_file();
 
         $tmpdir = new \Hazaar\File\Dir(Application::getInstance()->runtimePath('geodata', true));
 
@@ -115,27 +113,7 @@ class GeoData {
         /*
          * Download extra country code data
          */
-        $codes = array();
-
-        $codes_file = explode("\n", file_get_contents(GeoData::$sources['code']['url']));
-
-        $headers = str_getcsv(array_shift($codes_file));
-
-        foreach($codes_file as $line){
-
-            $line = str_getcsv($line);
-
-            if(count($line) !== count($headers))
-                continue;
-
-            $item = array();
-
-            foreach($line as $col => $value)
-                $item[$headers[$col]] = $value;
-
-            $codes[$item['ISO2']] = $item;
-
-        }
+        $codes = $this->parseCSV(GeoData::$sources['code']['url'], 'ISO2');
 
         /*
          * Process the contents of the CSV and store in our Btree database
@@ -246,9 +224,9 @@ class GeoData {
         }
 
         foreach($data as $key => $country)
-            $this->db->set($key, $country);
+            GeoData::$db->set($key, $country);
 
-        $this->db->set('__version__', GeoData::$version);
+        GeoData::$db->set('__version__', GeoData::$version);
 
         $tmpdir->delete(true);
 
@@ -256,13 +234,45 @@ class GeoData {
 
     }
 
+    private function parseCSV($file, $key_name){
+
+        $items = array();
+
+        $lines = explode("\n", file_get_contents($file));
+
+        $headers = str_getcsv(array_shift($lines));
+
+        foreach($lines as $line){
+
+            $line = str_getcsv($line);
+
+            if(count($line) !== count($headers))
+                continue;
+
+            $item = array();
+
+            foreach($line as $col => $value)
+                $item[$headers[$col]] = $value;
+
+            if($key = ake($item, $key_name, null, true))
+                $items[$key] = $item;
+
+        }
+
+        ksort($items);
+
+        return $items;
+
+    }
+
     /**
      * Obtains a list of all countries indexed by code
+     *
      * @param mixed $db
      * @param mixed $field
      * @return array
      */
-    private function __list(\Hazaar\Btree $db, $field = 'name'){
+    private function __list(\Hazaar\Btree $db, $field = null){
 
         $list = array();
 
@@ -273,7 +283,7 @@ class GeoData {
             if(substr($code, 0, 2) == '__')
                 continue;
 
-            $list[$code] = ake($info, $field);
+            $list[$code] = $field ? ake($info, $field) : $info;
 
         }
 
@@ -293,7 +303,7 @@ class GeoData {
      */
     public function countries(){
 
-        return $this->__list($this->db, 'name');
+        return $this->__list(GeoData::$db, 'name');
 
     }
 
@@ -319,13 +329,19 @@ class GeoData {
      */
     public function country_info($code){
 
-        $info = $this->db->get(strtoupper($code));
+        $info = GeoData::$db->get(strtoupper($code));
 
         unset($info['states']);
 
         unset($info['cities']);
 
         return $info;
+
+    }
+
+    public function country_info_all(){
+
+        return $this->__list(GeoData::$db);
 
     }
 
@@ -342,7 +358,7 @@ class GeoData {
 
         $list = array();
 
-        if($country = $this->db->get(strtoupper($country_code))){
+        if($country = GeoData::$db->get(strtoupper($country_code))){
 
             foreach(ake($country, 'states') as $code => $state)
                 $list[$code] = $state['name'];
@@ -369,7 +385,7 @@ class GeoData {
 
         $list = array();
 
-        if($country = $this->db->get(strtoupper($country_code))){
+        if($country = GeoData::$db->get(strtoupper($country_code))){
 
             $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', array());
 
@@ -412,7 +428,7 @@ class GeoData {
      */
     public function country_code($name){
 
-        $info = $this->db->range("\x00", "\xff");
+        $info = GeoData::$db->range("\x00", "\xff");
 
         foreach($info as $country){
 

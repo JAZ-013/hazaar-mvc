@@ -16,6 +16,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     private $type;
 
+    private $allow_undefined = false;
+
     private $values = array();
 
     /**
@@ -31,10 +33,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      */
     function __construct($type, $values = array()){
 
-        if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || class_exists($type)))
+        if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || $type === 'any' || class_exists($type)))
             throw new \Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
+
+        if($this->type === 'any')
+            $this->allow_undefined = true;
 
         if(!is_array($values))
             $values = ($values === null) ? array() : array($values);
@@ -64,6 +69,30 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
         }
 
         return $multiple ? $values : null;
+
+    }
+
+    public function remove($criteria = array(), $multiple = false){
+
+        foreach($this->values as $index => $value){
+
+            if(!\Hazaar\Map::is_array($value))
+                continue;
+
+            if($this->matchItem($value, $criteria)){
+
+                unset($this->values[$index]);
+
+                if($multiple !== true)
+                    break;
+
+            }
+
+        }
+
+        $this->values = array_values($this->values);
+
+        return;
 
     }
 
@@ -223,6 +252,10 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
+        elseif($this->type === 'model')
+            $value = new ChildModel('any', $value);
+        elseif($this->allow_undefined === true && $this->type === 'any' )
+            $value = is_array($value) ? new ChildArray('any', $value) : new ChildModel('any', $value);
         else
             DataTypeConverter::convertType($value, $this->type);
 
@@ -236,6 +269,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     public function offsetUnset($offset){
 
         unset($this->values[$offset]);
+
+        $this->values = array_values($this->values);
 
     }
 
@@ -298,7 +333,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function toArray($export_data_binder = false, $disable_callbacks = false, $depth = null, $show_hidden = true){
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false){
 
         $values = $this->values;
 

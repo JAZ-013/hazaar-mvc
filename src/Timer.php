@@ -30,6 +30,13 @@ class Timer {
     private $timers = array();
 
     /**
+     * The name of the last timer.  Used in checkpointing.
+     * 
+     * @var mixed
+     */
+    private $last;
+
+    /**
      * Timer Precision
      *
      * This sets the precision of the output.  By default it is 2 which means output is 1/10th of a millisecond.
@@ -70,6 +77,8 @@ class Timer {
 
         $this->timers[$name] = array('start' => $when);
 
+        $this->last = $name;
+
     }
 
     /**
@@ -94,6 +103,26 @@ class Timer {
 
         return $this->get($name);
 
+    }
+
+    /**
+     * Create a timer checkpoint.
+     * 
+     * Simply put, this will automatically stop the last timer and start a new one in one function call.
+     * 
+     * @param mixed $name The name of the new timer.
+     * 
+     * @return boolean
+     */
+    public function checkpoint($name){
+
+        if(!$this->last)
+            return false;
+
+        $this->stop($this->last);
+
+        return $this->start($name);
+        
     }
 
     /**

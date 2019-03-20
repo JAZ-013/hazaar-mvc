@@ -13,7 +13,7 @@ namespace Hazaar\Socket;
  * @since 2.0.0
  *       
  */
-class Server {
+abstract class Server {
 
     protected $maxBufferSize;
 

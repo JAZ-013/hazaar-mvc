@@ -112,168 +112,158 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __construct($name, $application) {
 
+        $application->setResponseType('json');
+
         parent::__construct($name, $application);
 
-        if(class_exists('Hazaar\Cache'))
-            $this->__rest_cache = new \Hazaar\Cache();
+        $this->__rest_cache = new \Hazaar\Cache();
 
     }
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $request->setResponseType('json');
+        $class = new \ReflectionClass($this);
 
-        try{
+        foreach($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method){
 
-            $class = new \ReflectionClass($this);
+            if(substr($method->getName(), 0, 2) === '__' || $method->isPrivate())
+                continue;
 
-            foreach($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method){
+            $method->setAccessible(true);
 
-                if(substr($method->getName(), 0, 2) === '__' || $method->isPrivate())
+            if(!($comment = $method->getDocComment()))
+                continue;
+
+            if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $method_matches)))
+                continue;
+
+            $endpoint = array(
+                'cache' => false,
+                'cache_timeout' => null,
+                'comment' => $comment,
+                'routes' => array()
+            );
+
+            if(($pos = array_search('cache', $method_matches[2])) !== false){
+
+                if(preg_match('/cache\s+(.*)/', $method_matches[1][$pos], $cache_matches)){
+
+                    $cache = trim($cache_matches[1]);
+
+                    if(is_numeric($cache)){
+
+                        $endpoint['cache'] = true;
+
+                        $endpoint['cache_timeout'] = intval($cache);
+
+                    }else{
+
+                        $endpoint['cache'] = boolify($cache);
+
+                    }
+
+                }
+
+            }
+
+            foreach($method_matches[2] as $index => $tag){
+
+                if($tag !== 'route')
                     continue;
 
-                $method->setAccessible(true);
-
-                if(!($comment = $method->getDocComment()))
+                if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
                     continue;
 
-                if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $method_matches)))
-                    continue;
+                $target = '/' . ltrim($route_matches[1], '/');
 
-                $endpoint = array(
-                    'cache' => false,
-                    'cache_timeout' => null,
-                    'comment' => $comment,
-                    'routes' => array()
+                $args = array('methods' => array('GET'));
+
+                if(array_key_exists(2, $route_matches)){
+
+                    $parts = preg_split('/\s*(,(?![^(\[]*[\)\]]))\s*/', $route_matches[2]);
+
+                    foreach($parts as $part){
+
+                        //If there is no equals sign, skip this one.
+                        if(strpos($part, '=') > 0){
+
+                            list($key, $value) = explode('=', $part, 2);
+
+                            if($value = json_decode(str_replace("'", '"', $value), true))
+                                $args[$key] = $value;
+
+                        }else{
+
+                            if(!array_key_exists('properties', $args))
+                                $args['properties'] = array();
+
+                            $args['properties'][] = trim($part);
+
+                        }
+
+                    }
+
+                }
+
+                $endpoint['routes'][$target] = array(
+                    'func' => $method,
+                    'args' => $args
                 );
 
-                if(($pos = array_search('cache', $method_matches[2])) !== false){
-
-                    if(preg_match('/cache\s+(.*)/', $method_matches[1][$pos], $cache_matches)){
-
-                        $cache = trim($cache_matches[1]);
-
-                        if(is_numeric($cache)){
-
-                            $endpoint['cache'] = true;
-
-                            $endpoint['cache_timeout'] = intval($cache);
-
-                        }else{
-
-                            $endpoint['cache'] = boolify($cache);
-
-                        }
-
-                    }
-
-                }
-
-                foreach($method_matches[2] as $index => $tag){
-
-                    if($tag !== 'route')
-                        continue;
-
-                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
-                        continue;
-
-                    $target = '/' . ltrim($route_matches[1], '/');
-
-                    $args = array('methods' => array('GET'));
-
-                    if(array_key_exists(2, $route_matches)){
-
-                        $parts = preg_split('/\s*(,(?![^(\[]*[\)\]]))\s*/', $route_matches[2]);
-
-                        foreach($parts as $part){
-
-                            //If there is no equals sign, skip this one.
-                            if(strpos($part, '=') > 0){
-
-                                list($key, $value) = explode('=', $part, 2);
-
-                                if($value = json_decode(str_replace("'", '"', $value), true))
-                                    $args[$key] = $value;
-
-                            }else{
-
-                                if(!array_key_exists('properties', $args))
-                                    $args['properties'] = array();
-
-                                $args['properties'][] = trim($part);
-
-                            }
-
-                        }
-
-                    }
-
-                    $endpoint['routes'][$target] = array(
-                        'func' => $method,
-                        'args' => $args
-                    );
-
-                }
-
-                if(count($endpoint['routes']) > 0)
-                    $this->__rest_endpoints[$method->name] = $endpoint;
-
             }
 
-            $full_path = '/' . $this->request->getRawPath();
-
-            if($full_path == '/'){
-
-                if(!$this->allow_directory)
-                    throw new \Exception('Directory listing is not allowed', 403);
-
-                return new \Hazaar\Controller\Response\Json($this->__describe_api());
-
-            }
-
-            foreach($this->__rest_endpoints as $endpoint){
-
-                foreach($endpoint['routes'] as $target => $route){
-
-                    if($this->__match_route($full_path, $target, $route, $args)){
-
-                        if($this->request->method() == 'OPTIONS'){
-
-                            $response = new \Hazaar\Controller\Response\Json();
-
-                            $response->setHeader('allow', $route['args']['methods']);
-
-                            if($this->allow_directory)
-                                $response->populate($this->__describe_endpoint($target, $route, $this->describe_full));
-
-                            return $response;
-
-                        }else{
-
-                            $this->__endpoint = array($endpoint, $route, $args);
-
-                            break;
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            if(!$this->__endpoint)
-                throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
-
-            if(method_exists($this, 'init'))
-                $this->init($request);
+            if(count($endpoint['routes']) > 0)
+                $this->__rest_endpoints[$method->name] = $endpoint;
 
         }
-        catch(\Exception $e){
 
-            return $this->__exception($e);
+        $full_path = '/' . $this->request->getRawPath();
+
+        if($full_path == '/'){
+
+            if(!$this->allow_directory)
+                throw new \Exception('Directory listing is not allowed', 403);
+
+            return new \Hazaar\Controller\Response\Json($this->__describe_api());
 
         }
+
+        foreach($this->__rest_endpoints as $endpoint){
+
+            foreach($endpoint['routes'] as $target => $route){
+
+                if($this->__match_route($full_path, $target, $route, $args)){
+
+                    if($this->request->method() == 'OPTIONS'){
+
+                        $response = new \Hazaar\Controller\Response\Json();
+
+                        $response->setHeader('allow', $route['args']['methods']);
+
+                        if($this->allow_directory)
+                            $response->populate($this->__describe_endpoint($target, $route, $this->describe_full));
+
+                        return $response;
+
+                    }else{
+
+                        $this->__endpoint = array($endpoint, $route, $args);
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        if(!$this->__endpoint)
+            throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
+
+        if(method_exists($this, 'init'))
+            $this->init($request);
 
         return null;
 
@@ -281,16 +271,7 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __run() {
 
-        try{
-
-            return $this->__exec_endpoint($this->__endpoint);
-
-        }
-        catch(\Exception $e){
-
-            return $this->__exception($e);
-
-        }
+        return $this->__exec_endpoint($this->__endpoint);
 
     }
 
@@ -298,51 +279,51 @@ abstract class REST extends \Hazaar\Controller {
 
         $api = array();
 
-        foreach($this->__rest_endpoints as $route => $routes){
-
-            foreach($routes as $endpoint)
-                $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api);
-
-        }
+        foreach($this->__rest_endpoints as $endpoint)
+            $this->__describe_endpoint($endpoint, $this->describe_full, $api);
 
         return $api;
 
     }
 
-    private function __describe_endpoint($route, $endpoint, $describe_full = false, &$api = null){
+    private function __describe_endpoint($endpoint, $describe_full = false, &$api = null){
 
         if(!$api) $api = array();
 
-        foreach($endpoint['args']['methods'] as $methods){
+        foreach($endpoint['routes'] as $route => $route_data){
 
-            $info = array(
-                'url' => $this->url() . $route,
-                'httpMethods' => $methods
-            );
+            foreach($route_data['args']['methods'] as $methods){
 
-            if($describe_full && ($doc = ake($endpoint, 'doc'))){
+                $info = array(
+                    'url' => (string)$this->url($route),
+                    'httpMethods' => $methods
+                );
 
-                if($doc->hasTag('param')){
+                if($describe_full && ($doc = ake($endpoint, 'doc'))){
 
-                    $info['parameters'] = array();
+                    if($doc->hasTag('param')){
 
-                    foreach($doc->tag('param') as $name => $param){
+                        $info['parameters'] = array();
 
-                        if(!preg_match('/<(\w+:)*' . substr($name, 1) . '>/', $route))
-                            continue;
+                        foreach($doc->tag('param') as $name => $param){
 
-                        $info['parameters'][$name] = $param['desc'];
+                            if(!preg_match('/<(\w+:)*' . substr($name, 1) . '>/', $route))
+                                continue;
+
+                            $info['parameters'][$name] = $param['desc'];
+
+                        }
 
                     }
 
+                    if($brief = $doc->brief())
+                        $info['description'] = $brief;
+
                 }
 
-                if($brief = $doc->brief())
-                    $info['description'] = $brief;
+                $api[] = $info;
 
             }
-
-            $api[] = $info;
 
         }
 
@@ -409,94 +390,68 @@ abstract class REST extends \Hazaar\Controller {
 
     private function __exec_endpoint($endpoint){
 
-        try{
+        list($endpoint, $route, $args) = $endpoint;
 
-            list($endpoint, $route, $args) = $endpoint;
+        if(!($method = $route['func']) instanceof \ReflectionMethod)
+            throw new \Exception('Method is no longer a method!?', 500);
 
-            if(!($method = $route['func']) instanceof \ReflectionMethod)
-                throw new \Exception('Method is no longer a method!?', 500);
+        $params = array();
 
-            $params = array();
+        foreach($method->getParameters() as $p){
 
-            foreach($method->getParameters() as $p){
+            $key = $p->getName();
 
-                $key = $p->getName();
+            $value = null;
 
-                $value = null;
+            if(array_key_exists($key, $args))
+                $value = $args[$key];
+            elseif(array_key_exists('defaults', $route['args']) && array_key_exists($key, $route['args']['defaults']))
+                $value = $route['args']['defaults'][$key];
+            elseif($p->isDefaultValueAvailable())
+                $value = $p->getDefaultValue();
+            else
+                throw new \Exception("Missing value for parameter '$key'.", 400);
 
-                if(array_key_exists($key, $args))
-                    $value = $args[$key];
-                elseif(array_key_exists('defaults', $route['args']) && array_key_exists($key, $route['args']['defaults']))
-                    $value = $route['args']['defaults'][$key];
-                elseif($p->isDefaultValueAvailable())
-                    $value = $p->getDefaultValue();
-                else
-                    throw new \Exception("Missing value for parameter '$key'.", 400);
+            $params[$p->getPosition()] = $value;
 
-                $params[$p->getPosition()] = $value;
+        }
 
-            }
+        $result = null;
 
-            $result = null;
+        /*
+         * Enable caching if:
+         * * The cache object has been created (ie: the cache library is available)
+         * * This endpoint has enabled caching specifically
+         * * Global cache is enabled and this endpoint has not disabled caching
+         */
+        $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
+            && ($endpoint['cache'] === true
+            || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
+            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
 
-            /*
-             * Enable caching if:
-             * * The cache object has been created (ie: the cache library is available)
-             * * This endpoint has enabled caching specifically
-             * * Global cache is enabled and this endpoint has not disabled caching
-             */
-            $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
-                && ($endpoint['cache'] === true
-                || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-                ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
+        //Try extracting from cache first if caching is enabled
+        if($cache_key !== null)
+            $result = $this->__rest_cache->get($cache_key);
 
-            $response = new \Hazaar\Controller\Response\Json();
+        //If there is no result yet, execute the endpoint
+        if(!$result){
 
-            //Try extracting from cache first if caching is enabled
+            $result = $method->invokeArgs($this, $params);
+
+            if($result instanceof \Hazaar\Controller\Response)
+                return $result;
+
+            //Save the result if caching is enabled.
             if($cache_key !== null)
-                $result = $this->__rest_cache->get($cache_key);
-
-            //If there is no result yet, execute the endpoint
-            if(!$result){
-
-                $result = $method->invokeArgs($this, $params);
-
-                //Save the result if caching is enabled.
-                if($cache_key !== null)
-                    $this->__rest_cache->set($cache_key, $result, $endpoint['cache_timeout']);
-
-            }
-
-            $response->populate($result);
-
-            return $response;
-
-        }
-        catch(\Exception $e){
-
-            return $this->__exception($e);
+                $this->__rest_cache->set($cache_key, $result, $endpoint['cache_timeout']);
 
         }
 
-    }
+        $response = new \Hazaar\Controller\Response\Json();
 
-    private function __exception(\Exception $e){
+        $response->populate($result);
 
-        $error = array(
-            'ok' => false,
-            'error' => array(
-                'type' => $e->getCode(),
-                'status' => 'REST API ERROR',
-                'str' => $e->getMessage(),
-                'file' => $e->getFile()
-            )
-        );
-
-        if(!($code = $e->getCode()) > 0) $code = 500;
-
-        $out = new \Hazaar\Controller\Response\Json($error, $code);
-
-        return $out;
+        return $response;
 
     }
 

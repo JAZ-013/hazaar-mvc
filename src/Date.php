@@ -690,5 +690,63 @@ class Date extends \Datetime {
 
     }
 
-}
+    /**
+     * Get locale data for a specified locale
+     *
+     * Data included is what is returned by PHP's localeconv() function.
+     *
+     * @param mixed $locale The locale to get data for.
+     *
+     * @return \array|boolean If the locale is invalid then FALSE is returned.  Otherwise the result of
+     * localeconv() for the specified locale.
+     */
+    static public function getLocaleData($locale){
 
+        $local_locale = setlocale(LC_ALL, 0);
+
+        if(!setlocale(LC_ALL, $locale))
+            return false;
+
+        $data = localeconv();
+
+        setlocale(LC_ALL, $local_locale);
+
+        return $data;
+
+    }
+
+    /**
+     * Retrieve a date format for a specific locale
+     *
+     * This will return something like DMY to indicate that the locale format is date, month followed by year.
+     *
+     * These formats are not meant to be used directly in date functions as different date functions use different
+     * format specifiers and we won't even attempt to support all of them here.
+     *
+     * @param mixed $locale
+     * @return \boolean|null|string
+     */
+    static public function getLocaleDateFormat($locale){
+
+        $local_locale = setlocale(LC_ALL, 0);
+
+        if(!setlocale(LC_ALL, $locale))
+            return false;
+
+        $format = null;
+
+        if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', strftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
+
+            $matrix = array(1 => 'D', 12 => 'M', 2000 => 'Y');
+
+            $format = $matrix[intval($matches[1])] . $matrix[intval($matches[3])] . $matrix[intval($matches[5])];
+
+        }
+
+        setlocale(LC_ALL, $local_locale);
+
+        return $format;
+
+    }
+
+}
