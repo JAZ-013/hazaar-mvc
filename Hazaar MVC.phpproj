@@ -525,7 +525,6 @@
     <Content Include="libs\css\images\fileicon\xls.png" />
     <Content Include="libs\css\images\loading.gif" />
     <Content Include="libs\css\popup.css" />
-    <Content Include="libs\currencyInfo.csv" />
     <Content Include="libs\dropzone\css\dropzone.css" />
     <Content Include="libs\dropzone\dropzone.js" />
     <Content Include="libs\dropzone\images\spritemap%402x.png" />

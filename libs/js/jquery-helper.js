@@ -657,7 +657,8 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 
 dataBinderArray.prototype.populate = function (elements) {
     this._elements = [];
-    if (!Array.isArray(elements))
+    if (!elements || typeof elements !== 'object') return;
+    else if (!Array.isArray(elements))
         elements = Object.values(elements);
     for (let x in elements) {
         if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
