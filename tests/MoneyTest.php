@@ -2,7 +2,7 @@
 
 namespace HazaarTest;
 
-class MoneyTest extends \PHPUnit_Framework_TestCase {
+class MoneyTest extends \PHPUnit\Framework\TestCase {
 
     public function testCanDoAdd() {
 
