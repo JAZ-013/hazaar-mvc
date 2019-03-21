@@ -8,7 +8,7 @@ class ApplicationTest extends \PHPUnit\Framework\TestCase {
 
     private $config_file;
 
-    protected function setUp() {
+    public function setUp() : void {
 
         $this->app = new \Hazaar\Application('development');
 
