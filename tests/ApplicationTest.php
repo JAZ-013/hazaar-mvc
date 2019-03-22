@@ -2,13 +2,13 @@
 
 namespace HazaarTest;
 
-class ApplicationTest extends \PHPUnit_Framework_TestCase {
+class ApplicationTest extends \PHPUnit\Framework\TestCase {
 
     private $app;
 
     private $config_file;
 
-    protected function setUp() {
+    public function setUp() : void {
 
         $this->app = new \Hazaar\Application('development');
 

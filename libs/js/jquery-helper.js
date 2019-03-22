@@ -149,6 +149,10 @@ var dataBinderValue = function (name, value, label, parent) {
     });
 };
 
+dataBinderValue.prototype.__name = function () {
+    return this._parent._attr_name(this._name);
+};
+
 dataBinderValue.prototype.toString = function () {
     return this.label || this.value || this.other;
 };
@@ -209,6 +213,10 @@ dataBinder.prototype._init = function (data, name, parent) {
             return Object.keys(this._attributes).length;
         }
     });
+};
+
+dataBinder.prototype.__name = function () {
+    return this._attr_name();
 };
 
 dataBinder.prototype.__nullify = function (value) {
@@ -492,6 +500,10 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     });
 };
 
+dataBinderArray.prototype.__name = function () {
+    return this._attr_name();
+};
+
 dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
 
 dataBinderArray.prototype._attr_name = function (attr_name) {
@@ -645,7 +657,8 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 
 dataBinderArray.prototype.populate = function (elements) {
     this._elements = [];
-    if (!Array.isArray(elements))
+    if (!elements || typeof elements !== 'object') return;
+    else if (!Array.isArray(elements))
         elements = Object.values(elements);
     for (let x in elements) {
         if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
@@ -653,13 +666,18 @@ dataBinderArray.prototype.populate = function (elements) {
     }
 };
 
-dataBinderArray.prototype.filter = function (cb, saved) {
+dataBinderArray.prototype.filter = function (cb) {
     var list = [];
     for (let x in this._elements) {
         var value = this._elements[x] instanceof dataBinderValue ? this._elements[x].value : this._elements[x];
-        if (cb(value)) list.push(this_.elements[x]);
+        if (cb(value)) list.push(this._elements[x]);
     }
     return list;
+};
+
+dataBinderArray.prototype.reduce = function (cb) {
+    for (let x in this._elements) if (cb(this._elements[x]) === false) this._elements.splice(x, 1);
+    return this;
 };
 
 dataBinderArray.prototype.__nullify = function (value) {

@@ -134,6 +134,8 @@ class Cron {
 
         $next = $this->getTimestamp($timestamp);
 
+        $next[IDX_MINUTE]++;
+
         $next_time = $this->calculateDateTime($next);
 
         return $next_time;
