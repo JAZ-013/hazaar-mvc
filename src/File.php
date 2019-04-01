@@ -483,7 +483,7 @@ class File {
      */
     public function save() {
 
-        return $this->put_contents($this->contents, TRUE);
+        return $this->put_contents($this->get_contents(), TRUE);
 
     }
 
