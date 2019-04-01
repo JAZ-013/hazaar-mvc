@@ -693,7 +693,7 @@ class File {
 
         if($set_path !== null){
 
-            if(!$set_path instanceof \Hazaar\Http\Uri)
+            if(!($set_path instanceof \Hazaar\Http\Uri || $set_path instanceof \Hazaar\Application\Url))
                 $set_path = new \Hazaar\Http\Uri($set_path);
 
             $this->__media_uri = $set_path;
