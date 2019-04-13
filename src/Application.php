@@ -699,7 +699,7 @@ class Application {
 
                     if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
 
-                        $code = $container->exec($payload->function, ake($payload, 'params'));
+                        $code = $container->exec($payload->exec, ake($payload, 'params'));
 
                     }else{
 
