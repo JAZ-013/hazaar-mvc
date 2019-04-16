@@ -22,6 +22,30 @@ class DataBinderValue implements \JsonSerializable {
 
     function __construct($value, $label = null, $other = null){
 
+        if(is_array($value)){
+
+            if(array_key_exists('__hz_other', $value))
+                $other = $value['__hz_other'];
+
+            if(array_key_exists('__hz_label', $value))
+                $label = $value['__hz_label'];
+
+            if(array_key_exists('__hz_value', $value))
+                $value = $value['__hz_value'];
+
+        }elseif($value instanceof \stdClass){
+
+            if(property_exists($value, '__hz_other'))
+                $other = $value->__hz_other;
+
+            if(property_exists($value, '__hz_label'))
+                $label = $value->__hz_label;
+
+            if(property_exists($value, '__hz_value'))
+                $value = $value->__hz_value;
+
+        }
+
         $this->value = $value;
 
         $this->label = $label;
