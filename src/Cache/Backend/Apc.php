@@ -12,9 +12,11 @@ namespace Hazaar\Cache\Backend;
 /**
  * @brief The APC cache backend.
  *
- * @detail This is a high performance caching backend that uses user cache functions that are part of the APC module.
+ * @detail This is a high performance caching backend that uses user cache functions
+ * that are part of the APC module.
  *
- * There are no special options required to use this backend.  It only requires that the APC PHP module be installed and operational.
+ * There are no special options required to use this backend.  It only requires that
+ * the APC PHP module be installed and operational.
  *
  * @since 1.0.0
  */
@@ -42,12 +44,11 @@ class Apc extends \Hazaar\Cache\Backend {
 
     public function close(){
 
-        if(count($this->refresh) > 0){
+        if(count($this->refresh) === 0)
+            return;
 
-            foreach($this->refresh as $key => &$value)
-                apcu_store($this->key($key), $value, $this->options->lifetime);
-
-        }
+        foreach($this->refresh as $key => &$value)
+            apcu_store($this->key($key), $value, $this->options->lifetime);
 
     }
 

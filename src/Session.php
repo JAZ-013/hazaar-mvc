@@ -52,6 +52,12 @@ class Session extends \Hazaar\Cache {
 
         $options->keepalive = true;
 
+        //If there is no backend requested, and none configured, use SESSION
+        if ($backend === NULL
+            && ($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application
+            && !$app->config->cache->has('backend'))
+            $backend = array('apc', 'session');
+
         parent::__construct($backend, $options, Session::$session_id);
 
         if(!$this->backend->can('keepalive'))
