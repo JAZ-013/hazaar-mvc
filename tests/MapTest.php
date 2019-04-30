@@ -2,7 +2,7 @@
 
 namespace HazaarTest;
 
-class MapTest extends \PHPUnit_Framework_TestCase {
+class MapTest extends \PHPUnit\Framework\TestCase {
 
     public function testCanCount() {
 

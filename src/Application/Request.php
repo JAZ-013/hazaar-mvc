@@ -69,6 +69,10 @@ abstract class Request implements Request\_Interface {
 
         if(array_key_exists('path', $url)){
 
+            //If there is a fragment here, it is almost entirely likely to be part of the filename, so re-attach it.
+            if(array_key_exists('fragment', $url))
+                $url['path'] .= '#' . $url['fragment'];
+
             $nodes = explode('/', $url['path']);
 
             /* Pull out the first path node and use it to find the controller */
