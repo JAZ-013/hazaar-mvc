@@ -291,7 +291,7 @@ class Application {
 
     static public function setRoot($value){
 
-        Application::$root = rtrim($value, '/') . '/';
+        Application::$root = rtrim(str_replace('\\', '/', $value), '/') . '/';
 
     }
 
