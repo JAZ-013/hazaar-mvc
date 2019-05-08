@@ -257,6 +257,31 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function has($key) {
 
+        if(strpos($key, '.') !== false){
+
+            $value = $this;
+
+            $parts = explode('.', $key);
+
+            end($parts);
+
+            $lastKey = key($parts);
+
+            foreach($parts as $key => $part){
+
+                if($value instanceof Strict)
+                    $value = ($lastKey === $key) ? $value->has($part) : $value->get($part, false);
+                elseif(is_array($value))
+                    $value = ($lastKey === $key) ? array_key_exists($part, $value) : ake($value, $part);
+                else
+                    $value = false;
+
+            }
+
+            return $value;
+
+        }
+
         return array_key_exists($key, $this->fields);
 
     }

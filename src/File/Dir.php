@@ -482,4 +482,10 @@ class Dir {
 
     }
 
+     public function get_meta($key = NULL) {
+
+        return $this->backend->get_meta($this->source_file, $key);
+
+    }
+
 }
