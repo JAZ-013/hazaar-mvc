@@ -17,6 +17,7 @@ class Modifier {
         'indent',
         'lower',
         'nl2br',
+        'number_format',
         'regex_replace',
         'replace',
         'spacify',
@@ -128,6 +129,12 @@ class Modifier {
     public function nl2br($string){
 
         return str_replace("\n", '<br />', $string);
+
+    }
+
+    public function number_format($string, $decimals = 0, $dec_point = '.', $thousands_sep = ','){
+
+        return number_format($string, $decimals, $dec_point, $thousands_sep);
 
     }
 

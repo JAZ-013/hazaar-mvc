@@ -324,15 +324,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     $value = ake($value, $part);
 
-                }elseif(is_array($value)){
+                }elseif(($value = ake($value, $part)) === null){
 
-                    $value = ake($value, $part);
-
-                }else{
-
-                    $null = null;
-
-                    return $null;
+                    return $value;
 
                 }
 

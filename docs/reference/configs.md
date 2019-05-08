@@ -1,14 +1,37 @@
-# Configuration
+# Application Configuration
 
-## Includes
+Application configuration files can be in either JSON or INI format.  JSON is the preferred format, but INI files were the original file format used so they are still supported for legacy purposes.
 
-You can include another configuration if needed.
+The default JSON configuration looks like this:
 
+```json
+{
+    "app": {
+        "root": {{ "/" for CLI and $_SERVER['SCRIPT_NAME'] for HTTP }}
+        "defaultController": "Index",
+        "useDefaultController": false,
+        "favicon": "favicon.png",
+        "timezone": "UTC",
+        "rewrite": {{ false for CLI and true for HTTP }},
+        "files": {
+            "bootstrap": "bootstrap.php",
+            "shutdown": "shutdown.php",
+            "route": "route.php",
+            "media": "media.php"
+        },
+        "responseImageCache": false
+    },
+    "paths": {
+        "model": "models",
+        "view": "views",
+        "controller": "controllers",
+        "service": "services"
+    },
+    "view": {
+        "prepare": false
+    }
+}
 ```
-include = production
-```
-
-This is useful for if you have a development server or other stripped down server. You can set all your options up in the [production] configuration, include that config, and then only add the settings that you want to override. For example, you may have debugging off by default, so you could include the production config and then just set debug = true.
 
 ## Application Directives
 
@@ -18,48 +41,60 @@ These directives are used throughout the application and affect it's functionali
 
 The short name of the application.
 
-```
-app.name = "Test Application"
+```json
+{
+    "app": { "name": "Test Application" }
+}
 ```
 
 ### app.version
 
 The current version of the application. This is returned when calling Hazaar\\Application::getVersion().
 
-```
-app.version = 1.0.1
+```json
+{
+    "app": { "version": "1.0.1" }
+}
 ```
 
 ### app.view
 
 The default view to use for the Hazaar\\Controller\\Action controller. This controller uses this global view which can set the overall style and layout of the application. A call to $this->getContent() from inside this view will then populate the page with the output from the controller.
 
-```
-app.view = "application"
+```json
+{
+    "app": { "view": "application" }
+}
 ```
 
 ### app.defaultController
 
 This is the controller that is loaded if one is not specified in the URL. Usually 'Index'.
 
-```
-app.defaultController = "Index"
+```json
+{
+    "app": { "defaultController": "Index" }
+}
 ```
 
 ### app.errorController
 
 This is the controller that is used if an error occurs. Usually 'error'. See Error for more information.
 
-```
-app.errorController = "Error"
+```json
+{
+    "app": { "errorController": "Error" }
+}
 ```
 
 ### app.compress
 
 If this is true, the application will compress any output that it produces. This includes stylesheets and javascript files.
 
-```
-app.compress = false
+```json
+{
+    "app": { "compress": false }
+}
 ```
 
 ### app.timer
@@ -196,14 +231,26 @@ view.helper.load[] = Bootstrap
 view.helper.load[] = Google
 ```
 
-```
-view.cache
-```
+### view.cache
 
 Enables internal caching of external view includes.  This means that if an external JavaScript or CSS file is included using the 
 Hazaar\Controller::requires() or Hazaar\Controller::link() methods, then the file will be cached in the application runtime directory.  This can be
 used during development to reduce requests to external servers and allows for working "offline".
 
+```json
+{
+    "view": { "cache": true }
+}
 ```
-view.cache = true
+
+## Includes
+
+You can include another configuration if needed.
+
+```json
+{
+    "include": "production"
+}
 ```
+
+This is useful for if you have a development server or other stripped down server. You can set all your options up in the [production] configuration, include that config, and then only add the settings that you want to override. For example, you may have debugging off by default, so you could include the production config and then just set debug = true.
