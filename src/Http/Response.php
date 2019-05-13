@@ -64,6 +64,8 @@ class Response {
 
         $this->buffer .= $buffer;
 
+        $param = null;
+
         if(! $this->header_parsed) {
 
             $offset = 0;
@@ -83,7 +85,17 @@ class Response {
 
                 $header = substr($this->buffer, $offset, $del - $offset);
 
-                if($split = strpos($header, ':')) {
+                if($this->status === null){
+
+                    if(!preg_match('/(HTTP\/[\d\.]+)\s+(\d+)\s+(.*)/', $header, $matches))
+                        throw new \Exception('Got bad HTTP response: ' . $header);
+
+                    //Parse the response header so we can throw errors if needed
+                    list($null, $this->version, $this->status, $this->name) = $matches;
+
+                    settype($this->status, 'integer');
+
+                }elseif($split = strpos($header, ':')) {
 
                     $param = strtolower(substr($header, 0, $split));
 
@@ -124,12 +136,13 @@ class Response {
 
                     }
 
+                } elseif($param !== null) {
+
+                    $this->headers[$param] .= ' ' . trim($header);
+
                 } else {
 
-                    //Parse the response header so we can throw errors if needed
-                    list($this->version, $this->status, $this->name) = explode(' ', $header, 3);
-
-                    settype($this->status, 'integer');
+                    throw new \Exception('Got bad HTTP response header: ' . $header);
 
                 }
 
