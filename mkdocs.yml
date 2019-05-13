@@ -43,7 +43,7 @@ pages:
     - XMLRPC: advanced/xmlrpc.md
     - AJAX Streaming: advanced/ajax-streaming.md
     - Helper Functions: advanced/helper-functions.md
-  - Administrators Guide
+  - Administrators Guide:
     - Performance Tuning: admin/performance.md
   - Developer Reference:
     - Config Directives: reference/configs.md
