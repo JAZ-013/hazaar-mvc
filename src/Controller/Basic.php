@@ -102,7 +102,8 @@ abstract class Basic extends \Hazaar\Controller {
      */
     protected function __runAction(&$action = null) {
 
-        $action = $this->__action;
+        if(!$action)
+            $action = $this->__action;
 
         /*
          * Check that the requested controller is this one.  If not then we probably got re-routed to the
@@ -117,7 +118,7 @@ abstract class Basic extends \Hazaar\Controller {
 
                 array_unshift($this->__actionArgs, $this->application->getRequestedController());
 
-                $action = '__default';
+                $this->__action = $action = '__default';
 
             } else {
 
