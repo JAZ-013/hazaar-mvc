@@ -1,6 +1,6 @@
 # PDF Controller Responses
 
-PDFs can be generated using a controller response. This approach has been used because to output a PDF you don't want to output anything else, otherwise the browser will get confused. The PDF Response controller is called Hazaar\Controller\Response\PDF. You instantiate the object, load in some HTML and return that from your controller action so that it can automatically be rendered and returned to the browser.
+PDFs can be generated using a controller response. This approach has been used because to output a PDF you don't want to output anything else, otherwise the browser will get confused. The PDF Response controller is called [[Hazaar\Controller\Response\PDF]]. You instantiate the object, load in some HTML and return that from your controller action so that it can automatically be rendered and returned to the browser.
 
 ```php
 class GetPDFController extends Hazaar\Controller\Action {
