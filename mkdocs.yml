@@ -3,7 +3,8 @@ docs_dir: docs
 theme: readthedocs
 pages:
   - Welcome: index.md
-  - Introduction:
+  - Test: test.md
+  - Introduction: intro.md
     - Framework Overview: intro/overview.md
     - Licence: intro/licence.md
   - Getting Started:
