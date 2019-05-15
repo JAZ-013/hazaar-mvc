@@ -7,6 +7,7 @@ pages:
   - Introduction:
     - Framework Overview: intro/overview.md
     - Licence: intro/licence.md
+    - Test: intro/test.md
   - Getting Started:
     - Requirements: getting_started/requirements.md
     - Download & Install: getting_started/install.md
