@@ -1,3 +1,7 @@
 # Intro Test Page
 
-* [Test](intro/test.md)
+* [Relative Test #1](test.md)
+* [Relative Test #2](intro/test.md)
+
+* [Absolute Test #1](/test.md)
+* [Absolute Test #2](/intro/test.md)
