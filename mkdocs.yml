@@ -4,7 +4,7 @@ theme: readthedocs
 pages:
   - Welcome: index.md
   - Test: test.md
-  - Introduction: intro.md
+  - Introduction:
     - Framework Overview: intro/overview.md
     - Licence: intro/licence.md
   - Getting Started:
