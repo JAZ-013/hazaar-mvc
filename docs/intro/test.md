@@ -1,3 +1,3 @@
 # Intro Test Page
 
-* [Test](test.md)
+* [Test](intro/test.md)
