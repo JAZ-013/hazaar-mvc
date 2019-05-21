@@ -908,11 +908,20 @@ function years($interval) {
  *
  * @since 1.0.0
  *
- *        $retval int Number of years from the specified date to now.
+ * @return int|boolean Number of years from the specified date to now, or FALSE on error.
  */
 function age($date) {
 
-    return years(time() - strtotime($date));
+    if($date instanceof \DateTime)
+        $time = $date->getTimestamp();
+
+    elseif(is_string($date))
+        $time = strtotime($date);
+
+    else
+        return false;
+
+    return years(time() - $time);
 
 }
 
@@ -926,9 +935,7 @@ function age($date) {
  *
  * @return int Minutes in interval
  */
-function uptime($seconds) {
-
-    $interval = $seconds . ' seconds';
+function uptime($interval) {
 
     $d = floor(days($interval));
 
@@ -1665,6 +1672,14 @@ function array_remove_empty(&$array){
 
 }
 
+/**
+ * Generate a truly random string of characters.
+ * 
+ * @param mixed $length The length of the random string being created.
+ * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
+ * 
+ * @return string A totally random string of characters.
+ */
 function str_random($length, $include_special = false){
 
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
