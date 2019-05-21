@@ -476,7 +476,7 @@ class Application {
         if(!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
 
-        Application\Url::$aliases = $this->config->app->get('alias');
+        Application\Url::$aliases = $this->config->app->getArray('alias');
 
         if($this->getRequestedController() !== 'hazaar') {
 
