@@ -476,7 +476,7 @@ class Application {
         if(!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
 
-        Application\Url::$aliases = $this->config->app->get('alias');
+        Application\Url::$aliases = $this->config->app->getArray('alias');
 
         if($this->getRequestedController() !== 'hazaar') {
 
@@ -807,7 +807,7 @@ class Application {
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
-     * For examples see: "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls
+     * For examples see: [Generating URLs](/basics/urls.md)
      *
      * @since 1.0.0
      *

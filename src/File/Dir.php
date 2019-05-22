@@ -16,7 +16,9 @@ class Dir {
 
     private $__media_uri;
 
-    function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
+    private $relative_path;
+
+    function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null, $relative_path = null) {
 
         if(! $backend)
             $backend = new Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
@@ -26,6 +28,8 @@ class Dir {
         $this->manager = $manager;
 
         $this->path = $this->fixPath($path);
+
+        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
 
     }
 
@@ -233,10 +237,12 @@ class Dir {
 
         }
 
-        if($this->backend->is_dir($this->fixPath($this->path, $file)))
-            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
+        if($this->backend->is_dir($this->fixPath($this->path, $file)))
+            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager, $relative_path);
+
+        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $relative_path);
 
     }
 
@@ -270,6 +276,8 @@ class Dir {
         if(!($dir = $this->backend->scandir($start, NULL, TRUE)))
             return null;
 
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
         foreach($dir as $file) {
 
             if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
@@ -287,15 +295,13 @@ class Dir {
 
             if($this->backend->is_dir($item)) {
 
-                $dir = new \Hazaar\File\Dir($item, $this->backend, $this->manager);
+                $subdir = new \Hazaar\File\Dir($item, $this->backend, $this->manager, $relative_path);
 
-                if($subdir = $dir->find($pattern, $show_hidden, $case_sensitive))
-                    $list = array_merge($list, $subdir);
-
-                $list[] = $dir;
+                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive))
+                    $list = array_merge($list, $subdiritems);
 
             }else
-                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $this->path);
+                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $relative_path);
 
         }
 
@@ -371,13 +377,17 @@ class Dir {
         if($force_dir === true || (file_exists($path) && is_dir($path)))
             return new \Hazaar\File\Dir($path, $this->backend, $this->manager);
 
-        return new \Hazaar\File($this->path($child), $this->backend, $this->manager, $this->path);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
+        return new \Hazaar\File($this->path($child), $this->backend, $this->manager, $relative_path);
 
     }
 
     public function dir($child) {
 
-        return new \Hazaar\File\Dir($this->path($child), $this->backend, $this->manager);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
+        return new \Hazaar\File\Dir($this->path($child), $this->backend, $this->manager, $relative_path);
 
     }
 
@@ -482,7 +492,7 @@ class Dir {
 
     }
 
-     public function get_meta($key = NULL) {
+    public function get_meta($key = NULL) {
 
         return $this->backend->get_meta($this->source_file, $key);
 

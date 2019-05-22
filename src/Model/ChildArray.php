@@ -362,4 +362,15 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
+    public function collate($key_field, $value_field = null){
+
+        $items = array();
+
+        foreach($this->values as $value)
+            $items[$value[$key_field]] = ($value_field === null) ? $value : $value[$value_field];
+
+        return $items;
+
+    }
+
 }

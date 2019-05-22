@@ -38,7 +38,7 @@ if (!ini_get('date.timezone'))
  * as a last ditch effort the Date class will default to UTC. This is because not having an ini setting in
  * date.timzone will cause a PHP runtime error.
  */
-class Date extends \Datetime {
+class Date extends \DateTime {
 
     public static $calendar = CAL_JULIAN;
 
@@ -72,7 +72,7 @@ class Date extends \Datetime {
      *            [[http://au1.php.net/manual/en/function.strtotime.php|strtotime()]] for more information on valid
      *            formats. If the datetime value is not set, the current date and time will be used.
      *
-     * @param string $timezone
+     * @param string|\DateTimeZone $timezone
      *            The timezone for this datetime value. If no timezone is specified then the default
      *            timezone is used.
      */
@@ -90,7 +90,7 @@ class Date extends \Datetime {
             $datetime = '@' . $datetime . '.0';
 
         } elseif (is_array($datetime)){
-            
+
             if(array_key_exists('sec', $datetime)) { // Common array date object
 
                 $ndatetime = '@' . $datetime['sec'];
@@ -107,7 +107,7 @@ class Date extends \Datetime {
 
                 $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
             }else{
-                
+
                 $datetime = null;
 
             }
@@ -653,37 +653,46 @@ class Date extends \Datetime {
     /**
      * Return a fuzzy diff between the current time and the Date value.
      *
-     * @param bool $precise
+     * @param bool $precise             Boolean indicating if precise mode should be used.  This generally adds the time
+     *                                  to day-based results.
      *
-     * @return string
+     * @param int  $date_threshold_days A threshold in days after which the full date will be returned.  Avoids
+     *                                  situations like "3213 days ago" which is silly.
+     *
+     * @return string  Returns a nice fuzzy interval like "yesterday at xx:xx" or "4 days ago".
      */
-    public function fuzzy($precise = FALSE) {
+    public function fuzzy($precise = FALSE, $date_threshold_days = 30) {
 
-        $diff = $this->diff(new Date());
+        $diff = $this->diff(new Date(null, $this->getTimezone()));
 
-        if ($diff->days == 0) {
+        if($diff->days > $date_threshold_days)
+            return $this->format('F jS' . ($precise ? ' \a\t g:ia' : ''));
 
-            if ($diff->h > 0) {
+        if ($diff->days === 0) {
 
+            if ($diff->h > 0)
                 $msg = $diff->h . ' hour' . (($diff->h > 1) ? 's' : NULL);
-            } elseif ($diff->i > 0) {
-
+            elseif ($diff->i > 0)
                 $msg = $diff->i . ' minute' . (($diff->i > 1) ? 's' : NULL);
-            } elseif ($precise == FALSE && $diff->s < 30) {
-
+            elseif ($precise == FALSE && $diff->s < 30)
                 $msg = 'A few seconds';
-            } else {
-
+            else
                 $msg = $diff->s . ' seconds';
-            }
 
             $msg .= ' ago';
-        } elseif ($diff->days == 1) {
 
-            $msg = 'Yesterday at ' . $this->format('g:ia');
-        } else {
+        } elseif ($diff->days === 1) {
 
-            $msg = $this->format('j F \a\t g:ia');
+            $msg = 'Yesterday' . ($precise ? ' at ' . $this->format('g:ia') : '');
+
+        } elseif ($diff->days > 1 && $diff->days < 7){
+
+            $msg = 'Last ' . $this->format('l' . ($precise ? ' \a\t g:ia' : ''));
+
+        }else{
+
+            $msg = $diff->days . ' days ago';
+
         }
 
         return $msg;

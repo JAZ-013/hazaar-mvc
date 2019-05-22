@@ -102,7 +102,7 @@ abstract class Request implements Request\_Interface {
                 $this->setActionName(substr($this->raw_path, 0, $pos));
 
             /* Keep the rest as a path off the controller */
-            if($pos < strlen($this->raw_path))
+            if($pos < strlen(trim($this->raw_path, '/')))
                 $this->path = substr($this->raw_path, $pos + 1);
 
         }
