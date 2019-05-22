@@ -93,17 +93,20 @@ abstract class Request implements Request\_Interface {
             }
 
             /* Keep what we have left so far as the RAW path */
-            $this->raw_path = implode('/', $nodes);
+            if(count($nodes) > 0){
 
-            if(!($pos = strpos($this->raw_path, '/')))
-                $pos = strlen($this->raw_path);
+                $this->raw_path = implode('/', $nodes);
 
-            if(count($nodes) > 0)
+                if(!($pos = strpos($this->raw_path, '/')))
+                    $pos = strlen($this->raw_path);
+
                 $this->setActionName(substr($this->raw_path, 0, $pos));
 
-            /* Keep the rest as a path off the controller */
-            if($pos < strlen(trim($this->raw_path, '/')))
-                $this->path = substr($this->raw_path, $pos + 1);
+                /* Keep the rest as a path off the controller */
+                if($pos < strlen(trim($this->raw_path, '/')))
+                    $this->path = substr($this->raw_path, $pos + 1);
+
+            }else $this->raw_path = null;
 
         }
 
@@ -122,15 +125,12 @@ abstract class Request implements Request\_Interface {
         /*
          * Find the controller we are trying to load
          */
-        if(! $this->getControllerName()) {
+        if(!($controller = $this->getControllerName())) {
 
-            if(! $default = $this->config->app['defaultController']) {
-
+            if(!$controller = $this->config->app['defaultController'])
                 return FALSE;
 
-            }
-
-            $this->setControllerName($default);
+            $this->setControllerName($controller);
 
         }
 
@@ -142,7 +142,7 @@ abstract class Request implements Request\_Interface {
 
             $router = new Router($route);
 
-            $result = $router->exec($this->getControllerName());
+            $result = $router->exec($controller);
 
         }
 
@@ -155,11 +155,31 @@ abstract class Request implements Request\_Interface {
 
             $this->evaluate($result);
 
-        } elseif($result === TRUE && $this->config->app->has('alias') && $this->config->app->alias->has($this->getControllerName())) {
+        } elseif($result === TRUE && is_array(Url::$aliases)){
 
-            $alias = $this->config->app->alias[$this->getControllerName()];
+            $aliases = array_keys(Url::$aliases);
 
-            $this->evaluate($alias);
+            if(($result = array_usearch(array_keys(Url::$aliases), function($item) use($controller){
+                $parts = explode('/', $item, 2);
+                return $parts[0] === $controller;
+            })) !== false){
+
+                $alias = $aliases[$result];
+
+                $path = trim(Url::$aliases[$alias], '/');
+
+                if(strpos($alias, '/') === false && $this->action && $this->action !== 'index'){
+
+                    if(strpos($path, '/') !== false)
+                        return true;
+
+                    $path .= '/' . $this->action;
+
+                }
+
+                $this->evaluate($path);
+
+            }
 
         }
 
@@ -223,7 +243,7 @@ abstract class Request implements Request\_Interface {
 
     public function setControllerName($name) {
 
-        $this->controller = $name;
+        return $this->controller = $name;
 
     }
 

@@ -143,21 +143,26 @@ class Url {
 
     private function renderPath(){
 
-        $controller = $this->controller;
+        $path = $this->controller . ($this->method ? '/' . $this->method : NULL);
 
-        if(Url::$aliases instanceof \Hazaar\Map){
+        if(is_array(Url::$aliases)){
 
-            foreach(Url::$aliases as $alias_controller => $alias){
+            foreach(Url::$aliases as $alias_path => $alias){
 
-                $pos = strpos($alias, '/');
+                $parts = explode('/', trim($alias, '/'), 3);
 
-                $target = ($pos > 0) ? substr($alias, 0, $pos) : $alias;
+                $target_parts = explode('/', $path);
 
-                if(strcasecmp($target, $controller) === 0){
+                $diff = array_udiff($parts, $target_parts, function($a, $b){
+                    return strcasecmp($a, $b);
+                });
 
-                    $controller = $alias_controller;
+                if(count($diff) === 0){
 
-                    break;
+                    if(count($parts) === 1 && $this->method)
+                        $alias_path .= '/' . $this->method;
+
+                    return $alias_path;
 
                 }
 
@@ -165,7 +170,7 @@ class Url {
 
         }
 
-        return $controller . ($this->method ? '/' . $this->method : NULL);
+        return $path;
 
     }
 
