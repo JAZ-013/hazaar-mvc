@@ -673,7 +673,7 @@ class Application {
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         //Execution should wait here until we get a command
-        $line = stream_get_contents(STDIN);
+        $line = fgets(STDIN);
 
         $code = 1;
 
@@ -692,20 +692,7 @@ class Application {
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    $headers = array(
-                        'X-WARLOCK-JOB-ID' => $payload->job_id,
-                        'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
-                    );
-
-                    if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
-
-                        $code = $container->exec($payload->exec, ake($payload, 'params'));
-
-                    }else{
-
-                        $code = 4;
-
-                    }
+                    $code = $container->exec($payload->exec, ake($payload, 'params'));
 
                     break;
 
@@ -728,20 +715,7 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        $headers = array(
-                            'X-WARLOCK-JOB-ID' => $payload->job_id,
-                            'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
-                        );
-
-                        if($service->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
-
-                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
-
-                        }else{
-
-                            $code = 4;
-
-                        }
+                        $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
 
                     } else {
 
