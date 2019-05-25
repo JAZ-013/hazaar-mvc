@@ -459,6 +459,8 @@ class View {
 
             $template = new File\Template\Smarty($this->_viewfile);
 
+            $template->registerFunctionHandler($this);
+
             $template->registerFunctionHandler($this->_methodHandler);
 
             $output = $template->render($this->_data);
