@@ -14,6 +14,8 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     private $__cache_enabled = false;
 
+    private $__cache_file;
+
     function __construct($file, $cache_enabled = null){
 
         $this->loadFromFile($file);
@@ -24,6 +26,13 @@ class Smarty extends \Hazaar\Template\Smarty {
         $this->__cache_enabled = $cache_enabled;
 
         parent::$tags[] = 'config_load';
+
+    }
+
+    function __destruct(){
+
+        if($this->__cache_file)
+            $this->__cache_file->put_contents($this->__compiled_content);
 
     }
 
@@ -43,7 +52,7 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     public function compile(){
 
-        $cache_file = null;
+        $this->__cache_file = null;
 
         if(!$this->__source_file instanceof \Hazaar\File)
             throw new \Exception('Template compilation failed! No source file or template content has been loaded!');
@@ -54,10 +63,10 @@ class Smarty extends \Hazaar\Template\Smarty {
 
             $cache_dir = new \Hazaar\File\Dir(\Hazaar\Application::getInstance()->runtimePath('template_cache', true));
 
-            $cache_file = $cache_dir->get($cache_id . '.tpl');
+            $this->__cache_file = $cache_dir->get($cache_id . '.tpl');
 
-            if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime())
-                return $cache_file->get_contents();
+            if($this->__cache_file->exists() && $this->__cache_file->mtime() > $this->__source_file->mtime())
+                return $this->__cache_file->get_contents();
 
         }
 
@@ -65,10 +74,36 @@ class Smarty extends \Hazaar\Template\Smarty {
 
         $this->__compiled_content = "<?php chdir('$this->__cwd'); ?>\n" . parent::compile($this->__content);
 
-        if($cache_file)
-            $cache_file->put_contents($this->__compiled_content);
-
         return $this->__compiled_content;
+
+    }
+
+    public function render($params = array()){
+
+        try{
+
+            $out = parent::render($params);
+
+        }
+        catch(\Throwable $e){
+
+            $this->__cache_file = null;
+
+            $line = ($e->getLine() - 21);
+
+            $output = "An error occurred parsing the Smarty template: ";
+
+            $e = new \Hazaar\Exception($output, 500);
+
+            $e->setFile($this->__source_file->fullpath());
+
+            $e->setLine($line);
+
+            throw $e;
+
+        }
+
+        return $out;
 
     }
 
