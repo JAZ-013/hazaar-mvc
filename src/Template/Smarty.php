@@ -192,6 +192,12 @@ class Smarty {
                     if(\$file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', \$file))
                         \$file = getcwd() . DIRECTORY_SEPARATOR . \$file;
 
+                    \$info = pathinfo(\$file);
+
+                    if(!(array_key_exists('extension', \$info) 
+                        && \$info['extension']
+                        && file_exists(\$file . '.tpl'))) \$file .= '.tpl';
+
                     \$content = file_get_contents(\$file);
 
                 }
@@ -794,7 +800,6 @@ class Smarty {
 
         if(!array_key_exists('file', $params))
             return;
-
 
         $file = $params['file'];
 
