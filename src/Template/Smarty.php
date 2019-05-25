@@ -47,7 +47,7 @@ class Smarty {
 
     protected $__custom_functions = array();
 
-    private   $__custom_function_handler;
+    private   $__custom_function_handlers = array();
 
     private $__section_stack = array();
 
@@ -70,7 +70,7 @@ class Smarty {
 
     /**
      * Load the SMARTy template from a supplied string
-     * 
+     *
      * @param mixed $content The template source code
      */
     public function loadFromString($content) {
@@ -83,7 +83,7 @@ class Smarty {
 
     /**
      * Read the template from a file
-     * 
+     *
      * @param mixed $file Can be either a Hazaar\File object or a string to a file on disk.
      */
     public function loadFromFile($file){
@@ -98,15 +98,15 @@ class Smarty {
     public function registerFunctionHandler($object){
 
         if(is_object($object))
-            $this->__custom_function_handler = $object;
+            $this->__custom_function_handlers[] = $object;
 
     }
 
     /**
      * Render the template with the supplied parameters and return the rendered content
-     * 
+     *
      * @param mixed $params Parameters to use when embedding variables in the rendered template.
-     * 
+     *
      * @return string
      */
     public function render($params = array()) {
@@ -115,6 +115,7 @@ class Smarty {
 
         $default_params = array(
             'hazaar' => array('version' => HAZAAR_VERSION),
+            'application' => \Hazaar\Application::getInstance(),
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
@@ -162,11 +163,11 @@ class Smarty {
 
             private \$functions = array();
 
-            private \$custom_handler;
+            private \$custom_handlers;
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
-            public function setCustomHandler(\$object){ \$this->custom_handler = \$object; }
+            public function setCustomHandlers(\$h){ \$this->custom_handlers = \$h; }
 
             public function render(\$params){
 
@@ -180,9 +181,11 @@ class Smarty {
 
             private function include(\$file, \$params = array()){
 
-                if(is_object(\$this->custom_handler) && method_exists(\$this->custom_handler, 'smarty_include')){
+                if(is_array(\$this->custom_handlers) && \$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
+                    return method_exists(\$item, 'smarty_include');
+                }))){
 
-                    \$content = \$this->custom_handler->smarty_include(\$file);
+                    \$content = \$custom_handler->smarty_include(\$file);
 
                 }else{
 
@@ -209,8 +212,8 @@ class Smarty {
 
         ob_start();
 
-        if($this->__custom_function_handler)
-            $obj->setCustomHandler($this->__custom_function_handler);
+        if(count($this->__custom_function_handlers) > 0)
+            $obj->setCustomHandlers($this->__custom_function_handlers);
 
         $obj->render($params);
 
@@ -257,10 +260,10 @@ class Smarty {
 
     /**
      * Compile the template ready for rendering
-     * 
+     *
      * This will normally happen automatically when calling Hazaar\Template\Smarty::render() but can be called
      * separately if needed.  The compiled template content is returned and can be stored externally.
-     * 
+     *
      * @return string The compiled template
      */
     public function compile(){
@@ -308,9 +311,14 @@ class Smarty {
 
                 $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
 
-            }elseif(is_object($this->__custom_function_handler) && method_exists($this->__custom_function_handler, $matches[2])){
+            }elseif(is_array($this->__custom_function_handlers)
+            && $custom_handler = current(array_filter($this->__custom_function_handlers, function($item, $index) use($matches){
+                    if(!method_exists($item, $matches[2])) return false;
+                    $item->__index = $index;
+                    return true;
+            }, ARRAY_FILTER_USE_BOTH))){
 
-                $replacement = $this->compileCUSTOMHANDLERFUNC($matches[2], $matches[3]);
+                $replacement = $this->compileCUSTOMHANDLERFUNC($custom_handler, $matches[2], $matches[3], $custom_handler->__index);
 
             }elseif(preg_match('/(\/?)strip/', $matches[1], $flags)){
 
@@ -728,11 +736,11 @@ class Smarty {
 
     }
 
-    protected function compileCUSTOMHANDLERFUNC($method, $params){
+    protected function compileCUSTOMHANDLERFUNC($handler, $method, $params, $index){
 
         $params = $this->parsePARAMS($params);
 
-        $reflect = new \ReflectionMethod($this->__custom_function_handler, $method);
+        $reflect = new \ReflectionMethod($handler, $method);
 
         $func_params = array();
 
@@ -742,7 +750,7 @@ class Smarty {
 
             $value = 'null';
 
-            if(array_key_exists($name, $params)){
+            if(array_key_exists($name, $params) || array_key_exists($name = $p->getPosition(), $params)){
 
                 $value = $this->compilePARAMS($params[$name]);
 
@@ -760,7 +768,7 @@ class Smarty {
 
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array(array(\$this->custom_handler, '$method'), array($params)); ?>";
+        return "<?php echo call_user_func_array(array(\$this->custom_handlers[$index], '$method'), array($params)); ?>";
 
     }
 
@@ -783,6 +791,10 @@ class Smarty {
     protected function compileINCLUDE($params){
 
         $params = $this->parsePARAMS($params);
+
+        if(!array_key_exists('file', $params))
+            return;
+
 
         $file = $params['file'];
 
