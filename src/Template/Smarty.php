@@ -43,9 +43,11 @@ class Smarty {
 
     protected $__content = null;
 
-    protected $__compiled_content = null;
+    protected $__compiled_content = '';
 
     protected $__custom_functions = array();
+
+    protected $__includes = array();
 
     private   $__custom_function_handlers = array();
 
@@ -77,7 +79,7 @@ class Smarty {
 
         $this->__content = (string)$content;
 
-        $this->__compiled_content = null;
+        $this->__compiled_content = '';
 
     }
 
@@ -163,11 +165,9 @@ class Smarty {
 
             private \$functions = array();
 
-            private \$custom_handlers;
+            public  \$custom_handlers;
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
-
-            public function setCustomHandlers(\$h){ \$this->custom_handlers = \$h; }
 
             public function render(\$params){
 
@@ -177,36 +177,9 @@ class Smarty {
 
             }
 
-            private function url(\$path = null){ return new \Hazaar\Application\Url(urldecode(\$path)); }
+            private function url(\$path = null){ 
 
-            private function include(\$file, \$params = array()){
-
-                if(is_array(\$this->custom_handlers) && \$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
-                    return method_exists(\$item, 'smarty_include');
-                }))){
-
-                    \$content = \$custom_handler->smarty_include(\$file);
-
-                }else{
-
-                    if(\$file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', \$file))
-                        \$file = getcwd() . DIRECTORY_SEPARATOR . \$file;
-
-                    \$info = pathinfo(\$file);
-
-                    if(!(array_key_exists('extension', \$info) 
-                        && \$info['extension']
-                        && file_exists(\$file . '.tpl'))) \$file .= '.tpl';
-
-                    \$content = file_get_contents(\$file);
-
-                }
-
-                \$template = new \\Hazaar\\Template\\Smarty(\$content);
-
-                \$params = (is_array(\$params) ? array_merge(\$this->params, \$params) : \$this->params);
-
-                echo \$template->render(\$params);
+                return new \Hazaar\Application\Url(urldecode(\$path)); 
 
             }
 
@@ -218,8 +191,7 @@ class Smarty {
 
         ob_start();
 
-        if(count($this->__custom_function_handlers) > 0)
-            $obj->setCustomHandlers($this->__custom_function_handlers);
+        $obj->custom_handlers = $this->__custom_function_handlers;
 
         $obj->render($params);
 
@@ -799,20 +771,24 @@ class Smarty {
         $params = $this->parsePARAMS($params);
 
         if(!array_key_exists('file', $params))
-            return;
+            return '';
 
-        $file = $params['file'];
+        $file = trim($params['file'], '\'"');
 
         unset($params['file']);
 
-        $include_params = array();
+        if($file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', $file))
+            $file = getcwd() . DIRECTORY_SEPARATOR . $file;
 
-        foreach($params as $key => $value)
-            $include_params[] = $this->compilePARAMS($key) . ' => ' . $this->compileVAR($value);
+        $info = pathinfo($file);
 
-        $include_params = '[' . implode(', ', $include_params) . ']';
+        if(!(array_key_exists('extension', $info)
+            && $info['extension']
+            && file_exists($file . '.tpl'))) $file .= '.tpl';
 
-        return "<?php \$this->include($file, $include_params); ?>";
+        $this->__includes[] = $file;
+
+        return file_get_contents($file);
 
     }
 
