@@ -177,9 +177,9 @@ class Smarty {
 
             }
 
-            private function url(\$path = null){ 
+            private function url(\$path = null){
 
-                return new \Hazaar\Application\Url(urldecode(\$path)); 
+                return new \Hazaar\Application\Url(urldecode(\$path));
 
             }
 
@@ -788,7 +788,9 @@ class Smarty {
 
         $this->__includes[] = $file;
 
-        return file_get_contents($file);
+        $include = new Smarty(file_get_contents($file));
+
+        return $include->compile();
 
     }
 

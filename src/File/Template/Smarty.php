@@ -16,6 +16,8 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     private $__cache_file;
 
+    private $__cwd;
+
     function __construct($file, $cache_enabled = null){
 
         $this->loadFromFile($file);
@@ -31,8 +33,22 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     function __destruct(){
 
-        if($this->__cache_file)
-            $this->__cache_file->put_contents($this->__compiled_content);
+        if($this->__cache_file){
+
+            $header = "@$this->__source_file";
+
+            if(count($this->__includes) > 0){
+
+                foreach($this->__includes as &$include)
+                    $include = $this->__source_file->relativepath($include);
+
+                $header .= ';' . implode(';', $this->__includes);
+
+            }
+
+            $this->__cache_file->put_contents($header . "\n" . $this->__compiled_content);
+
+        }
 
     }
 
@@ -50,6 +66,49 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     }
 
+    private function getCompiledContentFromCache(){
+
+        $cache_id = md5($this->__source_file->fullpath());
+
+        $cache_dir = new \Hazaar\File\Dir(\Hazaar\Application::getInstance()->runtimePath('template_cache', true));
+
+        $this->__cache_file = $cache_dir->get($cache_id . '.tpl');
+
+        if(!$this->__cache_file->exists())
+            return false;
+
+        $this->__cache_file->open();
+
+        if(!(($header = $this->__cache_file->gets()) && $header[0] === '@'))
+            return false;
+
+        $parts = explode(';', trim(substr($header, 1)));
+
+        //Check that the header references the actual source file and that is hasn't been modified
+        if($parts[0] !== $this->__source_file->fullpath()
+            || $this->__cache_file->mtime() <= $this->__source_file->mtime())
+            return false;
+
+        //Check that all files used have not been modified since the cache file was created
+        for($i = 1; $i<count($parts); $i++){
+
+            $path = $this->__source_file->parent()->get($parts[$i]);
+
+            //If the file doesn't exists or has changed, don't load cached content
+            if(!($path->exists() && $this->__cache_file->mtime() > $path->mtime()))
+                return false;
+
+        }
+
+        $content = $this->__cache_file->get_contents(strlen($header));
+
+        //Unset the cache file so we don't re-cache everything
+        $this->__cache_file = null;
+
+        return $content;
+
+    }
+
     public function compile(){
 
         $this->__cache_file = null;
@@ -59,20 +118,20 @@ class Smarty extends \Hazaar\Template\Smarty {
 
         if($this->__cache_enabled){
 
-            $cache_id = md5($this->__source_file->fullpath());
-
-            $cache_dir = new \Hazaar\File\Dir(\Hazaar\Application::getInstance()->runtimePath('template_cache', true));
-
-            $this->__cache_file = $cache_dir->get($cache_id . '.tpl');
-
-            if($this->__cache_file->exists() && $this->__cache_file->mtime() > $this->__source_file->mtime())
-                return $this->__cache_file->get_contents();
+            if($content = $this->getCompiledContentFromCache())
+                return $content;
 
         }
 
+        $cwd = getcwd();
+
+        chdir($this->__cwd);
+
         $this->__content = $this->__source_file->get_contents();
 
-        $this->__compiled_content = "<?php chdir('$this->__cwd'); ?>\n" . parent::compile($this->__content);
+        $this->__compiled_content = parent::compile($this->__content);
+
+        chdir($cwd);
 
         return $this->__compiled_content;
 
