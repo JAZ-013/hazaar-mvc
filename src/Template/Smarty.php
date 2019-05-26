@@ -177,9 +177,14 @@ class Smarty {
 
             }
 
-            private function url(\$path = null){
+            private function url(){
 
-                return new \Hazaar\Application\Url(urldecode(\$path));
+                if(\$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
+                    return method_exists(\$item, 'url');
+                })))
+                    return call_user_func_array(array(\$custom_handler, 'url'), func_get_args());
+
+                return new \Hazaar\Application\Url(urldecode(implode('/', func_get_args())));
 
             }
 
@@ -546,7 +551,22 @@ class Smarty {
 
     protected function compileURL($tag){
 
-        return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
+        $vars = '';
+
+        if($tag){
+
+            $nodes = array();
+
+            $tags = preg_split('/\s+/', $tag);
+
+            foreach($tags as $tag)
+                $nodes[] = "'" . $this->compileVARS(trim($tag, "'")) . "'";
+
+            $vars = implode(', ', $nodes);
+
+        }else $vars = "'" . trim($tag, "'") . "'";
+
+        return '<?php echo @$this->url(' . $vars . ');?>';
 
     }
 
