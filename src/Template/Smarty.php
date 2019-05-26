@@ -782,9 +782,8 @@ class Smarty {
 
         $info = pathinfo($file);
 
-        if(!(array_key_exists('extension', $info)
-            && $info['extension']
-            && file_exists($file . '.tpl'))) $file .= '.tpl';
+        if(!(array_key_exists('extension', $info) && $info['extension'])
+            && file_exists($file . '.tpl')) $file .= '.tpl';
 
         $this->__includes[] = $file;
 
