@@ -49,6 +49,8 @@ class Smarty {
 
     protected $__includes = array();
 
+    protected $__include_funcs = array();
+
     private   $__custom_function_handlers = array();
 
     private $__section_stack = array();
@@ -63,7 +65,10 @@ class Smarty {
 
     public $allow_globals = true;
 
-    function __construct($content = null){
+    function __construct($content = null, $include_funcs = null){
+
+        if($include_funcs)
+            $this->__include_funcs = $include_funcs;
 
         if($content)
             $this->loadFromString($content);
@@ -166,6 +171,8 @@ class Smarty {
             private \$functions = array();
 
             public  \$custom_handlers;
+
+            private \$include_funcs = array();
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
@@ -805,11 +812,34 @@ class Smarty {
         if(!(array_key_exists('extension', $info) && $info['extension'])
             && file_exists($file . '.tpl')) $file .= '.tpl';
 
-        $this->__includes[] = $file;
+        $hash = hash('crc32b', $file);
 
-        $include = new Smarty(file_get_contents($file));
+        $output = '';
 
-        return $include->compile();
+        if(!array_key_exists($hash, $this->__include_funcs)){
+
+            $this->__includes[] = $file;
+
+            $this->__include_funcs[$hash] = $include = new Smarty(file_get_contents($file));
+
+            $include->__include_funcs = $this->__include_funcs;
+
+            $output = $include->compile();
+
+            $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
+
+            if(count($params) === 0)
+                return $output;
+
+            $args = implode(', ', array_map(function($item){ return '$' . $item; }, array_keys($params)));
+
+            $output = "<?php \$this->include_funcs['$hash'] = function($args){ ?>\n$output\n<?php }; ?>";
+
+        }
+
+        $output .= "<?php \$this->include_funcs['$hash'](" . $this->compilePARAMS(implode(', ', $params)) . "); ?>";
+
+        return $output;
 
     }
 
