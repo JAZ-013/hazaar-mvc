@@ -439,7 +439,7 @@ class Application {
      * @return \Hazaar\Application Returns a reference to itself to allow chaining
      *
      */
-    public function bootstrap($simple_mode = FALSE) {
+    public function bootstrap() {
 
         if($this->timer) {
 
@@ -505,39 +505,6 @@ class Application {
 
         }
 
-        if($simple_mode === FALSE) {
-
-            if(!$this->request->processRoute())
-                throw new Application\Exception\RouteFailed();
-
-            /*
-             * Load the controller and check it was successful
-             */
-            $this->controller = $this->loader->loadController($this->request->getControllerName());
-
-            if(!($this->controller instanceof Controller))
-                throw new Application\Exception\RouteNotFound($this->request->getControllerName());
-
-            $this->controller->setRequest($this->request);
-
-            /*
-             * Initialise the controller with the current request
-             */
-            $response = $this->controller->__initialize($this->request);
-
-            //If we get a response now, the controller wants out, so display it and quit.
-            if($response instanceof \Hazaar\Controller\Response){
-
-                $response->__writeOutput();
-
-                $this->controller->__shutdown();
-
-                exit;
-
-            }
-
-        }
-
         if($this->timer)
             $this->timer->stop('bootstrap');
 
@@ -576,10 +543,40 @@ class Application {
 
         }
 
-        if(!$controller)
-            $controller = $this->controller;
-
         try {
+
+            if(!$controller instanceof Controller) {
+
+                if(!$this->request->processRoute())
+                    throw new Application\Exception\RouteFailed();
+
+                /*
+                 * Load the controller and check it was successful
+                 */
+                $controller = $this->loader->loadController($this->request->getControllerName());
+
+                if(!($controller instanceof Controller))
+                    throw new Application\Exception\RouteNotFound($this->request->getControllerName());
+
+                $controller->setRequest($this->request);
+
+                /*
+                 * Initialise the controller with the current request
+                 */
+                $response = $controller->__initialize($this->request);
+
+                //If we get a response now, the controller wants out, so display it and quit.
+                if($response instanceof \Hazaar\Controller\Response){
+
+                    $response->__writeOutput();
+
+                    $controller->__shutdown();
+
+                    return 0;
+
+                }
+
+            }
 
             /*
              * Execute the controllers run method.
