@@ -469,10 +469,8 @@ class View {
 
             ob_start();
 
-            if (! ($file = $this->getViewFile()) || ! file_exists($file)) {
-
+            if (! ($file = $this->getViewFile()) || ! file_exists($file))
                 throw new \Exception("View does not exist ($this->name)", 404);
-            }
 
             include ($file);
 
@@ -498,9 +496,7 @@ class View {
          *
          * Relative paths are then made relative to the current view (using it's absolute path).
          */
-        $fChar = substr($view, 0, 1);
-
-        if ($fChar == '/')
+        if (substr($view, 0, 1) === '/')
             $view = substr($view, 1);
         else
             $view = dirname($this->_viewfile) . '/' . $view . '.phtml';
