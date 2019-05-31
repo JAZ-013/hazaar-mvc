@@ -173,7 +173,7 @@ class File extends \Hazaar\Cache\Backend {
             if(array_key_exists('data', $cache))
                 $value = $cache['data'];
 
-            if(ord(substr($value, 0, 1)) === 120) {
+            if(is_string($value) && ord(substr($value, 0, 1)) === 120) {
 
                 if(! $this->zlib)
                     throw new Exception\NoZlib($key);
