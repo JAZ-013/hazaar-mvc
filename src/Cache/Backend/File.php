@@ -36,13 +36,15 @@ class File extends \Hazaar\Cache\Backend {
 
     private   $cache_dir;
 
-    private   $store;
-
     private   $timeout_file;
 
     private   $timeout;
 
     private   $local = array();
+
+    private   $store;
+
+    static private $__open_store = array();
 
     static public function available(){
 
@@ -74,7 +76,12 @@ class File extends \Hazaar\Cache\Backend {
             mkdir($cache_dir);
 
         //Open the B-Tree database file
-        $this->store = new \Hazaar\Btree($cache_dir . ($this->options->encode_fs ? md5($this->namespace) : $this->namespace) . '.db');
+        $cache_file = $cache_dir . ($this->options->encode_fs ? md5($this->namespace) : $this->namespace) . '.db';
+
+        if(!array_key_exists($cache_file, File::$__open_store))
+            File::$__open_store[$cache_file] = new \Hazaar\Btree($cache_file);
+
+        $this->store = File::$__open_store[$cache_file];
 
         $this->addCapabilities('store_objects', 'expire_val', 'array');
 
