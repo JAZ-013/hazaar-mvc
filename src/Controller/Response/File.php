@@ -61,7 +61,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
         }
 
         if($content_type)
-            $this->file->set_mime_content_type($content_type);
+            $this->file->set_mime_content_type($this->content_type = $content_type);
 
         $this->file->set_contents($data);
 
