@@ -1326,7 +1326,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     public function __call($func, $argv){
 
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
-            throw new \BadMethodCallException(__CLASS__.'->'.$func);
+            throw new \BadMethodCallException(get_class($this).'->'.$func);
 
         $values = $this->values;
 
