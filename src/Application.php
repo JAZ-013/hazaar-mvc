@@ -39,9 +39,9 @@ define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
  */
 define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..')), -1))[0]);
 
-require_once('ErrorControl.php');
-
 require_once('HelperFunctions.php');
+
+require_once('ErrorControl.php');
 
 putenv('HOME=' . APPLICATION_PATH);
 
