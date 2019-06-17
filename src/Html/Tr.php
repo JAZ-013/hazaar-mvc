@@ -30,20 +30,24 @@ class Tr extends Block {
 
     }
 
-    public function add($field){
+    public function add(){
 
-        if($field instanceof Td || $field instanceof Th){
+        foreach(func_get_args() as $field){
 
-            parent::add($field);
+            if($field instanceof Td || $field instanceof Th){
 
-        }elseif(is_array($field)){
+                parent::add($field);
 
-            foreach($field as $f)
-                $this->add($f);
+            }elseif(is_array($field)){
 
-        }else{
+                foreach($field as $f)
+                    $this->add($f);
 
-            parent::add(new Td($field));
+            }else{
+
+                parent::add(new Td($field));
+
+            }
 
         }
 
