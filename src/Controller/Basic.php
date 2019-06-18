@@ -66,6 +66,8 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
+        $this->request = $request;
+        
         $response = null;
 
         if(!($this->__action = $request->getActionName()))

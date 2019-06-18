@@ -244,7 +244,7 @@ abstract class Response implements Response\_Interface {
 
         if($this->modified()){
 
-            if($this->tidy && substr($this->content_type, 0, 4) == 'text') {
+            if($this->tidy && substr($this->getContentType(), 0, 4) === 'text') {
 
                 $tidy = new \tidy();
 

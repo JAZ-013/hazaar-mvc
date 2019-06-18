@@ -10,13 +10,13 @@ class MoneyTest extends \PHPUnit\Framework\TestCase {
 
         $b = new \Hazaar\Money(100, 'AUD');
 
-        $this->assertInternalType('float', $a->toFloat());
+        $this->assertIsFloat($a->toFloat());
 
-        $this->assertInternalType('float', $b->toFloat());
+        $this->assertIsFloat($b->toFloat());
 
         $a->add($b);
 
-        $this->assertInternalType('float', $a->toFloat());
+        $this->assertIsFloat($a->toFloat());
 
     }
 
@@ -26,7 +26,7 @@ class MoneyTest extends \PHPUnit\Framework\TestCase {
 
         $rate = $a->getExchangeRate('USD');
 
-        $this->assertInternalType('float', $rate);
+        $this->assertIsFloat($rate);
 
         $this->assertGreaterThan(0, $rate);
 
@@ -38,7 +38,7 @@ class MoneyTest extends \PHPUnit\Framework\TestCase {
 
         $a->convertTo('AUD');
 
-        $this->assertInternalType('string', $a->toString());
+        $this->assertIsString($a->toString());
 
     }
 

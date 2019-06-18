@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Cron.php
  *
+ * @author      Christian Land http://tagdocs.de
  * @author      Jamie Carl <jamie@hazaarlabs.com>
  *
- * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
  */
 
 namespace Hazaar;
@@ -31,6 +31,20 @@ define('IDX_YEAR', 5);
  *
  * This will get the next occurrence from the schedule which should return dates and times for every 0th and 30th minute
  * between 9am and 5pm, Monday to Friday.
+ *
+ * @note    This code was originally added to Hazaar MVC in August of 2016 from code found randomly on the internet.  Probably
+ *          StackOverflow?  It was never intended to be incorporated into the framework, but became a depdendency for the
+ *          Hazaar Warlock library.  By this point and at that time I was unable to remember, or find, the original author
+ *          and where I came across this code.
+ *
+ *          I have now (May 2019) done another search and found the original author is Christian Land who has since released
+ *          this code under the MIT licence as the tdCron library.  He has made this library freely available on Github
+ *          at https://github.com/chland/tdCron.
+ *
+ *          I would like to thank Christian for his initial work on this library as, after a few tweaks, it has become the
+ *          integral scheduling code for Hazaar MVC/Warlock.
+ *
+ * @license https://github.com/chland/tdCron/blob/master/LICENSE.md MIT License
  */
 class Cron {
 
@@ -221,7 +235,7 @@ class Cron {
 
             // Meh. Such a cruel world. Something has gone awry. Lets see HOW awry it went.
 
-            if(! $nhour) {
+            if($nhour === FALSE) {
 
                 // Ah, the hour-part went wrong. Thats easy. Wrong hour means that no
                 // matter what we do we'll end up at a different date. Thus we can use

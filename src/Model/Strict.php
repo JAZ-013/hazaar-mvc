@@ -36,6 +36,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     protected $convert_nulls = false;
 
     /**
+     * Automatically convert empty strings to nulls
+     * @var bool
+     */
+    protected $convert_empty = false;
+
+    /**
      * The field definition.
      * @var mixed
      */
@@ -951,8 +957,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
-            if($value === null && ake(ake($this->fields, $key), 'type', 'string') && $this->convert_nulls)
-                $value = '';
+            if(gettype($value) === 'string'){
+
+                if($this->convert_nulls === true && $value === null)
+                    $value = '';
+                elseif($this->convert_empty === true && trim($value) === '')
+                    $value = null;
+
+            }
 
             $result[$key] = $value;
 
@@ -1314,7 +1326,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     public function __call($func, $argv){
 
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
-            throw new \BadMethodCallException(__CLASS__.'->'.$func);
+            throw new \BadMethodCallException(get_class($this).'->'.$func);
 
         $values = $this->values;
 

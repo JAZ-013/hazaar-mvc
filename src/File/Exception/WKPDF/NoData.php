@@ -1,7 +1,7 @@
 <?php
-namespace Hazaar\Controller\Response\Exception;
+namespace Hazaar\File\Exception\WKPDF;
 
-class WKPDFNoData extends \Hazaar\Exception {
+class NoData extends \Hazaar\Exception {
 
     function __construct($error) {
 
