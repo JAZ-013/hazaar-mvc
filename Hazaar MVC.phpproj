@@ -86,11 +86,11 @@
     <Compile Include="src\Controller\Response\Exception\JsonNotSupported.php" />
     <Compile Include="src\Controller\Response\Exception\NoLessSupport.php" />
     <Compile Include="src\Controller\Response\Exception\NoRenderer.php" />
-    <Compile Include="src\Controller\Response\Exception\WKPDFExecError.php" />
-    <Compile Include="src\Controller\Response\Exception\WKPDFInstallFailed.php" />
-    <Compile Include="src\Controller\Response\Exception\WKPDFNoData.php" />
-    <Compile Include="src\Controller\Response\Exception\WKPDFNotExecutable.php" />
-    <Compile Include="src\Controller\Response\Exception\WKPDFSystemError.php" />
+    <Compile Include="src\File\Exception\WKPDF\ExecError.php" />
+    <Compile Include="src\File\Exception\WKPDF\InstallFailed.php" />
+    <Compile Include="src\File\Exception\WKPDF\NoData.php" />
+    <Compile Include="src\File\Exception\WKPDF\NotExecutable.php" />
+    <Compile Include="src\File\Exception\WKPDF\SystemError.php" />
     <Compile Include="src\Controller\Response\File.php" />
     <Compile Include="src\Controller\Response\Html.php" />
     <Compile Include="src\Controller\Response\HTTP\BadRequest.php" />
@@ -404,6 +404,7 @@
     <Folder Include="src\File\Backend\" />
     <Folder Include="src\File\Backend\Exception\" />
     <Folder Include="src\File\Exception\" />
+    <Folder Include="src\File\Exception\WKPDF\" />
     <Folder Include="src\File\Template\" />
     <Folder Include="src\File\Renderer\" />
     <Folder Include="src\Html\" />

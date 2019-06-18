@@ -1,7 +1,7 @@
 <?php
-namespace Hazaar\Controller\Response\Exception;
+namespace Hazaar\File\Exception\WKPDF;
 
-class WKPDFNotExecutable extends \Hazaar\Exception {
+class NotExecutable extends \Hazaar\Exception {
 
     function __construct($cmd) {
 

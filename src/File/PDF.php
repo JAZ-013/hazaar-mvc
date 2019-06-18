@@ -62,9 +62,9 @@ class PDF extends \Hazaar\File {
      * @param mixed $manager An optional file manager for accessing public file data
      * @param mixed $relative_path Internal relative path when accessing the file through a Hazaar\File\Dir object.
      *
-     * @throws Exception\WKPDFInstallFailed The automated installation of WKPDFtoHTML failed.
+     * @throws Exception\WKPDF\InstallFailed The automated installation of WKPDFtoHTML failed.
      *
-     * @throws Exception\WKPDFNotExecutable The WKPDFtoHTML executable exists but failed to execute.
+     * @throws Exception\WKPDF\NotExecutable The WKPDFtoHTML executable exists but failed to execute.
      */
     function __construct($file = null, $backend = NULL, $manager = null, $relative_path = null){
 
@@ -77,16 +77,16 @@ class PDF extends \Hazaar\File {
              */
 
             if(!$this->install())
-                throw new Exception\WKPDFInstallFailed($cmd, $this->last_error);
+                throw new Exception\WKPDF\InstallFailed($cmd, $this->last_error);
 
         }
 
         if(!is_executable($cmd))
-            throw new Exception\WKPDFNotExecutable($cmd);
+            throw new Exception\WKPDF\NotExecutable($cmd);
 
         do {
 
-            $this->tmp = \Hazaar\Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . mt_rand() . '.html';
+            $this->tmp = new Temp(mt_rand() . '.html');
 
         } while(file_exists($this->tmp));
 
@@ -323,13 +323,13 @@ class PDF extends \Hazaar\File {
         $pipes = self::_pipeExec($cmd);
 
         if(strpos(strtolower($pipes['stderr']), 'error') !== FALSE)
-            throw new Exception\WKPDFSystemError($pipes['stderr']);
+            throw new Exception\WKPDF\SystemError($pipes['stderr']);
 
         if($pipes['stdout'] == '')
-            throw new Exception\WKPDFNoData($pipes['stderr']);
+            throw new Exception\WKPDF\NoData($pipes['stderr']);
 
         if(((int)$pipes['return']) > 1)
-            throw new Exception\WKPDFExecError((int)$pipes['return']);
+            throw new Exception\WKPDF\ExecError((int)$pipes['return']);
 
         $this->status = $pipes['stderr'];
 
@@ -353,16 +353,16 @@ class PDF extends \Hazaar\File {
             if(! is_writable($target))
                 throw new \Exception('The runtime binary directory is not writable!');
 
-            $tmp_path = \Hazaar\Application::getInstance()->runtimePath('tmp', true);
+            $tmp_path = new \Hazaar\File\TempDir();
 
             if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
                 $asset_suffix = '-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
             else
-                $asset_suffix = '_linux-generic-' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.tar.xz';
+                $asset_suffix = '.stretch_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
 
             $client = new \Hazaar\Http\Client();
 
-            $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/4730156');
+            $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases');
 
             if(!($response = $client->send($request)))
                 throw new \Exception('No response returned from Github API call!');
@@ -370,22 +370,28 @@ class PDF extends \Hazaar\File {
             if($response->status != 200)
                 throw new \Exception('Got ' . $response->status . ' from Github API call!');
 
-            $info = $response->body();
-
-            if(!$info instanceof \stdClass)
-                throw new \Exception('Unable to parse Github API response body!');
-
-            if(!($assets = ake($info, 'assets')))
-                throw new \Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
+            $releases = $response->body();
 
             $source_url = null;
 
-            foreach($assets as $asset){
+            foreach($releases as $info){
 
-                if(substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
-                    continue;
+                if(!$info instanceof \stdClass)
+                    throw new \Exception('Unable to parse Github API response body!');
 
-                $source_url = ake($asset, 'browser_download_url');
+                if(!($assets = ake($info, 'assets')))
+                    throw new \Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
+
+                foreach($assets as $asset){
+
+                    if(substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
+                        continue;
+
+                    $source_url = ake($asset, 'browser_download_url');
+
+                    break 2;
+
+                }
 
             }
 
@@ -403,35 +409,38 @@ class PDF extends \Hazaar\File {
 
             }
 
-            $dir = dirname($tmp_file) . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
+            $cwd = getcwd();
+
+            chdir((string)$tmp_path);
 
             if($winos){
 
-                shell_exec($tmp_file . ' /S /D=' . $dir);
+                shell_exec($tmp_file . ' /S /D=' . $tmp_path);
 
-                $bin_file = $dir . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'wkhtmltopdf.exe';
+                $bin_file = '.' . DIRECTORY_SEPARATOR . 'bin'
+                    . DIRECTORY_SEPARATOR . 'wkhtmltopdf.exe';
 
             }else{
 
-                if(!file_exists($dir))
-                    mkdir($dir);
+                shell_exec('ar x ' . $tmp_file . ' data.tar.xz');
 
-                shell_exec('tar -xJf ' . $tmp_file . ' -C ' . $dir);
+                shell_exec('tar -xf data.tar.xz ./usr/local/bin/wkhtmltopdf');
 
-                $bin_file = $dir . DIRECTORY_SEPARATOR . 'wkhtmltox' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
-
-            }
-
-            if(file_exists($bin_file)){
-
-                copy($bin_file, $cmd);
-
-                chmod($cmd, 0755);
+                $bin_file = '.' . DIRECTORY_SEPARATOR . 'usr'
+                    . DIRECTORY_SEPARATOR . 'local'
+                    . DIRECTORY_SEPARATOR . 'bin'
+                    . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
 
             }
 
-            \Hazaar\File::delete($dir);
+            if(!file_exists($bin_file))
+                throw new \Exception('Unable to find executable in release file!');
 
+            copy($bin_file, $cmd);
+
+            @chmod($cmd, 0755);
+
+            chdir($cwd);
 
             if(! file_exists($cmd))
                 throw new \Exception('Executable not found after installation!');
