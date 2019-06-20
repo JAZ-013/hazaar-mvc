@@ -5,7 +5,7 @@
  *
  * @param {string} url The URL
  * @param {object} options Stream options
- * @returns {object} The object itself
+ * @return {object} The object itself
  */
 jQuery.stream = function (url, options) {
     var callbacks = {};
@@ -88,7 +88,7 @@ jQuery.stream = function (url, options) {
  * @param {object} data Object data
  * @param {string} name The name of the object (used internally for recursion)
  * @param {object} parent Parent object reference (used internally for recursion)
- * @returns {object} A new dataBinder object.
+ * @return {object} A new dataBinder object.
  */
 var dataBinder = function (data, name, parent) {
     if (this === window) return new dataBinder(data);

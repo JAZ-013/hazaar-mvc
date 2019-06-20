@@ -190,7 +190,7 @@ function is_boolean($value) {
  *
  * @param boolean A boolean type value.  Can be an actual boolean or 1/0 yes/no on/off, etc.
  *
- * @returns string
+ * @return string
  */
 function yn($value){
 
@@ -1695,5 +1695,29 @@ function str_random($length, $include_special = false){
         $randomString .= $characters[rand(0, $count - 1)];
 
     return $randomString;
+
+}
+
+/**
+ * Pull an item out of an array by is key
+ *
+ * This function is similar to array_pop() and array_shift(), except that instead of popping the last/first element off the
+ * array, it pops an element with the specified key.
+ *
+ * @param array $array The array to pull the element from.
+ * @param int|string $key The key of the element.
+ *
+ * @return mixed The element returned from the array.
+ */
+function array_pull(&$array, $key){
+
+    if(!array_key_exists($key, $array))
+        return null;
+
+    $item = $array[$key];
+
+    unset($array[$key]);
+
+    return $item;
 
 }
