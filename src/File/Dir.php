@@ -263,11 +263,10 @@ class Dir {
      *                                  single character and first character is the same as the last.
      * @param bool $recursive If TRUE the search will recurse into sub directories.
      * @param bool $case_sensitive If TRUE character case will be honoured.
-     * @param string $start String path to start at if the search should start at a sub directory.
-     * @param bool $relative Return a path relative to the search path, default is to return absolute paths.
+     * @param int $depth Recursion depth.  NULL will always recurse.  0 will prevent recursion.
      * @return array    Returns an array of matches files.
      */
-    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE) {
+    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
         $start = rtrim($this->path, $this->backend->separator) . $this->backend->separator;
 
@@ -285,23 +284,26 @@ class Dir {
 
             $item = $start . $file;
 
-            if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
-
-                if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
-                    continue;
-
-            } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
-                continue;
-
-            if($this->backend->is_dir($item)) {
+            if($this->backend->is_dir($item) && ($depth === null || $depth > 0)) {
 
                 $subdir = new \Hazaar\File\Dir($item, $this->backend, $this->manager, $relative_path);
 
-                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive))
+                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
                     $list = array_merge($list, $subdiritems);
 
-            }else
+            }else{
+
+                if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
+
+                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
+                        continue;
+
+                } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
+                    continue;
+
                 $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $relative_path);
+
+            }
 
         }
 
