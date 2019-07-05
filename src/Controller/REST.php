@@ -218,7 +218,7 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $full_path = '/' . $this->request->getRawPath();
+        $full_path = '/' . $this->request->getPath();
 
         if($full_path == '/'){
 

@@ -32,9 +32,6 @@ function errorAndDie() {
 
     }elseif($app instanceof Hazaar\Application && $app->config) {
 
-        if($app->request)
-            $app->request->resetAction();
-
         if($app->config->app->has('errorController')) {
 
             $loader = \Hazaar\Loader::getInstance();

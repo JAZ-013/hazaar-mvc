@@ -241,17 +241,19 @@ class Handler {
 
     public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
 
-        $module_name = $request->getActionName();
+        $parts = array();
 
-        if($module_name == 'index')
+        if($path = $request->getPath())
+            $parts = explode('/', $path);
+
+        if(!($module_name = array_shift($parts)))
             $module_name = 'app';
 
         if(!$this->moduleExists($module_name))
             throw new \Exception("Console module '$module_name' does not exist!", 404);
 
-        $request->evaluate($request->getRawPath());
-
-        $action = $request->getActionName();
+        if(!($action = array_shift($parts)))
+            $action = 'index';
 
         $module = $this->modules[$module_name];
 

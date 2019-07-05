@@ -63,76 +63,63 @@ class Http extends \Hazaar\Application\Request {
      */
     function init($request = NULL) {
 
-        if($request === NULL){
-
-            /*
-             * Check if we require SSL and if so, redirect here.
-             */
-            if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
-
-                header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
-
-                exit;
-
-            }
-
+        if($request === NULL)
             $request = $_REQUEST;
 
-            $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->method = $_SERVER['REQUEST_METHOD'];
 
-            $this->headers = hazaar_request_headers();
+        $this->headers = hazaar_request_headers();
 
-            $this->body = @file_get_contents('php://input');
+        $this->body = @file_get_contents('php://input');
 
-            $encryption_header = ucwords(strtolower(\Hazaar\Http\Client::$encryption_header), '-');
+        $encryption_header = ucwords(strtolower(\Hazaar\Http\Client::$encryption_header), '-');
 
-            if(array_key_exists($encryption_header, $this->headers)){
+        if(array_key_exists($encryption_header, $this->headers)){
 
-                $iv = base64_decode($this->headers[$encryption_header]);
+            $iv = base64_decode($this->headers[$encryption_header]);
 
-                if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
-                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+            if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
+                throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
 
-                \Hazaar\Controller\Response::$encryption_key = trim(file_get_contents($keyfile));
+            \Hazaar\Controller\Response::$encryption_key = trim(file_get_contents($keyfile));
 
-                $this->body = openssl_decrypt(base64_decode($this->body),
-                    \Hazaar\Http\Client::$encryption_default_cipher,
-                    \Hazaar\Controller\Response::$encryption_key, OPENSSL_RAW_DATA, $iv);
+            $this->body = openssl_decrypt(base64_decode($this->body),
+                \Hazaar\Http\Client::$encryption_default_cipher,
+                \Hazaar\Controller\Response::$encryption_key, OPENSSL_RAW_DATA, $iv);
 
-                if($this->body === false)
-                    throw new \Exception('Received an encrypted request but was unable to decrypt the body!', 500);
+            if($this->body === false)
+                throw new \Exception('Received an encrypted request but was unable to decrypt the body!', 500);
 
-            }
+        }
 
-            if($this->body && ($content_type = explode(';', $this->getHeader('Content-Type')))){
+        if($this->body && ($content_type = explode(';', $this->getHeader('Content-Type')))){
 
-                switch($content_type[0]){
+            switch($content_type[0]){
 
-                    case 'text/json':
-                    case 'application/json':
-                    case 'application/javascript':
-                    case 'application/x-javascript':
+                case 'text/json':
+                case 'application/json':
+                case 'application/javascript':
+                case 'application/x-javascript':
 
-                        $request = array_merge($request, json_decode($this->body, true));
+                    $request = array_merge($request, json_decode($this->body, true));
 
-                        break;
+                    break;
 
-                    case 'text/html':
-                    case 'application/x-www-form-urlencoded':
+                case 'text/html':
+                case 'application/x-www-form-urlencoded':
 
-                        parse_str($this->body, $params);
+                    parse_str($this->body, $params);
 
-                        $request = array_merge($request, $params);
+                    $request = array_merge($request, $params);
 
-                        break;
-
-                }
+                    break;
 
             }
 
         }
 
-        $this->setParams($request);
+        if(is_array($request) && count($request) > 0)
+            $this->setParams($request);
 
         if(array_key_exists(Http::$queryParam, $this->params)){
 
@@ -354,11 +341,11 @@ class Http extends \Hazaar\Application\Request {
 
     /**
      * Get the remote IP address of the requesting host
-     * 
+     *
      * This will try to determine the correct IP to return.  By default it will return the $_SERVER['REMOTE_ADDR']
      * value, but if the connection is via a reverse proxy (such as Haproxy) then it will possibly have the standard
      * X-Forwarded-For header, so if that header exists then that value will be returned.
-     * 
+     *
      * @return mixed
      */
     public function getRemoteAddr(){

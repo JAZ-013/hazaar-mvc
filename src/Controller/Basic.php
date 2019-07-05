@@ -67,10 +67,12 @@ abstract class Basic extends \Hazaar\Controller {
     public function __initialize(\Hazaar\Application\Request $request) {
 
         $this->request = $request;
-        
+
         $response = null;
 
-        if(!($this->__action = $request->getActionName()))
+        $parts = explode('/', $request->getPath());
+
+        if(!($this->__action = array_shift($parts)))
             $this->__action = 'index';
 
         if(method_exists($this, 'init')) {
@@ -82,8 +84,7 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
-        if($path = $request->getPath())
-            $this->__actionArgs = explode('/', $path);
+        $this->__actionArgs = $parts;
 
         return $response;
 
@@ -108,11 +109,9 @@ abstract class Basic extends \Hazaar\Controller {
             $action = $this->__action;
 
         /*
-         * Check that the requested controller is this one.  If not then we probably got re-routed to the
-         * default controller so check for the __default() method. Then check if the action method exists
-         * and if not check for the __default() method.
+         * Check if the action method exists and if not check for the __default() method.
          */
-        if($this->request->getControllerName() !== $this->name || !method_exists($this, $action)) {
+        if(!method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 

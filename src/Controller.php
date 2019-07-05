@@ -48,19 +48,15 @@ abstract class Controller implements Controller\_Interface {
 
     }
 
-    public function setApplication($application) {
-
-        if(! $application instanceof \Hazaar\Application)
-            throw new Exception("Error setting application on controller " . get_class($this) . ". Object of type " . get_class($application) . " is not an application object!");
+    public function setApplication(\Hazaar\Application $application) {
 
         $this->application = $application;
 
     }
 
-    public function setRequest($request) {
+    public function setRequest(Application\Request $request) {
 
-        if($request instanceof Application\Request)
-            $this->request = $request;
+        $this->request = $request;
 
     }
 
@@ -145,7 +141,7 @@ abstract class Controller implements Controller\_Interface {
         }
 
         if(! $controller)
-            $controller = $this->request->getControllerName();
+            $controller = $this->getName();
 
         return $this->application->url($controller, $method, $params, $this->base_path);
 

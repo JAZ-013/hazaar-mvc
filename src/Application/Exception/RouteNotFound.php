@@ -8,7 +8,7 @@ class RouteNotFound extends \Hazaar\Exception {
     
     function __construct($controller) {
 
-        parent::__construct("No route found for controller '$controller'.", 404);
+        parent::__construct("No route found for '$controller'.", 404);
 
     }
 

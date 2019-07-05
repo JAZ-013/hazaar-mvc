@@ -491,28 +491,43 @@ class Loader {
          */
 		switch($controller){
 			case 'hazaar' :
+
 				$newController = new Controller\Router($controller, $this->application);
 				break;
 
 			case 'media' :
+
 				$newController = new Controller\Media($controller, $this->application);
 				break;
 
 			case 'style' :
+
 				$newController = new Controller\Style($controller, $this->application);
 				break;
 
 			case 'script' :
+
 				$newController = new Controller\Script($controller, $this->application);
 				break;
 
 			case 'favicon.png' :
 			case 'favicon.ico' :
+
 				$newController = new Controller\Favicon($controller, $this->application);
 				break;
 
 			default :
-				$controllerClass = ucfirst($controller) . 'Controller';
+
+                $parts = explode('/', $controller);
+
+                $controllerName = array_pop($parts);
+
+                $controllerClass = ucfirst($controllerName) . 'Controller';
+
+                $controllerClassFile = implode(DIRECTORY_SEPARATOR, $parts) . DIRECTORY_SEPARATOR . ucfirst($controllerName . '.php');
+
+                if($filename = Loader::getFilePath(FILE_PATH_CONTROLLER, $controllerClassFile))
+                    require_once($filename);
 
 				/*
                  * This call to class_exists() will actually load the class with the __autoload magic method. Then
@@ -521,7 +536,7 @@ class Loader {
                  */
 				try {
 
-					if(! class_exists($controllerClass)){
+					if(!class_exists($controllerClass)){
 
 						/*
                          * Use the default controller if no controller has been found.
