@@ -263,6 +263,8 @@ class Handler {
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
 
+        $request->setPath(implode('/', $parts));
+
         $module->base_path = 'hazaar/console';
 
         $module->__initialize($request);
