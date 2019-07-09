@@ -483,95 +483,75 @@ class Loader {
 
 		$newController = NULL;
 
-		/*
-         * Check for MAGIC controllers
-         *
-         * Magic controllers are are controllers that are handled internally. These can be
-         * either 'style', or 'script' to service up compressed CSS or JS files.
-         */
-		switch($controller){
-			case 'hazaar' :
+        try {
 
-				$newController = new Controller\Router($controller, $this->application);
-				break;
+            /*
+             * Check for magic controllers
+             *
+             * Magic controllers are are controllers that are handled internally. These can be
+             * either 'style', or 'script' to serve up compressed CSS or JS files, the hazaar
+             * controller, etc.
+             */
+            if(array_key_exists($controller, \Hazaar\Application\Router::$internal)){
 
-			case 'media' :
+                $newController = new \Hazaar\Application\Router::$internal[$controller]($controller, $this->application);
 
-				$newController = new Controller\Media($controller, $this->application);
-				break;
+            }else{
 
-			case 'style' :
+                //Build a list of controllers to search for
+                $controller_class_search = array();
 
-				$newController = new Controller\Style($controller, $this->application);
-				break;
+                if($controller){
 
-			case 'script' :
+                    $parts = explode('/', $controller);
 
-				$newController = new Controller\Script($controller, $this->application);
-				break;
+                    $controller_class_search[] = 'Application\\Controller\\' . implode('\\', array_map('ucfirst', $parts));
 
-			case 'favicon.png' :
-			case 'favicon.ico' :
+                    //Legacy controller name search
+                    if(count($parts) === 1)
+                        $controller_class_search[] = ucfirst($controller) . 'Controller';
 
-				$newController = new Controller\Favicon($controller, $this->application);
-				break;
+                }
 
-			default :
+                //If the default controller is active, search for that too.
+                if(boolify($this->application->config->app->useDefaultController)){
 
-                $parts = explode('/', $controller);
+                    $parts = explode('/', $this->application->config->app->defaultController);
 
-                $controllerName = array_pop($parts);
+                    $controller_class_search[] = 'Application\\Controller\\' . implode('\\', array_map('ucfirst', $parts));
 
-                $controllerClass = ucfirst($controllerName) . 'Controller';
+                    //Legacy controller name search
+                    if(count($parts) === 1)
+                        $controller_class_search[] = ucfirst($this->application->config->app->defaultController) . 'Controller';
 
-                $controllerClassFile = implode(DIRECTORY_SEPARATOR, $parts) . DIRECTORY_SEPARATOR . ucfirst($controllerName . '.php');
+                }
 
-                if($filename = Loader::getFilePath(FILE_PATH_CONTROLLER, $controllerClassFile))
-                    require_once($filename);
-
-				/*
+                /*
                  * This call to class_exists() will actually load the class with the __autoload magic method. Then
-                 * we test if the class exists and if it doesn't we try and load the default controller . If that
+                 * we test if the class exists and if it doesn't we try a legacy load which includes the default controller . If that
                  * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
                  */
-				try {
+                foreach($controller_class_search as $controller_class){
 
-					if(!class_exists($controllerClass)){
+                    if(!class_exists($controller_class))
+                        continue;
 
-						/*
-                         * Use the default controller if no controller has been found.
-                         */
-						if(boolify($this->application->config->app->useDefaultController)){
+                    $newController = new $controller_class($controller, $this->application);
 
-                            $controller = $this->application->config->app->defaultController;
+                    break;
 
-                            $controllerClass = ucfirst($this->application->config->app->defaultController) . 'Controller';
+                }
 
-							if(! class_exists($controllerClass))
-								return FALSE;
+            }
 
-						} else {
+        }
+        catch(\Hazaar\Exception\ClassNotFound $e){
 
-							return FALSE;
+            return NULL;
 
-						}
+        }
 
-					}
-
-				}
-                catch(\Hazaar\Exception\ClassNotFound $e){
-
-					return NULL;
-
-				}
-
-				$newController = new $controllerClass($controller, $this->application);
-
-				break;
-
-		}
-
-		return $newController;
+        return $newController;
 
 	}
 

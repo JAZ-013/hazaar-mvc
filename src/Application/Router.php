@@ -25,7 +25,14 @@ class Router {
 
     private $path;
 
-    private $internal = array('hazaar', 'media', 'style', 'script', 'hazaar', 'favicon.png', 'favicon.ico');
+    static public $internal = array(
+        'hazaar'        => 'Hazaar\Controller\Router',
+        'media'         => 'Hazaar\Controller\Media',
+        'style'         => 'Hazaar\Controller\Style',
+        'script'        => 'Hazaar\Controller\Script',
+        'favicon.png'   => 'Hazaar\Controller\Favicon',
+        'favicon.ico'   => 'Hazaar\Controller\Favicon'
+    );
 
     function __construct(Config $config) {
 
@@ -58,13 +65,15 @@ class Router {
 
         }
 
+        $index = 0;
+
         $controller_root = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
 
         $controller_path = DIRECTORY_SEPARATOR;
 
         $parts = explode('/', $this->route);
 
-        if(in_array($parts[0], $this->internal)){
+        if(array_key_exists($parts[0], self::$internal)){
 
             $this->controller = array_shift($parts);
 
@@ -106,11 +115,21 @@ class Router {
         }
 
         //If we still haven't found a controller, look at the last controller path for an index as we may have a path with no args
-        if(!$this->controller && file_exists($controller_root . $controller_path . 'Index.php')){
+        if(!$this->controller){
 
-            $this->controller = implode('/', $parts) . '/index';
+            if(file_exists($controller_root . $controller_path . 'Index.php')){
 
-            $parts = array();
+                $this->controller = implode('/', $parts) . '/index';
+
+                $parts = array();
+
+            }else{
+
+                $this->controller = implode('/', array_slice($parts, 0, $index + 1));
+
+                $parts = array_slice($parts, $index + 1);
+
+            }
 
         }
 
