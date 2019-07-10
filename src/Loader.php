@@ -514,7 +514,7 @@ class Loader {
                 }
 
                 //If the default controller is active, search for that too.
-                if(boolify($this->application->config->app->useDefaultController)){
+                if(!$controller || boolify($this->application->config->app->useDefaultController)){
 
                     $parts = explode('/', $this->application->config->app->defaultController);
 

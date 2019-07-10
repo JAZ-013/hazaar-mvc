@@ -15,10 +15,6 @@ class Router {
 
     private $file;
 
-    private $defaultController;
-
-    private $useDefaultController = false;
-
     private $route;
 
     private $controller;
@@ -41,10 +37,6 @@ class Router {
 
         $this->file = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($config->app->files, 'route', 'route.php');
 
-        $this->defaultController = ake($config->app, 'defaultController', 'index');
-
-        $this->useDefaultController = ake($config->app, 'useDefaultController', false);
-
     }
 
     public function evaluate(Request $request) {
@@ -57,13 +49,8 @@ class Router {
         if($this->file && file_exists($this->file))
             include($this->file);
 
-        if(!($this->route = trim($this->route, '/'))){
-
-            $this->controller = $this->defaultController;
-
+        if(!($this->route = trim($this->route, '/')))
             return true;
-
-        }
 
         $index = 0;
 
@@ -100,36 +87,22 @@ class Router {
 
                     break;
 
-                }elseif($this->useDefaultController){
-
-                    $this->controller = $this->defaultController;
-
-                    break;
-
                 }
 
-                return false;
+                $index--;
+
+                break;
 
             }
 
         }
 
-        //If we still haven't found a controller, look at the last controller path for an index as we may have a path with no args
+        //If we still haven't found a controller, look at the last controller path for an index as we may have a path with/without args
         if(!$this->controller){
 
-            if(file_exists($controller_root . $controller_path . 'Index.php')){
+            $this->controller = ltrim(str_replace('\\', '/', $controller_path) . 'index', '/');
 
-                $this->controller = implode('/', $parts) . '/index';
-
-                $parts = array();
-
-            }else{
-
-                $this->controller = implode('/', array_slice($parts, 0, $index + 1));
-
-                $parts = array_slice($parts, $index + 1);
-
-            }
+            $parts = array_slice($parts, $index + 1);
 
         }
 
