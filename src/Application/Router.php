@@ -19,7 +19,13 @@ class Router {
 
     private $controller;
 
+    private $controller_name;
+
     private $path;
+
+    private $use_default_controller = false;
+
+    private $default_controller;
 
     static public $internal = array(
         'hazaar'        => 'Hazaar\Controller\Router',
@@ -37,6 +43,10 @@ class Router {
 
         $this->file = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($config->app->files, 'route', 'route.php');
 
+        $this->use_default_controller = boolify($config->app->useDefaultController);
+
+        $this->default_controller = $config->app->defaultController;
+
     }
 
     public function evaluate(Request $request) {
@@ -49,72 +59,97 @@ class Router {
         if($this->file && file_exists($this->file))
             include($this->file);
 
-        if(!($this->route = trim($this->route, '/')))
-            return true;
+        if($this->route = trim($this->route, '/')){
 
-        $index = 0;
+            $parts = explode('/', $this->route);
 
-        $controller_root = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
+            if(array_key_exists($parts[0], self::$internal)){
 
-        $controller_path = DIRECTORY_SEPARATOR;
+                $this->controller = array_shift($parts);
 
-        $parts = explode('/', $this->route);
+            }else{
 
-        if(array_key_exists($parts[0], self::$internal)){
-
-            $this->controller = array_shift($parts);
-
-        }else{
-
-            foreach($parts as $index => $part){
-
-                $path = $controller_root . $controller_path;
-
-                //If the path exists as a directory, that becomes our new controller directory
-                if(is_dir($path . $part)){
-
-                    $controller_path .= $part . DIRECTORY_SEPARATOR;
-
-                    continue;
-
-                }
-
-                if(file_exists($path . ucfirst($part) . '.php')){
-
-                    $this->controller = (($index > 0) ? implode('/', array_slice($parts, 0, $index)) . '/' : null) . $part;
-
-                    $parts = array_slice($parts, $index + 1);
-
-                    break;
-
-                }
-
-                $index--;
-
-                break;
+                $this->controller = $this->findController($parts);
 
             }
 
+            if(count($parts) > 0)
+                $this->path = implode('/', $parts);
+
+            $request->setPath($this->path);
+
+        }else $this->use_default_controller = true;
+
+        //If there is no controller and the default controller is active, search for that too.
+        if(!$this->controller && $this->use_default_controller === true){
+
+            $default_parts = explode('/', $this->default_controller);
+
+            $this->controller = $this->findController($default_parts);
+
+            $this->controller_name = $request->popPath();
+
         }
-
-        //If we still haven't found a controller, look at the last controller path for an index as we may have a path with/without args
-        if(!$this->controller){
-
-            $this->controller = ltrim(str_replace('\\', '/', $controller_path) . 'index', '/');
-
-            $parts = array_slice($parts, $index + 1);
-
-        }
-
-        if(count($parts) > 0)
-            $this->path = implode('/', $parts);
-
-        $request->setPath($this->path);
 
         return true;
 
     }
 
+    private function findController(&$parts){
+
+        $index = 0;
+
+        $controller = null;
+
+        $controller_root = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
+
+        $controller_path = DIRECTORY_SEPARATOR;
+
+        $controller_index = null;
+
+        foreach($parts as $index => $part){
+
+            $found = false;
+
+            $path = $controller_root . $controller_path;
+
+            $controller_path .= $part . DIRECTORY_SEPARATOR;
+
+            if(is_dir($path . $part)){
+
+                $found = true;
+
+                if(file_exists($controller_root . $controller_path . 'Index.php')){
+
+                    $controller = implode('/', array_slice($parts, 0, $index + 1)) . '/index';
+
+                    $controller_index = $index;
+
+                }
+
+            }
+
+            if(file_exists($path . ucfirst($part) . '.php')){
+
+                $found = true;
+
+                $controller = (($index > 0) ? implode('/', array_slice($parts, 0, $index)) . '/' : null) . $part;
+
+                $controller_index = $index;
+
+            }
+
+            if($found === false)
+                break;
+
+        }
+
+        if($controller)
+            $parts = array_slice($parts, $controller_index + 1);
+
+        return $controller;
+
+    }
     /**
      * Get the currently set route
      *
@@ -138,6 +173,15 @@ class Router {
     }
 
     public function getController() {
+
+        return $this->controller;
+
+    }
+
+    public function getControllerName(){
+
+        if($this->controller_name)
+            return $this->controller_name;
 
         return $this->controller;
 

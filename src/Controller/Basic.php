@@ -70,9 +70,7 @@ abstract class Basic extends \Hazaar\Controller {
 
         $response = null;
 
-        $parts = explode('/', $request->getPath());
-
-        if(!($this->__action = array_shift($parts)))
+        if(!($this->__action = $request->popPath()))
             $this->__action = 'index';
 
         if(method_exists($this, 'init')) {
@@ -84,7 +82,8 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
-        $this->__actionArgs = $parts;
+        if($request->getPath())
+            $this->__actionArgs = explode('/', $request->getPath());
 
         return $response;
 
@@ -117,7 +116,7 @@ abstract class Basic extends \Hazaar\Controller {
 
                 array_unshift($this->__actionArgs, $action);
 
-                array_unshift($this->__actionArgs, $this->application->getRequestedController());
+                array_unshift($this->__actionArgs, $this->name);
 
                 $this->__action = $action = '__default';
 

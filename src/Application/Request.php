@@ -81,6 +81,36 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Pop a part off the path.
+     * 
+     * A "part" is simple anything delimited by '/' in the path section of the URL.
+     * 
+     * @return string
+     */
+    public function popPath(){
+
+        if(!$this->path)
+            return null;
+
+        if(($pos = strpos($this->path, '/')) === false){
+
+            $part = $this->path;
+
+            $this->path = null;
+
+        }else{
+
+            $part = substr($this->path, 0, $pos);
+
+            $this->path = substr($this->path, $pos + 1);
+
+        }
+
+        return $part;
+
+    }
+
     public function __get($key) {
 
         return $this->get($key);

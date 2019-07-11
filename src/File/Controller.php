@@ -34,7 +34,7 @@ class Controller extends \Hazaar\Controller\Basic {
 
         $response = NULL;
 
-        $target = $this->request->getPath();
+        $target = $action . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $this->request->getPath());
 
         if($this->path)
             $filename = $this->path . DIRECTORY_SEPARATOR . $target;

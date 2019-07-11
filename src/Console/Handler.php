@@ -243,8 +243,8 @@ class Handler {
 
         $parts = array();
 
-        if($path = $request->getPath())
-            $parts = explode('/', $path);
+        if($path = $request->getBasePath())
+            $parts = array_slice(explode('/', $path), 2);
 
         if(!($module_name = array_shift($parts)))
             $module_name = 'app';

@@ -574,17 +574,17 @@ class Application {
                 /*
                  * Load the controller and check it was successful
                  */
-                $controller = $this->loader->loadController($this->router->getController());
+                $controller = $this->loader->loadController($this->router->getController(), $this->router->getControllerName());
 
                 if(!($controller instanceof Controller))
-                    throw new Application\Exception\RouteNotFound($this->router->getController());
-
-                $controller->setRequest($this->request);
+                    throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
                 /*
                  * Initialise the controller with the current request
                  */
                 $response = $controller->__initialize($this->request);
+
+                $controller->setRequest($this->request);
 
                 //If we get a response now, the controller wants out, so display it and quit.
                 if($response instanceof \Hazaar\Controller\Response){

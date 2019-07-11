@@ -479,7 +479,13 @@ class Loader {
      *
      * @return mixed A controller instance (\Hazaar\Application\Controller) or FALSE.
      */
-	public function loadController($controller){
+	public function loadController($controller, $controller_name = null){
+
+        if(!$controller)
+            return false;
+
+        if(!$controller_name)
+            $controller_name = $controller;
 
 		$newController = NULL;
 
@@ -501,30 +507,13 @@ class Loader {
                 //Build a list of controllers to search for
                 $controller_class_search = array();
 
-                if($controller){
+                $parts = explode('/', $controller);
 
-                    $parts = explode('/', $controller);
+                $controller_class_search[] = 'Application\\Controller\\' . implode('\\', array_map('ucfirst', $parts));
 
-                    $controller_class_search[] = 'Application\\Controller\\' . implode('\\', array_map('ucfirst', $parts));
-
-                    //Legacy controller name search
-                    if(count($parts) === 1)
-                        $controller_class_search[] = ucfirst($controller) . 'Controller';
-
-                }
-
-                //If the default controller is active, search for that too.
-                if(!$controller || boolify($this->application->config->app->useDefaultController)){
-
-                    $parts = explode('/', $this->application->config->app->defaultController);
-
-                    $controller_class_search[] = 'Application\\Controller\\' . implode('\\', array_map('ucfirst', $parts));
-
-                    //Legacy controller name search
-                    if(count($parts) === 1)
-                        $controller_class_search[] = ucfirst($this->application->config->app->defaultController) . 'Controller';
-
-                }
+                //Legacy controller name search
+                if(count($parts) === 1)
+                    $controller_class_search[] = ucfirst($controller) . 'Controller';
 
                 /*
                  * This call to class_exists() will actually load the class with the __autoload magic method. Then
@@ -536,7 +525,7 @@ class Loader {
                     if(!class_exists($controller_class))
                         continue;
 
-                    $newController = new $controller_class($controller, $this->application);
+                    $newController = new $controller_class($controller_name, $this->application);
 
                     break;
 
