@@ -448,7 +448,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         $this->cacheDir = new \Hazaar\File\Dir($this->application->runtimePath('viewcache/' . $type, true));
 
-        $path = $request->getRawPath();
+        $path = $request->getPath();
 
         $params = $request->getParams();
 

@@ -11,30 +11,21 @@ namespace Hazaar\Application;
 
 abstract class Request implements Request\_Interface {
 
-    protected $controller;
-
-    protected $action     = 'index';
-
     protected $dispatched = FALSE;
 
     protected $params     = array();
 
     protected $exception;
 
-    protected $config;
-
     /**
      * The original path excluding the application base path
      */
-    private $base_path;
+    protected $base_path;
 
     /**
-     * The path without the controller reference in it
-     */
-    private $raw_path;
-
-    /**
-     * The path excluding the controller and action references
+     * The requested path
+     *
+     * @var mixed
      */
     private $path;
 
@@ -42,139 +33,24 @@ abstract class Request implements Request\_Interface {
 
         $args = func_get_args();
 
-        if(! ($this->config = array_shift($args)) instanceof Config)
-            throw new \Exception('Argument one of the Request constructor MUST be an Application\Config object!');
-
         if(method_exists($this, 'init'))
             $this->base_path = call_user_func_array(array($this,'init'), $args);
 
-        if($this->base_path)
-            $this->evaluate($this->base_path);
+        $this->path = $this->base_path;
+
+    }
+
+    public function getBasePath(){
+
+        return $this->base_path;
 
     }
 
     /**
-     * @detail      Parses a request URL string and turns it into a controller name, action name, and argument list.
-     * This
-     *              is essentially the core method of Hazaar that decides what to execute based on
-     */
-    public function evaluate($string) {
-
-        $this->action = 'index';
-
-        $this->path = null;
-
-        //First, split off any query string
-        $url = parse_url($string);
-
-        if(array_key_exists('path', $url)){
-
-            //If there is a fragment here, it is almost entirely likely to be part of the filename, so re-attach it.
-            if(array_key_exists('fragment', $url))
-                $url['path'] .= '#' . $url['fragment'];
-
-            $nodes = explode('/', $url['path']);
-
-            /* Pull out the first path node and use it to find the controller */
-            if(count($nodes) > 0)
-                $this->setControllerName(array_shift($nodes));
-
-            foreach($nodes as &$node){
-
-                if(substr($node, 0, 1) == '$'){
-
-                    $mod = substr($node, 1);
-
-                    if($mod === 'path')
-                        $node = $this->raw_path;
-
-                }
-
-            }
-
-            /* Keep what we have left so far as the RAW path */
-            $this->raw_path = implode('/', $nodes);
-
-            if(!($pos = strpos($this->raw_path, '/')))
-                $pos = strlen($this->raw_path);
-
-            if(count($nodes) > 0)
-                $this->setActionName(substr($this->raw_path, 0, $pos));
-
-            /* Keep the rest as a path off the controller */
-            if($pos < strlen(trim($this->raw_path, '/')))
-                $this->path = substr($this->raw_path, $pos + 1);
-
-        }
-
-        if(array_key_exists('query', $url)){
-
-            parse_str($url['query'], $params);
-
-            $this->params = array_merge($this->params, $params);
-
-        }
-
-    }
-
-    public function processRoute() {
-
-        /*
-         * Find the controller we are trying to load
-         */
-        if(! $this->getControllerName()) {
-
-            if(! $default = $this->config->app['defaultController']) {
-
-                return FALSE;
-
-            }
-
-            $this->setControllerName($default);
-
-        }
-
-        $result = TRUE;
-
-        $route = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'route', 'route.php');
-
-        if(file_exists($route)) {
-
-            $router = new Router($route);
-
-            $result = $router->exec($this->getControllerName());
-
-        }
-
-        /*
-         * Evaluate the router result.  If the result is a string then we evaluate it.  If it is true, then we are safe
-         * to
-         * evaluate any static routes.  If it is false, then we have been asked not to evaluate any further.
-         */
-        if(is_string($result)) {
-
-            $this->evaluate($result);
-
-        } elseif($result === TRUE && $this->config->app->has('alias') && $this->config->app->alias->has($this->getControllerName())) {
-
-            $alias = $this->config->app->alias[$this->getControllerName()];
-
-            $this->evaluate($alias);
-
-        }
-
-        return TRUE;
-
-    }
-
-    /**
-     * Return the request path suffix.
-     *
-     * This is the path that comes after the controller and action path elements.  Take the
-     * path /myapp/public/index/test/foo/bar for example.  In this case this method would return '/foo/bar'.
+     * Return the request path.
      *
      * @param mixed $strip_filename If true, this will cause the function to return anything before the last '/'
-     *                              (including the '/') which is the fulle directory path name. (Similar to dirname()).
+     *                              (including the '/') which is the full directory path name. (Similar to dirname()).
      *
      * @since       1.0.0
      *
@@ -195,35 +71,43 @@ abstract class Request implements Request\_Interface {
     }
 
     /**
-     * @detail      Return the complete raw request URI relative to the application path.  That is the full path
-     *              including the controller and action elements.  Take the path /myapp/public/index/test/foo/bar for
-     *              example.  In this case this method would return '/index/test/foo/bar'.
+     * Set the request path
      *
-     * @since       1.0.0
-     *
-     * @return      string The raw request URI relative to the application path.
+     * @param mixed $path
      */
-    public function getRawPath() {
+    public function setPath($path){
 
-        return $this->raw_path;
-
-    }
-
-    public function getBasePath() {
-
-        return $this->base_path;
+        $this->path = $path;
 
     }
 
-    public function getControllerName() {
+    /**
+     * Pop a part off the path.
+     * 
+     * A "part" is simple anything delimited by '/' in the path section of the URL.
+     * 
+     * @return string
+     */
+    public function popPath(){
 
-        return $this->controller;
+        if(!$this->path)
+            return null;
 
-    }
+        if(($pos = strpos($this->path, '/')) === false){
 
-    public function setControllerName($name) {
+            $part = $this->path;
 
-        $this->controller = $name;
+            $this->path = null;
+
+        }else{
+
+            $part = substr($this->path, 0, $pos);
+
+            $this->path = substr($this->path, $pos + 1);
+
+        }
+
+        return $part;
 
     }
 
@@ -438,24 +322,6 @@ abstract class Request implements Request\_Interface {
     public function count() {
 
         return count($this->params);
-
-    }
-
-    public function setActionName($name) {
-
-        $this->action = $name;
-
-    }
-
-    public function getActionName() {
-
-        return $this->action;
-
-    }
-
-    public function resetAction() {
-
-        $this->action = NULL;
 
     }
 

@@ -140,7 +140,7 @@ class Media extends \Hazaar\Controller\Action {
 
         }
 
-        $target = $this->request->getRawPath();
+        $target = $this->request->getPath();
 
         $pos = strpos($target, '/');
 
@@ -227,7 +227,7 @@ class Media extends \Hazaar\Controller\Action {
 
             $response->path = $this->file->fullpath();
 
-            $response->vpath = $this->request->getRawPath();
+            $response->vpath = $this->request->getPath();
 
             $response->root = ($this->file->fullpath() == '/');
 

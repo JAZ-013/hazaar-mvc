@@ -22,7 +22,7 @@ class Script extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->filename = $request->getRawPath();
+        $this->filename = $request->getPath();
 
         $this->source = $this->application->loader->getFilePath(FILE_PATH_VIEW, 'scripts/' . $this->filename);
 

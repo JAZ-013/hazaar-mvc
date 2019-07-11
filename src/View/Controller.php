@@ -12,19 +12,17 @@ class Controller extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        if(!($raw_path = trim($request->getRawPath(), '/')))
+        if(!($path = trim($request->getPath(), '/')))
             throw new \Exception('Not allowed!', 400);
 
-        $request->evaluate($raw_path);
+        $parts = explode('/', $path);
 
-        $action = $request->getActionName();
-
-        $controller = $request->getControllerName();
+        $controller = array_shift($parts);
 
         switch($controller){
             case 'helper':
 
-                $request->evaluate($request->getRawPath());
+                $action = array_shift($parts);
 
                 $className = 'Hazaar\\View\\Helper\\' . ucfirst($action);
 
@@ -33,7 +31,7 @@ class Controller extends \Hazaar\Controller {
 
                 $this->helper = new $className();
 
-                $this->method = $request->getActionName();
+                $this->method = array_shift($parts);
 
                 $this->params = array($request);
 
@@ -54,6 +52,8 @@ class Controller extends \Hazaar\Controller {
                 throw new \Exception('Method not allowed!', 403);
 
         }
+
+        $request->setPath(implode('/', $parts));
 
     }
 
