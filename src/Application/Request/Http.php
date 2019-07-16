@@ -61,7 +61,7 @@ class Http extends \Hazaar\Application\Request {
      *
      * @param       Array $request Optional reference to $_REQUEST
      */
-    function init($request = NULL) {
+    function init($request = NULL, $process_request_body = false) {
 
         if($request === NULL)
             $request = $_REQUEST;
@@ -70,7 +70,8 @@ class Http extends \Hazaar\Application\Request {
 
         $this->headers = hazaar_request_headers();
 
-        $this->body = @file_get_contents('php://input');
+        if($process_request_body === true)
+            $this->body = @file_get_contents('php://input');
 
         $encryption_header = ucwords(strtolower(\Hazaar\Http\Client::$encryption_header), '-');
 
