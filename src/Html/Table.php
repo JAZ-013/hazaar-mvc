@@ -121,7 +121,7 @@ class Table extends Block {
      */
     public function addRow($fields) {
 
-        if(is_array($fields)) {
+        if(is_array($fields) || $fields instanceof Tr) {
 
             if(!$this->tbody instanceof Tbody)
                 parent::add($this->tbody = new Tbody());

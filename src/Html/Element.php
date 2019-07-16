@@ -332,9 +332,12 @@ abstract class Element implements _Interface {
      *
      * @return Element This element
      */
-    public function appendTo(Element $element){
+    public function appendTo(&$element){
 
-        $element->add($this);
+        if($element instanceof Element)
+            $element->add($this);
+        elseif(is_array($element))
+            $element[] = $this;
 
         return $this;
 

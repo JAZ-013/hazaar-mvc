@@ -58,7 +58,12 @@ class Hmv extends \Hazaar\View\Helper {
 
             $label = ake($item, 'label', $key);
 
-            if($children = ake($item, 'list')){
+            if(array_key_exists('render', $item) && is_callable($item['render']))
+                $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
+
+            $no_value = empty(ake($item, 'value', null, true));
+
+            if($no_value && ($children = ake($item, 'list'))){
 
                 $labelTD = $this->html->td($this->html->label($label));
 
@@ -69,7 +74,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($labelTD, $itemsTD));
 
-            }elseif($children = ake($item, 'collection')){
+            }elseif($no_value && ($children = ake($item, 'collection'))){
 
                 $section = $this->html->td($this->html->block($this->section_tag, $label));
 
@@ -80,7 +85,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
-            }elseif($children = ake($item, 'items')){
+            }elseif($no_value && ($children = ake($item, 'items'))){
 
                 $section = $this->html->td($this->html->block($this->section_tag, $label));
 
@@ -93,9 +98,6 @@ class Hmv extends \Hazaar\View\Helper {
             }else{
 
                 $labelTD = $this->html->td($this->html->label($label));
-
-                if(array_key_exists('render', $item) && is_callable($item['render']))
-                    $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
 
                 $value = ake($item, 'value', $empty_val, true);
 

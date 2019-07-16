@@ -122,7 +122,7 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\A
      */
-    public function a($href, $content = NULL, $params = array()) {
+    public function a($href = null, $content = NULL, $params = array()) {
 
         return new \Hazaar\Html\A($href, $content, $params);
 

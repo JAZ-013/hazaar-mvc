@@ -1,6 +1,6 @@
 # Multiple Class Inheritance
 
-Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. To palliate this limitation and to make the framework truly extendible, Hazaar introduces a class called Extender. The Extender is a special class that allows you to extend your classes using multiple child classes.
+Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. To palliate this limitation and to make the framework truly extendible, Hazaar introduces a class called [[Hazaar\Extender]]. The [[Hazaar\Extender]] class is a special class that allows you to extend your classes using multiple child classes.
 
 !!! warning
 

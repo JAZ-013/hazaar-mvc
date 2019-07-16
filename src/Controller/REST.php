@@ -217,7 +217,9 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $full_path = '/' . $this->request->getRawPath();
+        $full_path = '/' . $request->getPath();
+
+        $request_method = $request->method();
 
         if($full_path == '/'){
 
@@ -232,9 +234,9 @@ abstract class REST extends \Hazaar\Controller {
 
             foreach($endpoint['routes'] as $target => $route){
 
-                if($this->__match_route($full_path, $target, $route, $args)){
+                if($this->__match_route($request_method, $full_path, $target, $route, $args)){
 
-                    if($this->request->method() == 'OPTIONS'){
+                    if($request->method() == 'OPTIONS'){
 
                         $response = new \Hazaar\Controller\Response\Json();
 
@@ -271,7 +273,7 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __run() {
 
-        return $this->__exec_endpoint($this->__endpoint);
+        return $this->__exec_endpoint($this->__endpoint, $this->request->getParams());
 
     }
 
@@ -331,7 +333,7 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __match_route($path, $route, $endpoint, &$args = null){
+    private function __match_route($request_method, $path, $route, $endpoint, &$args = null){
 
         $args = array();
 
@@ -381,14 +383,14 @@ abstract class REST extends \Hazaar\Controller {
 
         $http_methods = ake(ake($endpoint, 'args'), 'methods', array('GET'));
 
-        if(!in_array($this->request->method(), $http_methods))
+        if(!in_array($request_method, $http_methods))
             return false;
 
         return true;
 
     }
 
-    private function __exec_endpoint($endpoint){
+    private function __exec_endpoint($endpoint, $args = array()){
 
         list($endpoint, $route, $args) = $endpoint;
 
@@ -427,7 +429,7 @@ abstract class REST extends \Hazaar\Controller {
         $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
             && ($endpoint['cache'] === true
             || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
+            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $args))) : null);
 
         //Try extracting from cache first if caching is enabled
         if($cache_key !== null)

@@ -39,9 +39,9 @@ define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
  */
 define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..')), -1))[0]);
 
-require_once('ErrorControl.php');
-
 require_once('HelperFunctions.php');
+
+require_once('ErrorControl.php');
 
 putenv('HOME=' . APPLICATION_PATH);
 
@@ -91,6 +91,8 @@ class Application {
     public $config;
 
     public $loader;
+
+    public $router;
 
     public $environment = 'development';
 
@@ -202,7 +204,15 @@ class Application {
 
         }
 
-        $this->request = Application\Request\Loader::load($this->config);
+        /*
+         * Create a new router object for evaluating routes
+         */
+        $this->router = new Application\Router($this->config);
+
+        /*
+         * Create the request object
+         */
+        $this->request = Application\Request\Loader::load();
 
         /*
          * Create a timer for performance measuring
@@ -216,6 +226,17 @@ class Application {
             $this->timer->stop('init');
 
         }
+
+        /*
+         * Check if we require SSL and if so, redirect here.
+         */
+        /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+
+        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+
+        exit;
+
+        }*/
 
     }
 
@@ -336,7 +357,7 @@ class Application {
 
     static public function setRoot($value){
 
-        Application::$root = rtrim($value, '/') . '/';
+        Application::$root = rtrim(str_replace('\\', '/', $value), '/') . '/';
 
     }
 
@@ -437,7 +458,7 @@ class Application {
      */
     public function getRequestedController() {
 
-        return $this->request->getControllerName();
+        return $this->router->getController();
 
     }
 
@@ -484,7 +505,7 @@ class Application {
      * @return \Hazaar\Application Returns a reference to itself to allow chaining
      *
      */
-    public function bootstrap($simple_mode = FALSE) {
+    public function bootstrap() {
 
         if($this->timer) {
 
@@ -521,9 +542,12 @@ class Application {
         if(!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
 
-        Application\Url::$aliases = $this->config->app->get('alias');
+        Application\Url::$aliases = $this->config->app->getArray('alias');
 
-        if($this->getRequestedController() !== 'hazaar') {
+        if(!$this->router->evaluate($this->request))
+            throw new Application\Exception\RouteNotFound($this->request->getPath());
+
+        if(($controller = $this->router->getController()) !== 'hazaar') {
 
             /*
              * Check that all required modules are loaded
@@ -545,39 +569,6 @@ class Application {
 
                 if($this->bootstrap === FALSE)
                     throw new \Exception('The application failed to start!');
-
-            }
-
-        }
-
-        if($simple_mode === FALSE) {
-
-            if(!$this->request->processRoute())
-                throw new Application\Exception\RouteFailed();
-
-            /*
-             * Load the controller and check it was successful
-             */
-            $this->controller = $this->loader->loadController($this->request->getControllerName());
-
-            if(!($this->controller instanceof Controller))
-                throw new Application\Exception\RouteNotFound($this->request->getControllerName());
-
-            $this->controller->setRequest($this->request);
-
-            /*
-             * Initialise the controller with the current request
-             */
-            $response = $this->controller->__initialize($this->request);
-
-            //If we get a response now, the controller wants out, so display it and quit.
-            if($response instanceof \Hazaar\Controller\Response){
-
-                $response->__writeOutput();
-
-                $this->controller->__shutdown();
-
-                exit;
 
             }
 
@@ -621,10 +612,37 @@ class Application {
 
         }
 
-        if(!$controller)
-            $controller = $this->controller;
-
         try {
+
+            if(!$controller instanceof Controller) {
+
+                /*
+                 * Load the controller and check it was successful
+                 */
+                $controller = $this->loader->loadController($this->router->getController(), $this->router->getControllerName());
+
+                if(!($controller instanceof Controller))
+                    throw new Application\Exception\RouteNotFound($this->request->getBasePath());
+
+                /*
+                 * Initialise the controller with the current request
+                 */
+                $response = $controller->__initialize($this->request);
+
+                $controller->setRequest($this->request);
+
+                //If we get a response now, the controller wants out, so display it and quit.
+                if($response instanceof \Hazaar\Controller\Response){
+
+                    $response->__writeOutput();
+
+                    $controller->__shutdown();
+
+                    return 0;
+
+                }
+
+            }
 
             /*
              * Execute the controllers run method.
@@ -718,7 +736,7 @@ class Application {
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         //Execution should wait here until we get a command
-        $line = stream_get_contents(STDIN);
+        $line = fgets(STDIN);
 
         $code = 1;
 
@@ -737,20 +755,7 @@ class Application {
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    $headers = array(
-                        'X-WARLOCK-JOB-ID' => $payload->job_id,
-                        'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
-                    );
-
-                    if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
-
-                        $code = $container->exec($payload->exec, ake($payload, 'params'));
-
-                    }else{
-
-                        $code = 4;
-
-                    }
+                    $code = $container->exec($payload->exec, ake($payload, 'params'));
 
                     break;
 
@@ -773,20 +778,7 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        $headers = array(
-                            'X-WARLOCK-JOB-ID' => $payload->job_id,
-                            'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
-                        );
-
-                        if($service->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
-
-                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
-
-                        }else{
-
-                            $code = 4;
-
-                        }
+                        $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
 
                     } else {
 
@@ -852,7 +844,7 @@ class Application {
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
-     * For examples see: "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls
+     * For examples see: [Generating URLs](/basics/urls.md)
      *
      * @since 1.0.0
      *

@@ -141,5 +141,3 @@ class Bootstrap extends \Hazaar\View\Helper {
     }
 
 }
-
-

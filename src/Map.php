@@ -1315,6 +1315,24 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     }
 
     /**
+     * This is get() and toArray() all in one with the added benefit of checking if $key is a \Hazaar\Map and only calling toArray() if it is.
+     *
+     * @param mixed $key The key values to get as an array.
+     *
+     * @param mixed $ignorenulls
+     */
+    public function getArray($key, $ignorenulls = FALSE){
+
+        $value = $this->get($key);
+
+        if($value instanceof Map)
+            $value = $value->toArray($ignorenulls);
+
+        return $value;
+
+    }
+
+    /**
      * @detail      Return a valid JSON string representation of the Map
      *
      * @since       1.0.0

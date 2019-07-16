@@ -77,11 +77,8 @@ class HelperBroker {
 
     public function execAllHelpers($controller, $response) {
 
-        foreach($this->helpers as $helper => $obj) {
-
+        foreach($this->helpers as $helper => $obj)
             $obj->__exec($controller, $response);
-
-        }
 
     }
 

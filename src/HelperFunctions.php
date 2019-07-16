@@ -15,10 +15,10 @@
  * Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
- * 
+ *
  * Keys may also be specified using dot-notation.  This allows ake to called only once instead of for each
  * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
- * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if 
+ * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if
  * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
  * if the child is not an array or object.
  *
@@ -305,11 +305,11 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
  *
  * @param mixed $array The array to collate.
  * @param mixed $key_item The value to use as the key.
- * @param mixed $value_item The value to use as the value.
+ * @param mixed $value_item The value to use as the value.  If not supplied, the whole element will be the value.  Allows re-keying a mult-dimensional array by an array element.
  * @param mixed $group_item Optional value to group items by.
  * @return array
  */
-function array_collate($array, $key_item, $value_item, $group_item = null){
+function array_collate($array, $key_item, $value_item = null, $group_item = null){
 
     $result = array();
 
@@ -321,7 +321,7 @@ function array_collate($array, $key_item, $value_item, $group_item = null){
         if($group_item !== null)
             $result[ake($item, $group_item)][$item[$key_item]] = ake($item, $value_item);
         else
-            $result[$item[$key_item]] = ake($item, $value_item);
+            $result[$item[$key_item]] = ($value_item === null) ? $item : ake($item, $value_item);
 
     }
 
@@ -886,11 +886,20 @@ function years($interval) {
  *
  * @since 1.0.0
  *
- * @return int Number of years from the specified date to now.
+ * @return int|boolean Number of years from the specified date to now, or FALSE on error.
  */
 function age($date) {
 
-    return years(time() - strtotime($date));
+    if($date instanceof \DateTime)
+        $time = $date->getTimestamp();
+
+    elseif(is_string($date))
+        $time = strtotime($date);
+
+    else
+        return false;
+
+    return years(time() - $time);
 
 }
 
@@ -904,9 +913,7 @@ function age($date) {
  *
  * @return string Minutes in interval
  */
-function uptime($seconds) {
-
-    $interval = $seconds . ' seconds';
+function uptime($interval) {
 
     $d = floor(days($interval));
 
@@ -1648,6 +1655,14 @@ function array_remove_empty(&$array){
 
 }
 
+/**
+ * Generate a truly random string of characters.
+ * 
+ * @param mixed $length The length of the random string being created.
+ * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
+ * 
+ * @return string A totally random string of characters.
+ */
 function str_random($length, $include_special = false){
 
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1663,5 +1678,29 @@ function str_random($length, $include_special = false){
         $randomString .= $characters[rand(0, $count - 1)];
 
     return $randomString;
+
+}
+
+/**
+ * Pull an item out of an array by is key
+ *
+ * This function is similar to array_pop() and array_shift(), except that instead of popping the last/first element off the
+ * array, it pops an element with the specified key.
+ *
+ * @param array $array The array to pull the element from.
+ * @param int|string $key The key of the element.
+ *
+ * @return mixed The element returned from the array.
+ */
+function array_pull(&$array, $key){
+
+    if(!array_key_exists($key, $array))
+        return null;
+
+    $item = $array[$key];
+
+    unset($array[$key]);
+
+    return $item;
 
 }

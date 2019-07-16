@@ -14,7 +14,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler = new Handler($this->application);
 
-        if($this->request->getActionName() === 'login')
+        if($this->getAction() === 'login')
             return;
 
         if(!$this->handler->authenticated())

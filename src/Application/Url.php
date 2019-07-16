@@ -207,12 +207,15 @@ class Url {
             /*
              * Figure out the hostname and protocol
              */
-            $host = $_SERVER['HTTP_HOST'];
+            $host = ake($_SERVER, 'HTTP_HOST', 'localhost');
 
-            if(strpos($host, ':') === false && $_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443)
+            if(strpos($host, ':') === false
+                && array_key_exists('SERVER_PORT', $_SERVER)
+                && $_SERVER['SERVER_PORT'] != 80
+                && $_SERVER['SERVER_PORT'] != 443)
                 $host .= ':' . $_SERVER['SERVER_PORT'];
 
-            $proto = (($_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http');
+            $proto = ((ake($_SERVER, 'SERVER_PORT') == 443) ? 'https' : 'http');
 
             $url = $proto . '://' . $host;
 

@@ -43,11 +43,15 @@ class Smarty {
 
     protected $__content = null;
 
-    protected $__compiled_content = null;
+    protected $__compiled_content = '';
 
     protected $__custom_functions = array();
 
-    private   $__custom_function_handler;
+    protected $__includes = array();
+
+    protected $__include_funcs = array();
+
+    private   $__custom_function_handlers = array();
 
     private $__section_stack = array();
 
@@ -61,7 +65,10 @@ class Smarty {
 
     public $allow_globals = true;
 
-    function __construct($content = null){
+    function __construct($content = null, $include_funcs = null){
+
+        if($include_funcs)
+            $this->__include_funcs = $include_funcs;
 
         if($content)
             $this->loadFromString($content);
@@ -70,20 +77,20 @@ class Smarty {
 
     /**
      * Load the SMARTy template from a supplied string
-     * 
+     *
      * @param mixed $content The template source code
      */
     public function loadFromString($content) {
 
         $this->__content = (string)$content;
 
-        $this->__compiled_content = null;
+        $this->__compiled_content = '';
 
     }
 
     /**
      * Read the template from a file
-     * 
+     *
      * @param mixed $file Can be either a Hazaar\File object or a string to a file on disk.
      */
     public function loadFromFile($file){
@@ -98,15 +105,15 @@ class Smarty {
     public function registerFunctionHandler($object){
 
         if(is_object($object))
-            $this->__custom_function_handler = $object;
+            $this->__custom_function_handlers[] = $object;
 
     }
 
     /**
      * Render the template with the supplied parameters and return the rendered content
-     * 
+     *
      * @param mixed $params Parameters to use when embedding variables in the rendered template.
-     * 
+     *
      * @return string
      */
     public function render($params = array()) {
@@ -115,6 +122,7 @@ class Smarty {
 
         $default_params = array(
             'hazaar' => array('version' => HAZAAR_VERSION),
+            'application' => \Hazaar\Application::getInstance(),
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
@@ -162,11 +170,11 @@ class Smarty {
 
             private \$functions = array();
 
-            private \$custom_handler;
+            public  \$custom_handlers;
+
+            private \$include_funcs = array();
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
-
-            public function setCustomHandler(\$object){ \$this->custom_handler = \$object; }
 
             public function render(\$params){
 
@@ -176,28 +184,14 @@ class Smarty {
 
             }
 
-            private function url(\$path = null){ return new \Hazaar\Application\Url(urldecode(\$path)); }
+            private function url(){
 
-            private function include(\$file, \$params = array()){
+                if(\$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
+                    return method_exists(\$item, 'url');
+                })))
+                    return call_user_func_array(array(\$custom_handler, 'url'), func_get_args());
 
-                if(is_object(\$this->custom_handler) && method_exists(\$this->custom_handler, 'smarty_include')){
-
-                    \$content = \$this->custom_handler->smarty_include(\$file);
-
-                }else{
-
-                    if(\$file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', \$file))
-                        \$file = getcwd() . DIRECTORY_SEPARATOR . \$file;
-
-                    \$content = file_get_contents(\$file);
-
-                }
-
-                \$template = new \\Hazaar\\Template\\Smarty(\$content);
-
-                \$params = (is_array(\$params) ? array_merge(\$this->params, \$params) : \$this->params);
-
-                echo \$template->render(\$params);
+                return new \Hazaar\Application\Url(urldecode(implode('/', func_get_args())));
 
             }
 
@@ -209,8 +203,7 @@ class Smarty {
 
         ob_start();
 
-        if($this->__custom_function_handler)
-            $obj->setCustomHandler($this->__custom_function_handler);
+        $obj->custom_handlers = $this->__custom_function_handlers;
 
         $obj->render($params);
 
@@ -257,10 +250,10 @@ class Smarty {
 
     /**
      * Compile the template ready for rendering
-     * 
+     *
      * This will normally happen automatically when calling Hazaar\Template\Smarty::render() but can be called
      * separately if needed.  The compiled template content is returned and can be stored externally.
-     * 
+     *
      * @return string The compiled template
      */
     public function compile(){
@@ -308,9 +301,14 @@ class Smarty {
 
                 $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
 
-            }elseif(is_object($this->__custom_function_handler) && method_exists($this->__custom_function_handler, $matches[2])){
+            }elseif(is_array($this->__custom_function_handlers)
+            && $custom_handler = current(array_filter($this->__custom_function_handlers, function($item, $index) use($matches){
+                    if(!method_exists($item, $matches[2])) return false;
+                    $item->__index = $index;
+                    return true;
+            }, ARRAY_FILTER_USE_BOTH))){
 
-                $replacement = $this->compileCUSTOMHANDLERFUNC($matches[2], $matches[3]);
+                $replacement = $this->compileCUSTOMHANDLERFUNC($custom_handler, $matches[2], $matches[3], $custom_handler->__index);
 
             }elseif(preg_match('/(\/?)strip/', $matches[1], $flags)){
 
@@ -560,7 +558,22 @@ class Smarty {
 
     protected function compileURL($tag){
 
-        return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
+        $vars = '';
+
+        if($tag){
+
+            $nodes = array();
+
+            $tags = preg_split('/\s+/', $tag);
+
+            foreach($tags as $tag)
+                $nodes[] = "'" . $this->compileVARS(trim($tag, "'")) . "'";
+
+            $vars = implode(', ', $nodes);
+
+        }else $vars = "'" . trim($tag, "'") . "'";
+
+        return '<?php echo @$this->url(' . $vars . ');?>';
 
     }
 
@@ -728,11 +741,11 @@ class Smarty {
 
     }
 
-    protected function compileCUSTOMHANDLERFUNC($method, $params){
+    protected function compileCUSTOMHANDLERFUNC($handler, $method, $params, $index){
 
         $params = $this->parsePARAMS($params);
 
-        $reflect = new \ReflectionMethod($this->__custom_function_handler, $method);
+        $reflect = new \ReflectionMethod($handler, $method);
 
         $func_params = array();
 
@@ -742,7 +755,7 @@ class Smarty {
 
             $value = 'null';
 
-            if(array_key_exists($name, $params)){
+            if(array_key_exists($name, $params) || array_key_exists($name = $p->getPosition(), $params)){
 
                 $value = $this->compilePARAMS($params[$name]);
 
@@ -760,7 +773,7 @@ class Smarty {
 
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array(array(\$this->custom_handler, '$method'), array($params)); ?>";
+        return "<?php echo call_user_func_array(array(\$this->custom_handlers[$index], '$method'), array($params)); ?>";
 
     }
 
@@ -784,18 +797,49 @@ class Smarty {
 
         $params = $this->parsePARAMS($params);
 
-        $file = $params['file'];
+        if(!array_key_exists('file', $params))
+            return '';
+
+        $file = trim($params['file'], '\'"');
 
         unset($params['file']);
 
-        $include_params = array();
+        if($file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', $file))
+            $file = getcwd() . DIRECTORY_SEPARATOR . $file;
 
-        foreach($params as $key => $value)
-            $include_params[] = $this->compilePARAMS($key) . ' => ' . $this->compileVAR($value);
+        $info = pathinfo($file);
 
-        $include_params = '[' . implode(', ', $include_params) . ']';
+        if(!(array_key_exists('extension', $info) && $info['extension'])
+            && file_exists($file . '.tpl')) $file .= '.tpl';
 
-        return "<?php \$this->include($file, $include_params); ?>";
+        $hash = hash('crc32b', $file);
+
+        $output = '';
+
+        if(!array_key_exists($hash, $this->__include_funcs)){
+
+            $this->__includes[] = $file;
+
+            $this->__include_funcs[$hash] = $include = new Smarty(file_get_contents($file));
+
+            $include->__include_funcs = $this->__include_funcs;
+
+            $output = $include->compile();
+
+            $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
+
+            if(count($params) === 0)
+                return $output;
+
+            $args = implode(', ', array_map(function($item){ return '$' . $item; }, array_keys($params)));
+
+            $output = "<?php \$this->include_funcs['$hash'] = function($args){ ?>\n$output\n<?php }; ?>";
+
+        }
+
+        $output .= "<?php \$this->include_funcs['$hash'](" . $this->compilePARAMS(implode(', ', $params)) . "); ?>";
+
+        return $output;
 
     }
 
