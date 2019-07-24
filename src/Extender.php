@@ -121,7 +121,10 @@ abstract class Extender {
      */
     public function __call($method, $args = array()) {
 
-        if(array_key_exists($method, $this->methods)) {
+        if(array_key_exists($method, $this->methods)
+            || (array_key_exists('__call', $this->methods)
+                && ($args = array($method, $args))
+                && ($method = '__call'))) {
 
             list($class, $rm) = $this->methods[$method];
 
