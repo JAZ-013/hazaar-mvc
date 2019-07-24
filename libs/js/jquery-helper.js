@@ -164,7 +164,7 @@ dataBinderValue.prototype.valueOf = function () {
 dataBinderValue.prototype.set = function (value, label, other, update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
-        || value === this._value && label === this._label
+        || (value === this._value && update !== true) && label === this._label
         && (typeof other === 'undefined' || other === this._other)) return;
     var attr_name = this._parent._attr_name(this._name);
     this._value = value;
@@ -526,8 +526,8 @@ dataBinderArray.prototype._newitem = function (index, element) {
     newitem.find('[data-bind]').each(function (idx, item) {
         var key = item.attributes['data-bind'].value;
         item.attributes['data-bind'].value = attr_name + '.' + key;
+        item.id = attr_name.replace(/\[|\]/g, '_') + key;
     });
-    if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
     return newitem;
 };
 
@@ -569,7 +569,9 @@ dataBinderArray.prototype.push = function (element, no_update) {
     this._elements[key] = element;
     jQuery('[data-bind="' + this._attr_name() + '"]').trigger('push', [this._attr_name(), element, key]);
     if (no_update !== true && this._elements[key] instanceof dataBinder) {
-        jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
+        let newitem = this._newitem(key, this._elements[key]);
+        jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
+        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
         this.resync();
     } else this._update(this._attr_name(), this._elements[key], true);
     return key;
@@ -630,8 +632,11 @@ dataBinderArray.prototype.resync = function () {
         for (let x in this._elements) {
             var attr_name = this._attr_name(x);
             var item = parent.children('[data-bind="' + attr_name + '"]');
-            if (item.length === 0)
-                parent.append(this._newitem(x, this._elements[x]));
+            if (item.length === 0) {
+                let newitem = this._newitem(x, this._elements[x]);
+                parent.append(newitem);
+                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
+            }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
         }
