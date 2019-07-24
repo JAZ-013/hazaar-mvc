@@ -129,27 +129,14 @@ abstract class Extender {
 
                 $trace = debug_backtrace();
 
-                if($rm->isPrivate()) {
+                $calling_class = $trace[1]['class'];
 
-                    throw new Exception\ExtenderInvokeFailed('private', $class, $method, get_class($this));
-
-                } elseif(array_key_exists('class', $trace[2]) && $trace[2]['class'] == get_class($this)) {
-
-                    $call = true;
-
-                } elseif($rm->isProtected()) {
-
-                    throw new Exception\ExtenderInvokeFailed('protected', $class, $method, get_class($this));
-
-                }
+                $call = (!$rm->isPrivate() && $this->instanceof($calling_class));
 
             }
 
-            if($call) {
-
+            if($call)
                 return $rm->invokeArgs($this->children[$class], $args);
-
-            }
 
         }
 
