@@ -278,5 +278,31 @@ abstract class Extender {
 
     }
 
+    /**
+     * Test if the class extends another class.
+     *
+     * This implements the "instanceof" functionality of PHP and searches all the child classes to see if any of them extend
+     * the specified class.
+     *
+     * @param string $class The name of the class to test
+     *
+     * @return boolean True if any of the child classes extend the specified class.
+     *
+     * @since 2.5.1
+     */
+    public function instanceof($class){
+
+        foreach($this->children as $child){
+
+            if($child instanceof $class
+                || ($child instanceof Extender && $child->instanceof($class)))
+                return true;
+
+        }
+
+        return false;
+
+    }
+
 }
 
