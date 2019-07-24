@@ -279,6 +279,9 @@ abstract class Extender {
      */
     public function instanceof($class){
 
+        if($this instanceof $class)
+            return true;
+
         foreach($this->children as $child){
 
             if($child instanceof $class
