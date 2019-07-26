@@ -125,7 +125,7 @@ class Media extends \Hazaar\Controller\Action {
 
     }
 
-    public function __default() {
+    public function __default($controller, $source_name = null) {
 
         if($this->request->has('cmd'))
             return $this->command($this->request->get('cmd'), $this->connector);
@@ -140,17 +140,10 @@ class Media extends \Hazaar\Controller\Action {
 
         }
 
-        $target = $this->request->getRawPath();
-
-        $pos = strpos($target, '/');
-
-        if(! ($sourceName = substr($target, 0, $pos)))
-            $sourceName = $target;
-
-        $source = $this->connector->source($sourceName);
+        $source = $this->connector->source($source_name);
 
         if(! $source)
-            throw new \Exception("Media source '$sourceName' is unknown!", 404);
+            throw new \Exception("Media source '$source_name' is unknown!", 404);
 
         if(!$this->config->has($source->name))
             throw new \Exception("Config missing for loaded source!  What the hell!?");
@@ -165,10 +158,7 @@ class Media extends \Hazaar\Controller\Action {
 
         }
 
-        if($pos === false)
-            $target = '/';
-        else
-            $target = substr($target, $pos);
+        $target = $this->request->getPath();
 
         $this->file = $source->get($target);
 
@@ -225,11 +215,11 @@ class Media extends \Hazaar\Controller\Action {
 
             $response->source = $source->getOption('name');
 
-            $response->path = $this->file->fullpath();
+            $response->path =  $this->file->fullpath();
 
-            $response->vpath = $this->request->getRawPath();
+            $response->vpath = '/' . $source_name . ($target ? '/' . $target : '');
 
-            $response->root = ($this->file->fullpath() == '/');
+            $response->root = ($this->file->fullpath() === '/');
 
             $dir = $this->file->dir();
 

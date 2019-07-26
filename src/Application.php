@@ -92,6 +92,8 @@ class Application {
 
     public $loader;
 
+    public $router;
+
     public $environment = 'development';
 
     public $timer;
@@ -234,7 +236,15 @@ class Application {
 
         }
 
-        $this->request = Application\Request\Loader::load($this->config);
+        /*
+         * Create a new router object for evaluating routes
+         */
+        $this->router = new Application\Router($this->config);
+
+        /*
+         * Create the request object
+         */
+        $this->request = Application\Request\Loader::load();
 
         /*
          * Create a timer for performance measuring
@@ -248,6 +258,17 @@ class Application {
             $this->timer->stop('init');
 
         }
+
+        /*
+         * Check if we require SSL and if so, redirect here.
+         */
+        /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+
+        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+
+        exit;
+
+        }*/
 
     }
 
@@ -392,7 +413,7 @@ class Application {
      */
     public function getRequestedController() {
 
-        return $this->request->getControllerName();
+        return $this->router->getController();
 
     }
 
@@ -478,7 +499,10 @@ class Application {
 
         Application\Url::$aliases = $this->config->app->getArray('alias');
 
-        if($this->getRequestedController() !== 'hazaar') {
+        if(!$this->router->evaluate($this->request))
+            throw new Application\Exception\RouteNotFound($this->request->getPath());
+
+        if(($controller = $this->router->getController()) !== 'hazaar') {
 
             /*
              * Check that all required modules are loaded
@@ -547,18 +571,13 @@ class Application {
 
             if(!$controller instanceof Controller) {
 
-                if(!$this->request->processRoute())
-                    throw new Application\Exception\RouteFailed();
-
                 /*
                  * Load the controller and check it was successful
                  */
-                $controller = $this->loader->loadController($this->request->getControllerName());
+                $controller = $this->loader->loadController($this->router->getController(), $this->router->getControllerName());
 
                 if(!($controller instanceof Controller))
-                    throw new Application\Exception\RouteNotFound($this->request->getControllerName());
-
-                $controller->setRequest($this->request);
+                    throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
                 /*
                  * Initialise the controller with the current request
@@ -670,7 +689,7 @@ class Application {
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         //Execution should wait here until we get a command
-        $line = fgets(STDIN);
+        $line = stream_get_contents(STDIN);
 
         $code = 1;
 
@@ -689,7 +708,20 @@ class Application {
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    $code = $container->exec($payload->exec, ake($payload, 'params'));
+                    $headers = array(
+                        'X-WARLOCK-JOB-ID' => $payload->job_id,
+                        'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                    );
+
+                    if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
+
+                        $code = $container->exec($payload->exec, ake($payload, 'params'));
+
+                    }else{
+
+                        $code = 4;
+
+                    }
 
                     break;
 
@@ -712,7 +744,20 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
+                        $headers = array(
+                            'X-WARLOCK-JOB-ID' => $payload->job_id,
+                            'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                        );
+
+                        if($service->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
+
+                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
+
+                        }else{
+
+                            $code = 4;
+
+                        }
 
                     } else {
 

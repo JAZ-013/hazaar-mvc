@@ -12,13 +12,13 @@ class Router extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        if(!($raw_path = trim($request->getRawPath(), '/')))
+        if(!($path = trim($request->getPath(), '/')))
             $this->redirect($this->url('console'));
 
-        $request->evaluate($raw_path);
+        $parts = explode('/', $path);
 
         //If the request has no action, redirect to the console sub-controller
-        if(!($this->moduleName = $request->getControllerName()))
+        if(!($this->moduleName = array_shift($parts)))
             throw new \Exception('Hazaar router controller failure!');
 
         $this->className = '\Hazaar\\' . ucfirst($this->moduleName) . '\Controller';
@@ -28,7 +28,9 @@ class Router extends \Hazaar\Controller {
 
         $path = $this->getSupportPath($this->className);
 
-        if($this->request->getActionName() == 'file'){
+        if(count($parts) > 0 && $parts[0] === 'file'){
+
+            array_shift($parts);
 
             if(!$path)
                 throw new \Exception("Module {$this->moduleName} does not have a support path!", 405);
@@ -36,8 +38,6 @@ class Router extends \Hazaar\Controller {
             $this->module = new \Hazaar\File\Controller($this->moduleName, $this->application, false);
 
             $this->module->setPath($path);
-
-            $request->evaluate($request->getRawPath());
 
         }else{
 
@@ -48,12 +48,12 @@ class Router extends \Hazaar\Controller {
 
         }
 
+        $request->setPath(implode('/', $parts));
+
         if(!$this->module instanceof \Hazaar\Controller)
             throw new \Exception('Bad module controller!');
 
         $this->module->base_path ='hazaar';
-
-        $this->module->setRequest($request);
 
         $this->module->__initialize($request);
 
