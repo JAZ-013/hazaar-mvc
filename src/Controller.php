@@ -18,17 +18,15 @@ abstract class Controller implements Controller\_Interface {
 
     protected $name;
 
-    protected $request;
-
     public    $statusCode;
 
     public    $base_path;    //Optional base_path for controller relative url() calls.
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         $this->name = $name;
 
-        $this->setApplication($application);
+        $this->application = $application;
 
     }
 
@@ -45,18 +43,6 @@ abstract class Controller implements Controller\_Interface {
     public function getName() {
 
         return $this->name;
-
-    }
-
-    public function setApplication(\Hazaar\Application $application) {
-
-        $this->application = $application;
-
-    }
-
-    public function setRequest(Application\Request $request) {
-
-        $this->request = $request;
 
     }
 

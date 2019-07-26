@@ -4,9 +4,13 @@ namespace Hazaar\Xml\Rpc;
 
 abstract class Server extends \Hazaar\Controller {
 
+    protected $request;
+
     protected $registered_methods = array();
 
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        $this->request = $request;
 
         $auto_register = true;
 

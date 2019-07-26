@@ -584,8 +584,6 @@ class Application {
                  */
                 $response = $controller->__initialize($this->request);
 
-                $controller->setRequest($this->request);
-
                 //If we get a response now, the controller wants out, so display it and quit.
                 if($response instanceof \Hazaar\Controller\Response){
 

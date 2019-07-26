@@ -90,6 +90,8 @@ namespace Hazaar\Controller;
  */
 abstract class REST extends \Hazaar\Controller {
 
+    protected $request;
+
     protected $describe_full = true;
 
     protected $allow_directory = true;
@@ -110,7 +112,7 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         $application->setResponseType('json');
 
@@ -122,6 +124,8 @@ abstract class REST extends \Hazaar\Controller {
     }
 
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        $this->request = $request;
 
         $class = new \ReflectionClass($this);
 

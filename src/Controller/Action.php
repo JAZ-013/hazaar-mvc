@@ -24,7 +24,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     private   $stream        = FALSE;
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         parent::__construct($name, $application, $use_app_config);
 

@@ -4,6 +4,8 @@ namespace Hazaar\Console;
 
 abstract class Module extends \Hazaar\Controller\Action {
 
+    protected $request;
+
     private $handler;
 
     public $view_path;
@@ -25,6 +27,8 @@ abstract class Module extends \Hazaar\Controller\Action {
     }
 
     public function __initialize(\Hazaar\Application\Request $request){
+
+        $this->request = $request;
 
         $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
 

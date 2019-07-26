@@ -16,11 +16,15 @@ namespace Hazaar\Controller;
  */
 class Style extends \Hazaar\Controller {
 
+    protected $request;
+
     private $source;
 
     private $filename;
 
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        $this->request = $request;
 
         $this->filename = $this->application->loader->getFilePath(FILE_PATH_VIEW)
             . DIRECTORY_SEPARATOR . 'styles' . DIRECTORY_SEPARATOR . $request->getPath();
