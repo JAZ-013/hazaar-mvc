@@ -301,8 +301,6 @@ class Handler {
         if($action !== 'file')
             $module->__initialize($request);
 
-        $module->setRequest($request);
-
         $response = call_user_func(array($module, $action), $request);
 
         if(!$response instanceof \Hazaar\Controller\Response){

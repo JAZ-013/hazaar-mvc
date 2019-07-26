@@ -64,8 +64,6 @@ class Router extends \Hazaar\Controller {
 
         $this->module->base_path ='hazaar';
 
-        $this->module->setRequest($request);
-
         $this->module->__initialize($request);
 
     }

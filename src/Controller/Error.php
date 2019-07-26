@@ -35,7 +35,7 @@ class Error extends \Hazaar\Controller\Action {
 
     private $status_codes = array();
 
-    function __construct($name, $application){
+    function __construct($name, \Hazaar\Application $application){
 
         parent::__construct($name, $application, false);
 

@@ -629,8 +629,6 @@ class Application {
                  */
                 $response = $controller->__initialize($this->request);
 
-                $controller->setRequest($this->request);
-
                 //If we get a response now, the controller wants out, so display it and quit.
                 if($response instanceof \Hazaar\Controller\Response){
 
@@ -736,7 +734,7 @@ class Application {
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         //Execution should wait here until we get a command
-        $line = fgets(STDIN);
+        $line = stream_get_contents(STDIN);
 
         $code = 1;
 
@@ -755,7 +753,20 @@ class Application {
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    $code = $container->exec($payload->exec, ake($payload, 'params'));
+                    $headers = array(
+                        'X-WARLOCK-JOB-ID' => $payload->job_id,
+                        'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                    );
+
+                    if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
+
+                        $code = $container->exec($payload->exec, ake($payload, 'params'));
+
+                    }else{
+
+                        $code = 4;
+
+                    }
 
                     break;
 
@@ -778,7 +789,20 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
+                        $headers = array(
+                            'X-WARLOCK-JOB-ID' => $payload->job_id,
+                            'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                        );
+
+                        if($service->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
+
+                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
+
+                        }else{
+
+                            $code = 4;
+
+                        }
 
                     } else {
 

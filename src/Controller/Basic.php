@@ -25,6 +25,8 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
+    protected $request;
+
     protected $__action        = 'index';
 
     protected $__actionArgs    = array();
