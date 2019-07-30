@@ -53,15 +53,41 @@ class Router {
 
         $this->route = $request->getPath();
 
-        if($this->aliases && array_key_exists($this->route, $this->aliases))
-            $this->route = $this->aliases[$this->route];
-
         if($this->file && file_exists($this->file))
             include($this->file);
 
         if($this->route = trim($this->route, '/')){
 
             $parts = explode('/', $this->route);
+
+            if($this->aliases){
+
+                foreach($this->aliases as $match => $alias){
+
+                    $alias_parts = explode('/', $match);
+
+                    if($alias_parts !== array_slice($parts, 0, count($alias_parts)))
+                        continue;
+
+                    $leftovers = array_slice($parts, count($alias_parts));
+
+                    $parts = explode('/', $alias);
+
+                    foreach($parts as &$part){
+
+                        if($part[0] !== '$')
+                            continue;
+
+                        if(substr($part, 1) === 'path')
+                            $part = implode('/', $leftovers);
+
+                    }
+
+                    break;
+
+                }
+
+            }
 
             if(array_key_exists($parts[0], self::$internal)){
 
