@@ -218,9 +218,11 @@ abstract class Basic extends \Hazaar\Controller {
         }
 
         if(! $controller)
-            $controller = $this->getName();
+            $controller = '/' . $this->getName();
 
-        $is_controller = strcasecmp($this->getName(), $controller) == 0;
+        $controller = '/' . trim($controller, '/');
+
+        $is_controller = strcasecmp('/' . trim(substr($this->getName(), 0, strlen($controller)), '/'), $controller) === 0;
 
         if(! $action)
             return $is_controller;
