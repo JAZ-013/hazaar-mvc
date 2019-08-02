@@ -222,9 +222,18 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $full_path = '/' . $request->getPath();
+        if(method_exists($this, 'init'))
+            $this->init($request);
 
-        $request_method = $request->method();
+        return null;
+
+    }
+
+    public function __run() {
+
+        $full_path = '/' . $this->request->getPath();
+
+        $request_method = $this->request->method();
 
         if($full_path == '/'){
 
@@ -241,7 +250,7 @@ abstract class REST extends \Hazaar\Controller {
 
                 if($this->__match_route($request_method, $full_path, $target, $route, $args)){
 
-                    if($request->method() == 'OPTIONS'){
+                    if($this->request->method() == 'OPTIONS'){
 
                         $response = new \Hazaar\Controller\Response\Json();
 
@@ -268,15 +277,6 @@ abstract class REST extends \Hazaar\Controller {
 
         if(!$this->__endpoint)
             throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
-
-        if(method_exists($this, 'init'))
-            $this->init($request);
-
-        return null;
-
-    }
-
-    public function __run() {
 
         return $this->__exec_endpoint($this->__endpoint, $this->request->getParams());
 
