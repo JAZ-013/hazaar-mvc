@@ -56,17 +56,19 @@ class Router {
         if($this->file && file_exists($this->file))
             include($this->file);
 
-        if($this->route = strtolower(trim($this->route, '/'))){
+        if($this->route = trim($this->route, '/')){
 
             $parts = explode('/', $this->route);
 
             if($this->aliases){
 
+                $match_parts = array_map('strtolower', $parts);
+
                 foreach($this->aliases as $match => $alias){
 
                     $alias_parts = explode('/', strtolower($match));
 
-                    if($alias_parts !== array_slice($parts, 0, count($alias_parts)))
+                    if($alias_parts !== array_slice($match_parts, 0, count($alias_parts)))
                         continue;
 
                     $leftovers = array_slice($parts, count($alias_parts));
