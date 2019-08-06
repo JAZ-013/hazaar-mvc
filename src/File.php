@@ -444,7 +444,7 @@ class File {
 
         $content_type = null;
 
-        if(!is_resource($this->source_file))
+        if(!is_resource($this->handle))
             $content_type = $this->mime_content_type();
 
         if(!$content_type)
@@ -1024,6 +1024,36 @@ class File {
             return false;
 
         return ftell($this->handle);
+
+    }
+
+    /**
+     * Rewind the position of a file pointer
+     *
+     * Sets the file position indicator for handle to the beginning of the file stream.
+     *
+     * @return boolean
+     */
+    public function rewind(){
+
+        if(!$this->handle)
+            return false;
+
+        return rewind($this->handle);
+
+    }
+
+    /**
+     * Tests for end-of-file on a file pointer
+     *
+     * @return boolean TRUE if the file pointer is at EOF or an error occurs; otherwise returns FALSE.
+     */
+    public function eof(){
+
+        if(!$this->handle)
+            return false;
+
+        return feof($this->handle);
 
     }
 

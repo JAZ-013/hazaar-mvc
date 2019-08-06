@@ -149,19 +149,17 @@ class Application {
         //Store the search paths in the GLOBALS container so they can be used in config includes.
         $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
 
-        $is_cli = (substr(php_sapi_name(), 0, 3) === 'cli');
-
         /**
          * Set up some default config properties.
          */
         $defaults = array(
             'app' => array(
-                'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
+                'root' => dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
-                'rewrite' => (!$is_cli),
+                'rewrite' => true,
                 'files' => array(
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',
