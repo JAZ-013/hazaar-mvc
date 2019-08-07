@@ -9,7 +9,7 @@
  */
 namespace Hazaar;
 
-class View {
+class View implements \ArrayAccess {
 
     private $name;
 
@@ -629,6 +629,33 @@ class View {
             $url .= '?d=' . urlencode($default);
 
         return new Html\Img($url, $address);
+
+    }
+
+    public function offsetExists($offset){
+
+        return isset($this->_data[$offset]);
+
+    }
+
+    public function offsetGet($offset){
+
+        return $this->_data[$offset];
+
+    }
+
+    public function offsetSet($offset, $value){
+
+        if($offset === null)
+            $this->_data[] = $value;
+        else
+            $this->_data[$offset] = $value;
+
+    }
+
+    public function offsetUnset($offset){
+
+        unset($this->_data[$offset]);
 
     }
 

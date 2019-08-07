@@ -571,7 +571,7 @@ dataBinderArray.prototype.push = function (element, no_update) {
     if (no_update !== true && this._elements[key] instanceof dataBinder) {
         let newitem = this._newitem(key, this._elements[key]);
         jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
+        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
         this.resync();
     } else this._update(this._attr_name(), this._elements[key], true);
     return key;
@@ -635,7 +635,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
+                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
@@ -689,8 +689,8 @@ dataBinderArray.prototype.__nullify = function (value) {
     return this._parent.__nullify(value);
 };
 
-dataBinderArray.prototype.watch = function (cb) {
-    if (typeof cb === 'function') this._watchers.push(cb);
+dataBinderArray.prototype.watch = function (cb, args) {
+    if (typeof cb === 'function') this._watchers.push([cb, args]);
 };
 
 dataBinderArray.prototype.empty = function () {

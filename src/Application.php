@@ -306,17 +306,15 @@ class Application {
 
     public function getDefaultConfig(){
 
-        $is_cli = (substr(php_sapi_name(), 0, 3) === 'cli');
-
         return array(
             'app' => array(
-                'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
+                'root' => dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'errorController' => null,
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
-                'rewrite' => (!$is_cli),
+                'rewrite' => true,
                 'files' => array(
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',

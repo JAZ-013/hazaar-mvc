@@ -144,6 +144,7 @@ abstract class REST extends \Hazaar\Controller {
             $endpoint = array(
                 'cache' => false,
                 'cache_timeout' => null,
+                'cache_ignore_params' => false,
                 'comment' => $comment,
                 'routes' => array()
             );
@@ -165,6 +166,11 @@ abstract class REST extends \Hazaar\Controller {
                         $endpoint['cache'] = boolify($cache);
 
                     }
+
+                    if($endpoint['cache'] === true
+                        && (($pos = array_search('cache_ignore_params', $method_matches[2])) !== false)
+                        && preg_match('/cache_ignore_params\s+(.*)/', $method_matches[1][$pos], $cache_matches))
+                        $endpoint['cache_ignore_params'] = boolify($cache_matches[1]);
 
                 }
 
@@ -433,7 +439,7 @@ abstract class REST extends \Hazaar\Controller {
         $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
             && ($endpoint['cache'] === true
             || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $args))) : null);
+            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $args, (($endpoint['cache_ignore_params'] !== true) ? $this->request->getParams() : null)))) : null);
 
         //Try extracting from cache first if caching is enabled
         if($cache_key !== null)
