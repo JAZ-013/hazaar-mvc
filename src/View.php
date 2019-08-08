@@ -611,7 +611,10 @@ class View implements \ArrayAccess {
      *
      * @return mixed The rendered view output will be returned.  This can then be echo'd directly to the client.
      */
-    public function partial($view, array $data = array()) {
+    public function partial($view, $data = null) {
+
+        if($this->_rendering !== true)
+            return false;
 
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
@@ -631,9 +634,13 @@ class View implements \ArrayAccess {
 
             $partial->addHelper($this->_helpers);
 
-            $partial->extend($data);
+            if(is_array($data))
+                $partial->extend($data);
+            elseif($data === true)
+                $partial->extend($this->_data);
 
             $output = $partial->render();
+
         }
 
         return $output;
@@ -671,7 +678,10 @@ class View implements \ArrayAccess {
      *
      * @return string The rendered view output.
      */
-    public function partialLoop($view, array $data) {
+    public function partialLoop($view, $data) {
+
+        if(!is_array($data))
+            return null;
 
         $output = '';
 
