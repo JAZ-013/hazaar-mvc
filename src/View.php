@@ -460,8 +460,12 @@ class View implements \ArrayAccess {
      */
     public function removeHelper($helper){
 
-        if(array_key_exists($helper, $this->_helpers))
-            unset($this->_helpers[$helper]);
+        if(!array_key_exists($helper, $this->_helpers))
+            return false;
+
+        unset($this->_helpers[$helper]);
+
+        return true;
 
     }
 
