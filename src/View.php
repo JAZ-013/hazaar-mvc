@@ -291,7 +291,12 @@ class View implements \ArrayAccess {
      */
     public function populate($array) {
 
+        if(!is_array($array))
+            return false;
+
         $this->_data = $array;
+
+        return false;
 
     }
 
@@ -303,7 +308,12 @@ class View implements \ArrayAccess {
      */
     public function extend($array) {
 
+        if(!is_array($array))
+            return false;
+
         $this->_data = array_merge($this->_data, $array);
+
+        return true;
 
     }
 
