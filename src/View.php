@@ -268,7 +268,7 @@ class View implements \ArrayAccess {
 
     public function __unset($key) {
 
-        $this->unset($key);
+        $this->remove($key);
 
     }
 
