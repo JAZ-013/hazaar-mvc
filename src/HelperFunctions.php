@@ -43,10 +43,14 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
         if ($array instanceof \Hazaar\Model\Strict)
             return $array->ake($key, $default, $non_empty);
 
-        if(is_object($array)
-            && property_exists($array, $key)
-            && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
-            return $array->$key;
+        if(is_object($array)){
+
+            if(property_exists($array, $key) && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
+                return $array->$key;
+            elseif($array instanceof \ArrayAccess && array_key_exists($key, $array))
+                return $array[$key];
+
+        }
 
         if(strpos($key, '.') !== false){
 
@@ -1674,10 +1678,10 @@ function array_remove_empty(&$array){
 
 /**
  * Generate a truly random string of characters.
- * 
+ *
  * @param mixed $length The length of the random string being created.
  * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
- * 
+ *
  * @return string A totally random string of characters.
  */
 function str_random($length, $include_special = false){
