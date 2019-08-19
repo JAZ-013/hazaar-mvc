@@ -27,6 +27,8 @@ class Router {
 
     private $default_controller;
 
+    public $is_default_controller = false;
+
     static public $internal = array(
         'hazaar'        => 'Hazaar\Controller\Router',
         'media'         => 'Hazaar\Controller\Media',
@@ -106,16 +108,16 @@ class Router {
 
             $request->setPath($this->path);
 
-        }else $this->use_default_controller = true;
+        }else $this->controller = $this->findController($this->default_controller);
 
         //If there is no controller and the default controller is active, search for that too.
         if(!$this->controller && $this->use_default_controller === true){
 
-            $default_parts = explode('/', $this->default_controller);
-
-            $this->controller = $this->findController($default_parts);
+            $this->controller = $this->findController($this->default_controller);
 
             $this->controller_name = $request->popPath();
+
+            $this->is_default_controller = true;
 
         }
 
@@ -124,6 +126,9 @@ class Router {
     }
 
     private function findController(&$parts){
+
+        if(!is_array($parts))
+            $parts = explode('/', $parts);
 
         $index = 0;
 
