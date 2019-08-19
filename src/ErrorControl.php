@@ -34,9 +34,6 @@ function errorAndDie() {
 
     }elseif($app instanceof Hazaar\Application && $app->config) {
 
-        if($app->request)
-            $app->request->resetAction();
-
         $controller = null;
 
         if($error_controller = $app->config->app->get('errorController')) {
