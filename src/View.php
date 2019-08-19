@@ -180,12 +180,22 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Returns the name of the view
+     *
+     * @return string
+     */
     public function getName() {
 
         return $this->name;
 
     }
 
+    /**
+     * Returns the filename that the view was loaded from.
+     *
+     * @return string
+     */
     public function getViewFile() {
 
         return $this->_viewfile;
@@ -198,6 +208,15 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Helper/data accessor method
+     *
+     * This will return a helper, if one exists with the name provided.  Otherwise it will return any view data stored with the name.
+     *
+     * @param mixed $helper The name of the helper or view data key.
+     * @param mixed $default If neither a helper or view data is found this default value will be returned.
+     * @return mixed
+     */
     public function get($helper, $default = NULL) {
 
         if (array_key_exists($helper, $this->_helpers))
@@ -215,6 +234,13 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Set view data value by key
+     *
+     * @param string $key The name of the view data
+     *
+     * @param mixed $value The value to set on the view data.  Can be anything including strings, integers, arrays or objects.
+     */
     public function set($key, $value) {
 
         $this->_data[$key] = $value;
@@ -227,6 +253,13 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Tests if view data is set with the provided key
+     *
+     * @param mixed $key The name of the view data to look for
+     *
+     * @return boolean True if the view data is set (even if it is set but null/empty), false otherwise.
+     */
     public function has($key) {
 
         return array_key_exists($key, $this->_data);
@@ -235,28 +268,60 @@ class View implements \ArrayAccess {
 
     public function __unset($key) {
 
-        $this->unset($key);
+        $this->remove($key);
 
     }
 
+    /**
+     * Remove view data
+     *
+     * @param mixed $key The name of the view data to remove.
+     */
     public function remove($key) {
 
         unset($this->_data[$key]);
 
     }
 
+    /**
+     * Populate view data from an array
+     *
+     * @param array $array
+     * @return boolean
+     */
     public function populate($array) {
+
+        if(!is_array($array))
+            return false;
 
         $this->_data = $array;
 
+        return false;
+
     }
 
-    public function extend(array $array) {
+    /**
+     * Extend/merge existing view data with an array
+     *
+     * @param array $array
+     * @return boolean
+     */
+    public function extend($array) {
+
+        if(!is_array($array))
+            return false;
 
         $this->_data = array_merge($this->_data, $array);
 
+        return true;
+
     }
 
+    /**
+     * Returns the entire current view data array
+     *
+     * @return array
+     */
     public function getData() {
 
         return $this->_data;
@@ -365,25 +430,52 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Tests if a view helper has been loaded in this view
+     *
+     * @param mixed $helper The name of the view helper
+     * @return boolean
+     */
     public function hasHelper($helper) {
 
         return array_key_exists($helper, $this->_helpers);
 
     }
 
+    /**
+     * Returns a list of all currently loaded view helpers
+     *
+     * @return array
+     */
     public function getHelpers() {
 
         return array_keys($this->_helpers);
 
     }
 
+    /**
+     * Remove a loaded view helper
+     *
+     * @param mixed $helper Returns true if the helper was unloaded.  False if the view helper is not loaded to begin with.
+     */
     public function removeHelper($helper){
 
-        if(array_key_exists($helper, $this->_helpers))
-            unset($this->_helpers[$helper]);
+        if(!array_key_exists($helper, $this->_helpers))
+            return false;
+
+        unset($this->_helpers[$helper]);
+
+        return true;
 
     }
 
+    /**
+     * Retrieve a loaded view helper object
+     *
+     * @param mixed $key The name of the view helper
+     *
+     * @return mixed
+     */
     public function &getHelper($key) {
 
         if (array_key_exists($key, $this->_helpers))
@@ -393,6 +485,14 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Initialises the loaded view helpers
+     *
+     * View helpers usually want to be initialised.  This gives them a chance to require any scripts or set up any
+     * internal settings ready before execution of it's methods.
+     *
+     * @internal
+     */
     public function initHelpers() {
 
         foreach ($this->_helpers as $helper) {
@@ -417,10 +517,17 @@ class View implements \ArrayAccess {
 
         $this->_priority = 0;
 
-        return TRUE;
+        return true;
 
     }
 
+    /**
+     * Runs loaded view helpers
+     *
+     * @internal
+     *
+     * @return boolean
+     */
     public function runHelpers() {
 
         foreach ($this->_helpers as $helper) {
@@ -441,8 +548,12 @@ class View implements \ArrayAccess {
 
     }
 
-    /*
-     * Rendering the view
+    /**
+     * Render the view
+     *
+     * This method is responsible for loading the view files from disk, rendering it and returning it's output.
+     *
+     * @internal
      */
     public function render() {
 
@@ -486,10 +597,24 @@ class View implements \ArrayAccess {
 
     }
 
-    /*
-     * Render a partial view
+    /**
+     * Render a partial view in the current view
+     *
+     * This method can be called from inside a view source file to include another view source file.
+     *
+     * @param string $view The name of the view to include, relative to the current view.  This means that if the view is in the same
+     *                      directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
+     *                      to the current view.  Using parent references (..) will also work.
+     *
+     * @param mixed $data The data parameter can be either TRUE to indicate that all view data should be passed to the
+     *                      partial view, or an array of data to pass instead.  By default, no view data is passed to the partial view.
+     *
+     * @return mixed The rendered view output will be returned.  This can then be echo'd directly to the client.
      */
-    public function partial($view, array $data = array()) {
+    public function partial($view, $data = null) {
+
+        if($this->_rendering !== true)
+            return false;
 
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
@@ -509,9 +634,13 @@ class View implements \ArrayAccess {
 
             $partial->addHelper($this->_helpers);
 
-            $partial->extend($data);
+            if(is_array($data))
+                $partial->extend($data);
+            elseif($data === true)
+                $partial->extend($this->_data);
 
             $output = $partial->render();
+
         }
 
         return $output;
@@ -524,6 +653,15 @@ class View implements \ArrayAccess {
 
     }
 
+    /**
+     * Includes a script block at the end of the view
+     *
+     * Because display performance is a priority for Hazaar MVC, script blocks should NEVER be included inside views.  In the rare case
+     * that this is required and the block needs to come AFER any JavaScript file includes, then this method will output those blocks
+     * after the JS imports have been executed.
+     *
+     * @param mixed $code The JavaScipt code to render
+     */
     public function script($code) {
 
         $this->_scripts[] = new Html\Script($code);
@@ -533,11 +671,17 @@ class View implements \ArrayAccess {
     /**
      * Render a partial view multiple times on an array
      *
-     * @param mixed $view The partial view to render
-     * @param array $data A data array.  Usually multi-dimensional
-     * @return string
+     * This basically calls `$this->partial` for each element in an array
+     *
+     * @param mixed $view The partial view to render.
+     * @param array $data A data array, usually multi-dimensional, that each element will be passed to the partial view.
+     *
+     * @return string The rendered view output.
      */
-    public function partialLoop($view, array $data) {
+    public function partialLoop($view, $data) {
+
+        if(!is_array($data))
+            return null;
 
         $output = '';
 
@@ -552,6 +696,7 @@ class View implements \ArrayAccess {
      * Returns a date string formatted to the current set date format
      *
      * @param mixed $date
+     *
      * @return string
      */
     public function date($date) {
@@ -569,6 +714,7 @@ class View implements \ArrayAccess {
      * This is for making it quick and easy to output consistent timestamp strings.
      *
      * @param mixed $value
+     *
      * @return string
      */
     static public function timestamp($value) {
@@ -585,6 +731,7 @@ class View implements \ArrayAccess {
      *
      * @param mixed $value This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
      * @param mixed $format Optionally specify the format to display the date.  Otherwise the current default is used.
+     *
      * @return string The nicely formatted datetime string.
      */
     static public function datetime($value, $format = NULL) {
@@ -604,6 +751,7 @@ class View implements \ArrayAccess {
      *
      * @param mixed $value The boolean value
      * @param mixed $labels Optionally specify your own yes/no text to display
+     *
      * @return string
      */
     public function yn($value, $labels = array('Yes','No')) {
@@ -616,8 +764,9 @@ class View implements \ArrayAccess {
      * Display a Gravatar icon for a users email address.
      *
      * @param string $address The email address to show the gravatar image for.
-     * @param string $default The default image to use if none is available.  This can be either a URL to a supported image, or one of gravatars built-in
-     *                        default images. See the "Default Image" section of https://en.gravatar.com/site/implement/images/ for available options.
+     * @param string $default The default image to use if none is available.  This can be either a URL to a supported image, or one of
+     *                          gravatars built-in default images. See the "Default Image" section of
+     *                          https://en.gravatar.com/site/implement/images/ for available options.
      *
      * @return \Hazaar\Html\Img An IMG object so that extra options can be applied.
      */
@@ -656,6 +805,32 @@ class View implements \ArrayAccess {
     public function offsetUnset($offset){
 
         unset($this->_data[$offset]);
+
+    }
+
+    /**
+     * Use the match/replace algorithm on a string to replace mustache tags with view data
+     *
+     * This is similar code used in the Smarty view template renderer.
+     *
+     * So strings such as:
+     *
+     * * "Hello, {{entity}}" will replace {{entity}} with the value of `$this->entity`.
+     * * "The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}" will replace the tags with values in a multi-dimensional array.
+     *
+     * @param mixed $string The string to perform the match/replace on.
+     *
+     * @return mixed The modified string with mustache tags replaced with view data, or removed if the view data does not exist.
+     */
+    public function matchReplace($string){
+
+        $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match){
+
+            return ake($this->_data, $match[2]);
+
+        }, $string);
+
+        return $string;
 
     }
 

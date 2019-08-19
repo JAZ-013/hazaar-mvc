@@ -227,9 +227,6 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        if(method_exists($this, 'init'))
-            $this->init($request);
-
         return null;
 
     }
@@ -282,6 +279,9 @@ abstract class REST extends \Hazaar\Controller {
 
         if(!$this->__endpoint)
             throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
+
+        if(method_exists($this, 'init'))
+            $this->init($this->request);
 
         return $this->__exec_endpoint($this->__endpoint, $this->request->getParams());
 
