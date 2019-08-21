@@ -577,21 +577,21 @@ class Application {
                 if(!($controller instanceof Controller))
                     throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
-                /*
-                 * Initialise the controller with the current request
-                 */
-                $response = $controller->__initialize($this->request);
+            }
 
-                //If we get a response now, the controller wants out, so display it and quit.
-                if($response instanceof \Hazaar\Controller\Response){
+            /*
+             * Initialise the controller with the current request
+             */
+            $response = $controller->__initialize($this->request);
 
-                    $response->__writeOutput();
+            //If we get a response now, the controller wants out, so display it and quit.
+            if($response instanceof \Hazaar\Controller\Response){
 
-                    $controller->__shutdown();
+                $response->__writeOutput();
 
-                    return 0;
+                $controller->__shutdown();
 
-                }
+                return 0;
 
             }
 
