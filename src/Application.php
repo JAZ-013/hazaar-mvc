@@ -154,7 +154,7 @@ class Application {
          */
         $defaults = array(
             'app' => array(
-                'root' => dirname($_SERVER['SCRIPT_NAME']),
+                'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
