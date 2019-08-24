@@ -322,7 +322,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function append($value){
+    public function push($value = array()){
+        
+        return $this->append($value);
+
+    }
+
+    public function append($value = array()){
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
