@@ -148,7 +148,6 @@ class Application {
 
         //Store the search paths in the GLOBALS container so they can be used in config includes.
         $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
-
         /*
          * Load it with a config object. if the file doesn't exist
          * it will just be an empty object that will handle calls to
@@ -550,10 +549,8 @@ class Application {
             /*
              * Check that all required modules are loaded
              */
-            if(!isset($this->config->module['require']))
-                $this->config->module->require = array();
-
-            if(count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
+            if($this->config->module->has('require')
+                && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
                 throw new Application\Exception\ModuleMissing($missing);
 
             /*
@@ -622,21 +619,21 @@ class Application {
                 if(!($controller instanceof Controller))
                     throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
-                /*
-                 * Initialise the controller with the current request
-                 */
-                $response = $controller->__initialize($this->request);
+            }
 
-                //If we get a response now, the controller wants out, so display it and quit.
-                if($response instanceof \Hazaar\Controller\Response){
+            /*
+             * Initialise the controller with the current request
+             */
+            $response = $controller->__initialize($this->request);
 
-                    $response->__writeOutput();
+            //If we get a response now, the controller wants out, so display it and quit.
+            if($response instanceof \Hazaar\Controller\Response){
 
-                    $controller->__shutdown();
+                $response->__writeOutput();
 
-                    return 0;
+                $controller->__shutdown();
 
-                }
+                return 0;
 
             }
 
@@ -699,6 +696,8 @@ class Application {
             $this->timer->stop('exec');
 
         }
+
+        return 0;
 
     }
 
