@@ -505,10 +505,8 @@ class Application {
             /*
              * Check that all required modules are loaded
              */
-            if(!isset($this->config->module['require']))
-                $this->config->module->require = array();
-
-            if(count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
+            if($this->config->module->has('require')
+                && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
                 throw new Application\Exception\ModuleMissing($missing);
 
             /*
@@ -654,6 +652,8 @@ class Application {
             $this->timer->stop('exec');
 
         }
+
+        return 0;
 
     }
 
