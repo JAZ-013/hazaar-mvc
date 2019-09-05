@@ -179,6 +179,8 @@ class Application {
             )
         );
 
+        Application\Config::$override_paths = array('host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'), 'local');
+
         /*
          * Load it with a config object. if the file doesn't exist
          * it will just be an empty object that will handle calls to
