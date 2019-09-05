@@ -9,7 +9,7 @@ Project Root
 |
 |--application
 |   |
-|   |--configs - Your application configuration files.  Current just application.ini.
+|   |--configs - Your application configuration files.
 |   |
 |   |--controllers - This is where your controllers go.
 |   |
