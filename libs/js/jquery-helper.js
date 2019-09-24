@@ -453,13 +453,16 @@ dataBinder.prototype.get = function (key) {
         return this._attributes[key];
 };
 
-dataBinder.prototype.empty = function () {
-    for (x in this._attributes)
+dataBinder.prototype.empty = function (exclude) {
+    if (typeof exclude !== 'undefined' && !Array.isArray(exclude)) exclude = [exclude];
+    for (x in this._attributes) {
+        if (exclude.indexOf(x) >= 0) continue;
         if (this._attributes[x] instanceof dataBinder
             || this._attributes[x] instanceof dataBinderArray
             || this._attributes[x] instanceof dataBinderValue)
             this._attributes[x].empty();
         else this._attributes[x] = null;
+    }
 };
 
 dataBinder.prototype.enabled = function (value) {
