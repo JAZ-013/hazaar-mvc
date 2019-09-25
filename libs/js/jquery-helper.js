@@ -146,7 +146,7 @@ var dataBinderValue = function (name, value, label, parent) {
                 return this._parent;
             }
         },
-        "name": {
+        "attrName": {
             get: function () {
                 return this._parent._attr_name(this._name);
             }
@@ -220,7 +220,7 @@ dataBinder.prototype._init = function (data, name, parent) {
                 return this._parent;
             }
         },
-        "name": {
+        "attrName": {
             get: function () {
                 return this._attr_name();
             }
@@ -513,7 +513,7 @@ dataBinderArray.prototype._init = function (data, name, parent) {
                 return this._parent;
             }
         },
-        "name": {
+        "attrName": {
             get: function () {
                 return this._attr_name();
             }
