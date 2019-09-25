@@ -145,12 +145,13 @@ var dataBinderValue = function (name, value, label, parent) {
             get: function () {
                 return this._parent;
             }
+        },
+        "name": {
+            get: function () {
+                return this._parent._attr_name(this._name);
+            }
         }
     });
-};
-
-dataBinderValue.prototype.__name = function () {
-    return this._parent._attr_name(this._name);
 };
 
 dataBinderValue.prototype.toString = function () {
@@ -208,15 +209,23 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._enabled = true;
     if (Object.keys(data).length > 0)
         for (var key in data) this.add(key, data[key]);
-    Object.defineProperty(this, 'length', {
-        get: function () {
-            return Object.keys(this._attributes).length;
+    Object.defineProperties(this, {
+        "length": {
+            get: function () {
+                return Object.keys(this._attributes).length;
+            }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
+            }
+        },
+        "name": {
+            get: function () {
+                return this._attr_name();
+            }
         }
     });
-};
-
-dataBinder.prototype.__name = function () {
-    return this._attr_name();
 };
 
 dataBinder.prototype.__nullify = function (value) {
@@ -351,6 +360,10 @@ dataBinder.prototype._trigger = function (key, value) {
 dataBinder.prototype._trigger_diff = function (source) {
     if (!source instanceof dataBinder) return;
     for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray
+            || this._attributes[x] instanceof dataBinderValue)
+            this._attributes[x]._enabled = source[x]._enabled;
         if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
         else if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
             !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
@@ -499,12 +512,13 @@ dataBinderArray.prototype._init = function (data, name, parent) {
             get: function () {
                 return this._parent;
             }
+        },
+        "name": {
+            get: function () {
+                return this._attr_name();
+            }
         }
     });
-};
-
-dataBinderArray.prototype.__name = function () {
-    return this._attr_name();
 };
 
 dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
