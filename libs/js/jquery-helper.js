@@ -469,7 +469,7 @@ dataBinder.prototype.get = function (key) {
 dataBinder.prototype.empty = function (exclude) {
     if (typeof exclude !== 'undefined' && !Array.isArray(exclude)) exclude = [exclude];
     for (x in this._attributes) {
-        if (exclude.indexOf(x) >= 0) continue;
+        if (exclude && exclude.indexOf(x) >= 0) continue;
         if (this._attributes[x] instanceof dataBinder
             || this._attributes[x] instanceof dataBinderArray
             || this._attributes[x] instanceof dataBinderValue)
