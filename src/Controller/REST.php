@@ -268,7 +268,7 @@ abstract class REST extends \Hazaar\Controller {
 
                         $this->__endpoint = array($endpoint, $route, $args);
 
-                        break;
+                        break 2;
 
                     }
 
@@ -460,11 +460,7 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $response = new \Hazaar\Controller\Response\Json();
-
-        $response->populate($result);
-
-        return $response;
+        return new \Hazaar\Controller\Response\Json($result);
 
     }
 
