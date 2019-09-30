@@ -105,7 +105,7 @@ class DataBinderValue implements \JsonSerializable {
         if(!$this->value && $this->other)
             return $this->other;
 
-        return coalesce($this->label, $this->value);
+        return (string)coalesce($this->label, $this->value);
 
     }
 
