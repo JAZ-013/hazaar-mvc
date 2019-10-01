@@ -110,9 +110,12 @@ abstract class Basic extends \Hazaar\Controller {
             $action = $this->__action;
 
         /*
-         * Check if the action method exists and if not check for the __default() method.
+         * Check if we have routed to the default controller, or the action method does not
+         * exist and if not check for the __default() method.  Otherwise we have nothing
+         * to execute so throw a nasty exception.
          */
-        if(!method_exists($this, $action)) {
+        if($this->application->router->is_default_controller === true
+            || !method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 

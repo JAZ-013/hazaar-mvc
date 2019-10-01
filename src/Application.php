@@ -154,7 +154,7 @@ class Application {
          */
         $defaults = array(
             'app' => array(
-                'root' => dirname($_SERVER['SCRIPT_NAME']),
+                'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
@@ -178,6 +178,8 @@ class Application {
                 'prepare' => false
             )
         );
+
+        Application\Config::$override_paths = array('host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'), 'local');
 
         /*
          * Load it with a config object. if the file doesn't exist
@@ -505,10 +507,8 @@ class Application {
             /*
              * Check that all required modules are loaded
              */
-            if(!isset($this->config->module['require']))
-                $this->config->module->require = array();
-
-            if(count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
+            if($this->config->module->has('require')
+                && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
                 throw new Application\Exception\ModuleMissing($missing);
 
             /*
@@ -577,21 +577,21 @@ class Application {
                 if(!($controller instanceof Controller))
                     throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
-                /*
-                 * Initialise the controller with the current request
-                 */
-                $response = $controller->__initialize($this->request);
+            }
 
-                //If we get a response now, the controller wants out, so display it and quit.
-                if($response instanceof \Hazaar\Controller\Response){
+            /*
+             * Initialise the controller with the current request
+             */
+            $response = $controller->__initialize($this->request);
 
-                    $response->__writeOutput();
+            //If we get a response now, the controller wants out, so display it and quit.
+            if($response instanceof \Hazaar\Controller\Response){
 
-                    $controller->__shutdown();
+                $response->__writeOutput();
 
-                    return 0;
+                $controller->__shutdown();
 
-                }
+                return 0;
 
             }
 
@@ -654,6 +654,8 @@ class Application {
             $this->timer->stop('exec');
 
         }
+
+        return 0;
 
     }
 

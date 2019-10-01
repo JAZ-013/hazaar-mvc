@@ -16,6 +16,7 @@ pages:
       - Configuring Nginx: getting_started/web/nginx.md
   - The Basics:
     - Project Layout: basics/layout.md
+    - Configuration: basics/configs.md
     - Routing: basics/routing.md
     - Controllers: basics/controllers.md
     - Views: basics/views.md
@@ -47,7 +48,6 @@ pages:
   - Administrators Guide:
     - Performance Tuning: admin/performance.md
   - Developer Reference:
-    - Config Directives: reference/configs.md
     - Error Codes: reference/errorcodes.md
     - HTTP Status Codes: reference/http-status-codes.md
   - A Simple Tutorial: 

@@ -94,7 +94,7 @@ abstract class Controller implements Controller\_Interface {
 
                 list($controller, $method) = $args[0];
 
-            } elseif(count($args) == 2) {
+            } elseif(count($args) === 2) {
 
                 list($controller, $method) = $args;
 
@@ -114,7 +114,7 @@ abstract class Controller implements Controller\_Interface {
 
                 }
 
-            } elseif(count($args) == 3) {
+            } elseif(count($args) === 3) {
 
                 list($controller, $method, $params) = $args;
 

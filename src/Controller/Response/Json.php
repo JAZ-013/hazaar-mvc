@@ -78,7 +78,10 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function getContent() {
 
-        $data = json_encode($this->content);
+        $data = json_encode($this->content, JSON_INVALID_UTF8_SUBSTITUTE);
+
+        if($data === false)
+            throw new \Exception('JSON Encode error: ' . json_last_error_msg());
 
         if($this->callback)
             $data = $this->callback . "($data)";

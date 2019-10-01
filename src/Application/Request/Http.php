@@ -61,12 +61,12 @@ class Http extends \Hazaar\Application\Request {
      *
      * @param       Array $request Optional reference to $_REQUEST
      */
-    function init($request = NULL, $process_request_body = false) {
+    function init($request = NULL, $process_request_body = false, $method = null) {
 
         if($request === NULL)
             $request = $_REQUEST;
 
-        $this->method = $_SERVER['REQUEST_METHOD'];
+        $this->method = is_string($method) ? $method : $_SERVER['REQUEST_METHOD'];
 
         $this->headers = hazaar_request_headers();
 
