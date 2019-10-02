@@ -207,10 +207,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                     /*
                      * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
                      */
-                    if ($type == 'array' || $type == 'list' ) {
+                    if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
 
-                        if (array_key_exists('arrayOf', $def))
-                            $value = new ChildArray($def['arrayOf'], $value);
+                        $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
                     }elseif($type == 'model') {
