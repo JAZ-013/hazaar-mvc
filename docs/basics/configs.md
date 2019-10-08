@@ -1,8 +1,20 @@
 # Application Configuration
 
-Application configuration files can be in either JSON or INI format.  JSON is the preferred format, but INI files were the original file format used so they are still supported for legacy purposes.
+The application configuration is the central location for storing all the variable bits and pieces used to drive your application.  There are some built-in configuration options that control certain global aspects, such as PHP runtime configuration, but the main purpose of the application configuration is to give your application a place to store it's own settings.
 
-The default JSON configuration looks like this:
+!!! info
+Application configuration files can be in either JSON or INI format, it's entirely up to you.  However, JSON is the preferred format as it is more flexible so going forward, this document will only refer to the JSON format.  INI files were the original file format used so they are still supported for legacy purposes only and are no longer _officially_ supported.
+
+Configuration is loaded in several steps that allow the config to be overridden based on certain criteria.  The main configuration is kept in a file called _application.json_ which loaded from directories searched in the following order:
+
+* The default configuration is loaded.  This configuration is hard-coded into the `Hazaar\Application` class so that the minimum settings are specified in order to run the application.
+* The _main configuration_ is loaded from the _application\configs_ directory.  This file is broken into sections based on the `APPLICATION_ENV` environment variable that is defined in your web server config or defaults to _development_.
+* Any _server specific_ configuration is loaded from the _application\configs\host\{{yourservername}}_ directory.  This allows server specific configuration to be loaded based on the web server's configured server name.  
+* Any _local_ configuration is loaded from the _application\local_ directory which allows configuration settings to be overridden for the physical host, useful in multi-host setups or during development to override base settings.
+
+## Default Configuration
+
+The default *application configuration* looks a bit like this:
 
 ```json
 {
@@ -32,6 +44,70 @@ The default JSON configuration looks like this:
     }
 }
 ```
+
+This configuration is hard-coded into the `Hazaar\Application` class and is the absolute minimum required to get an application running.  This configuration will almost always be overridden by a configuration that you have defined in your application config directory.
+
+## Main Configuration
+
+The main configuration file supports _application environments_.  The current application environment it defined in the `APPLICATION_ENV` global constant and is normally set by the web server.  The default is always *development*, but typical values may include:
+
+* staging - For staging servers used to test code prior to deployment.
+* production - For production servers.
+
+A good example of using application environment specific configuration is on development and staging servers, you may way to enable PHP error logging with `"php": { "display_errors": 1}`, but obviously on production this would be set to `"php": { "display_errors": 0}` so that PHP error messages are hidden.
+
+An example of this setup would look like this:
+
+```json
+{
+    "production": {
+        "app": {
+            "name": "Production Settings"
+        },
+        "php": {
+            "display_startup_errors": 0,
+            "display_errors": 0
+        }
+    },
+    "staging": {
+        "app": {
+            "name": "Staging Settings"
+        },
+        "php": {
+            "display_startup_errors": 1,
+            "display_errors": 1
+        }
+    },
+    "development": {
+        "include": "staging",
+        "app": {
+            "name": "Development Settings"
+        }
+    }
+}
+```
+
+!!! notice
+Rather than defining the `php` section multiple times with the same settings, above we used the _include_ option to include previously defined configuration settings.  We can then override any settings needed in that environment.  This is a good methodology to employ.  By having _production_ as your master configuration and including it in other configuration environments you can override only what is neccessary.
+
+## Server Specific Configuration
+
+Server specific configurtaion files can be stored in a sub-directory of the main config directory named _application/configs/host_ in another sub-directory with the name of the host.  This allows an application to have multiple configurations based on the server name.  The server name is taken from the `$_SERVER['SERVER_NAME']` variable which is configured by your web server.  So if the server name is _www.yourdomain.com_ and we are loading the main application config file, it would be stored at _application/configs/host/www.yourdomain.com_.  
+
+An example use of this might be if you have multiple entry points to your application.  If someone accesses _www.yourdomain.com_ you can configure the `Index` controller as your default.  However if they access _cloud.yourdomain.com_ they can be automatically routed to the `Cloud` controller by default.
+
+!!! notice
+These configuration files do not use environment specific configurations.  The exception is the DBI module which is discussed in it's documentation at "scroly.io/hazaar-dbi":http://scroly.io/hazaar-dbi.
+
+## Local Configuration
+
+Local configuration opperates similar to server specific configuration and is stored in the _application/configs/local_ directory.  These config files allow settings to be defined for the physical host on which they reside.  
+
+This is useful in various situations such as using different cache settings during development, such as the _file_ backend, but then using the _redis_ backend on all other hosts.
+
+# Built-in Configuration Directives
+
+There are a number of configuration directive available that control the way certain _built-in_ application functionality operates.
 
 ## Application Directives
 

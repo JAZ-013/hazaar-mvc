@@ -73,6 +73,17 @@ function errorAndDie() {
                     $args[0]->getTrace()
                 );
 
+            }elseif(isset($arg[0]) && is_array($arg[0]) && array_key_exists('type', $arg[0])){
+
+                $error = array(
+                    $arg[0]['type'],
+                    $arg[0]['message'],
+                    $arg[0]['file'],
+                    $arg[0]['line'],
+                    null,
+                    (isset($arg[1]) ? $arg[1] : null)
+                );
+
             }else{
 
                 $error = $args;

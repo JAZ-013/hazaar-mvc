@@ -23,7 +23,7 @@ namespace Hazaar\Application;
  */
 class Config extends \Hazaar\Map {
 
-    static public $override_paths = array('local');
+    static public $override_paths = array();
 
     private $env;
 

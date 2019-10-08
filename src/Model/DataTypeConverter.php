@@ -110,9 +110,11 @@ abstract class DataTypeConverter  {
 
                     }
 
-                } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
+                } elseif ($type == 'string' && (is_object($value) || is_array($value))) {
 
-                    if ($value !== null)
+                    if(is_array($value))
+                        $value = null;
+                    elseif(is_object($value) && method_exists($value, '__tostring') && $value !== null)
                         $value = (string) $value;
 
                 } elseif ($type !== 'string' && ($value === '' || $value === 'null')){

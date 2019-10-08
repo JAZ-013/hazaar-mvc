@@ -1600,6 +1600,28 @@ function object_to_array($object){
 }
 
 /**
+ * Recursively convert an array into an object.
+ *
+ * This is the inverse of object_to_array().
+ *
+ * @param array $object The array to convert.
+ * @return object|boolean Returns the converted array as a \stdClass object or false on failure.
+ */
+function array_to_object($array){
+
+    if(!is_array($array))
+        return false;
+
+    $object = new \stdClass;
+
+    foreach($array as $key => $value)
+        $object->{$key} = is_array($value) ? array_to_object($value) : $value;
+
+    return $object;
+
+}
+
+/**
  * Searches the array using a callback function and returns the first corresponding key if successful.
  *
  * @param mixed $haystack The array.

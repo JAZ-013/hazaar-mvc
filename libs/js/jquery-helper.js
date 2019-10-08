@@ -145,12 +145,13 @@ var dataBinderValue = function (name, value, label, parent) {
             get: function () {
                 return this._parent;
             }
+        },
+        "attrName": {
+            get: function () {
+                return this._parent._attr_name(this._name);
+            }
         }
     });
-};
-
-dataBinderValue.prototype.__name = function () {
-    return this._parent._attr_name(this._name);
 };
 
 dataBinderValue.prototype.toString = function () {
@@ -208,15 +209,23 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._enabled = true;
     if (Object.keys(data).length > 0)
         for (var key in data) this.add(key, data[key]);
-    Object.defineProperty(this, 'length', {
-        get: function () {
-            return Object.keys(this._attributes).length;
+    Object.defineProperties(this, {
+        "length": {
+            get: function () {
+                return Object.keys(this._attributes).length;
+            }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
+            }
+        },
+        "attrName": {
+            get: function () {
+                return this._attr_name();
+            }
         }
     });
-};
-
-dataBinder.prototype.__name = function () {
-    return this._attr_name();
 };
 
 dataBinder.prototype.__nullify = function (value) {
@@ -328,7 +337,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
             else if (o.attr('data-bind-other') === 'true')
                 o.val(attr_item ? attr_item.other : null);
             else if (o.is("select")) {
-                if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value);
+                if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else {
@@ -351,6 +360,10 @@ dataBinder.prototype._trigger = function (key, value) {
 dataBinder.prototype._trigger_diff = function (source) {
     if (!source instanceof dataBinder) return;
     for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray
+            || this._attributes[x] instanceof dataBinderValue)
+            this._attributes[x]._enabled = source[x]._enabled;
         if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
         else if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
             !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
@@ -453,13 +466,16 @@ dataBinder.prototype.get = function (key) {
         return this._attributes[key];
 };
 
-dataBinder.prototype.empty = function () {
-    for (x in this._attributes)
+dataBinder.prototype.empty = function (exclude) {
+    if (typeof exclude !== 'undefined' && !Array.isArray(exclude)) exclude = [exclude];
+    for (x in this._attributes) {
+        if (exclude && exclude.indexOf(x) >= 0) continue;
         if (this._attributes[x] instanceof dataBinder
             || this._attributes[x] instanceof dataBinderArray
             || this._attributes[x] instanceof dataBinderValue)
             this._attributes[x].empty();
         else this._attributes[x] = null;
+    }
 };
 
 dataBinder.prototype.enabled = function (value) {
@@ -496,12 +512,13 @@ dataBinderArray.prototype._init = function (data, name, parent) {
             get: function () {
                 return this._parent;
             }
+        },
+        "attrName": {
+            get: function () {
+                return this._attr_name();
+            }
         }
     });
-};
-
-dataBinderArray.prototype.__name = function () {
-    return this._attr_name();
 };
 
 dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
