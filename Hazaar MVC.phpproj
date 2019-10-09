@@ -350,9 +350,9 @@
     <Compile Include="tests\ApplicationTest.php" />
     <Compile Include="tests\bootstrap.php" />
     <Compile Include="tests\MapTest.php" />
+    <Compile Include="tests\FilesystemTest.php" />
     <Compile Include="tests\MoneyTest.php" />
     <Compile Include="tests\README.txt" />
-    <Compile Include="tests\WarlockTest.php" />
     <Compile Include=".gitignore" />
     <Compile Include=".gitlab-ci.yml" />
     <Compile Include="Hazaar MVC.sln" />
