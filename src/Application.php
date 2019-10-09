@@ -974,4 +974,20 @@ class Application {
 
     }
 
+    /**
+     * Get the contents for the applications composer.json file
+     * 
+     * This is shorthand method to quickly get the application composer file.
+     * 
+     * @return boolean|\stdClass
+     */
+    public function composer(){
+
+        if(!($path = realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'composer.json')))
+            return false;
+
+        return json_decode(file_get_contents($path));
+
+    }
+
 }
