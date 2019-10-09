@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 interface _Interface {
 
+    static public function label();
+
     public function refresh($reset = FALSE);
 
     //Get a directory listing

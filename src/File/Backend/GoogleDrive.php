@@ -36,6 +36,12 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     private $cursor;
 
+    static public function label(){
+
+        return 'GoogleDrive';
+
+    }
+    
     public function __construct($options) {
 
         parent::__construct();

@@ -12,6 +12,12 @@ class Local implements _Interface {
 
     private $meta = array();
 
+    static public function label(){
+        
+        return 'Local Filesystem Storage';
+
+    }
+
     public function __construct($options = array()) {
 
         $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);

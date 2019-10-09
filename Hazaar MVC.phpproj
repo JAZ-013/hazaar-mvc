@@ -287,7 +287,7 @@
     <Compile Include="src\Http\WebDAV\Lock\Scope\Exclusive.php" />
     <Compile Include="src\Http\WebDAV\Lock\Type\Write.php" />
     <Compile Include="src\Http\WebDAV\Property.php" />
-    <Compile Include="src\Http\WebDAV\WebDAV.php" />
+    <Compile Include="src\Http\WebDAV.php" />
     <Compile Include="src\Loader.php" />
     <Compile Include="src\Logger\Backend.php" />
     <Compile Include="src\Logger\Backend\Chain.php" />

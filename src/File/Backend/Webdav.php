@@ -12,6 +12,12 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     private $meta = array();
 
+    static public function label(){
+
+        return "WebDAV";
+
+    }
+
     public function __construct($options) {
 
         $this->options = new \Hazaar\Map(array(
@@ -411,7 +417,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
-    public function rmdir($path) {
+    public function rmdir($path, $recurse = false) {
 
         var_dump(__METHOD__);
 
