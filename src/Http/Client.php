@@ -305,10 +305,19 @@ class Client {
 
         }
 
-        if(count($list) > 1)
+        if(count($list) === 0)
+            return null;
+
+        elseif(count($list) > 1)
             return $list;
 
         return array_pop($list);
+
+    }
+
+    public function hasCookie($name){
+
+        return ($this->getCookie($name) !== null);
 
     }
 
@@ -448,8 +457,7 @@ class Client {
 
             foreach($this->cookies as $key => $cookie){
 
-                if($cookie['expires'] instanceof \Hazaar\Date
-                    && $cookie['expires']->getTimestamp() > time())
+                if(($cookie['expires'] instanceof \Hazaar\Date && $cookie['expires']->getTimestamp() > time()) || $cookie['expires'] === null)
                     $cachable[$key] = $cookie;
 
             }
