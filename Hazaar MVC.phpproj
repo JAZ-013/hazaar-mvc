@@ -58,6 +58,7 @@
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
     <Compile Include="src\Controller\Response\Packer\CSS.php" />
     <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
+    <Compile Include="src\File\Backend\SharePoint.php" />
     <Compile Include="src\File\PDF.php" />
     <Compile Include="src\File\TempDir.php" />
     <Compile Include="src\File\Temp.php" />
@@ -403,6 +404,7 @@
     <Folder Include="src\File\" />
     <Folder Include="src\File\Backend\" />
     <Folder Include="src\File\Backend\Exception\" />
+    <Folder Include="src\File\Backend\XML\" />
     <Folder Include="src\File\Exception\" />
     <Folder Include="src\File\Exception\WKPDF\" />
     <Folder Include="src\File\Template\" />
@@ -546,6 +548,7 @@
     <Content Include="LICENCE.md" />
     <Content Include="mkdocs.yml" />
     <Content Include="phpunit.xml" />
+    <Content Include="src\File\Backend\Xml\SAML.xml" />
     <Content Include="tests\application\configs\application.json" />
   </ItemGroup>
 </Project>
