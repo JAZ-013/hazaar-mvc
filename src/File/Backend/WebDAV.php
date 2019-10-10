@@ -2,7 +2,7 @@
 
 namespace Hazaar\File\Backend;
 
-class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
+class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public  $separator  = '/';
     
