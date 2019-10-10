@@ -18,6 +18,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private $auth_cookies = null;
 
+    private $items = array();
+
     static public function label(){
 
         return "Microsoft SharePoint";
@@ -175,11 +177,11 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $request->setHeader('Accept', 'application/json; OData=verbose');
 
-        $this->applyCookies($request);
-
         $response = $this->send($request);
 
-        dump($response->body());
+        $results = ake($response->body(), 'd.results');
+
+        dump($results);
 
     }
 
@@ -196,8 +198,47 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    private function lookupItem($path, $suffic = null){
+
+        $url = $this->options['webURL'] . '/_api/Web'  . $this->makeODataPath($this->options['root'] . '/' . ltrim($path, '/')) . '/files';
+
+        $request = new Request($url, 'GET', 'application/json; OData=verbose');
+
+        $request->setHeader('Accept', 'application/json; OData=verbose');
+
+        $response = $this->send($request);
+
+        $results = ake($response->body(), 'd.results');
+
+        dump($results);
+
+    }
+
+    private function info($path){
+
+        $parts = explode('/', $path);
+
+        $folder = $this->items;
+
+        foreach($parts as $part){
+
+            if(!(array_key_exists('items', $folder) && array_key_exists($part, $folder['items']))){
+
+                $folder['items'][$part] = $this->scandir($part);
+
+            }
+
+
+
+        }
+
+    }
+
     //Check if file/path exists
     public function exists($path) {
+
+        if(!($info = $this->info($path)))
+            return NULL;
 
         return FALSE;
 
