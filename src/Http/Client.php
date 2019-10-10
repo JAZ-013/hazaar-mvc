@@ -338,7 +338,7 @@ class Client {
 
         $parts = explode(';', $cookie);
 
-        list($name, $value) = explode('=', array_shift($parts));
+        list($name, $value) = explode('=', array_shift($parts), 2);
 
         $data = array(
             'name' => $name,
