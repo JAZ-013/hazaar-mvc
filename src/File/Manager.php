@@ -202,7 +202,8 @@ class Manager {
      */
     public function authorise($redirect_uri = NULL) {
 
-        if(! method_exists($this->backend, 'authorise'))
+        if(! method_exists($this->backend, 'authorise')
+            || $this->backend->authorised())
             return TRUE;
 
         $result = $this->backend->authorise($redirect_uri);
