@@ -67,6 +67,62 @@ class Manager {
 
     }
 
+    static public function getAvailableBackends(){
+
+        $composer = \Hazaar\Application::getInstance()->composer();
+
+        if(!property_exists($composer, 'require'))
+            return false;
+
+        foreach($composer->require as $lib => $ver){
+
+            $lib_path = realpath(APPLICATION_PATH
+                . DIRECTORY_SEPARATOR . '..'
+                . DIRECTORY_SEPARATOR . 'vendor'
+                . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $lib));
+
+            if(substr(dirname($lib_path), -10) !== 'hazaarlabs')
+                continue;
+
+            $backend_path = $lib_path
+                . DIRECTORY_SEPARATOR . 'src'
+                . DIRECTORY_SEPARATOR . 'File'
+                . DIRECTORY_SEPARATOR . 'Backend';
+
+            if(!file_exists($backend_path))
+                continue;
+
+            $dir = dir($backend_path);
+
+            while(($file = $dir->read()) !== false){
+
+                if(substr($file, -4) !== '.php' || substr($file, 0, 1) === '.' || substr($file, 0, 1) === '_')
+                    continue;
+
+
+                $source = ake(pathinfo($file), 'filename');
+
+                $class = 'Hazaar\\File\\Backend\\' . $source;
+
+                if(!class_exists($class))
+                    continue;
+
+                $backend = array(
+                    'name'  => strtolower($source),
+                    'label' => $class::label(),
+                    'class' => $class
+                );
+
+                $backends[] = $backend;
+
+            }
+
+        }
+
+        return $backends;
+
+    }
+
     /**
      * Loads a Manager class by name as configured in media.json config
      *
