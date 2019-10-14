@@ -16,7 +16,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private static $signInURL = '/_forms/default.aspx?wa=wsignin1.0';
 
-    private $auth_cookies = null;
+    private $requestFormDigest;
 
     private $root = null;
 
@@ -170,25 +170,54 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    private function _post($path, $suffix = null, &$response = null){
+    private function resolvePath($path){
 
-        return $this->_query('POST', $url, $response);
+        $parts = explode('/', trim($this->options['root'] . '/' . ltrim($path, ' /'), '/'));
 
-    }
+        array_walk($parts, function(&$value){ $value = rawurlencode($value); });
 
-    private function _get($path, $suffix = null, &$response = null){
-
-        return $this->_query('GET', $path, $suffix, $response);
+        return implode('/', $parts);
 
     }
 
-    private function _query($method, $path, $suffix = null, &$response = null){
+    private function _load_meta($path, $suffix = null, &$response = null){
 
-        $url = $this->makeODataURL($path) . (($suffix !== null) ? '/' . $suffix : '');
+        $url = $this->_url($path, $suffix) ;
+
+        return $this->_query($url, 'GET', $suffix, $response);
+
+    }
+
+    private function _query($url, $method = 'GET', $extra_headers = null, &$response = null){
+
+        if($method === 'POST'){
+
+            if(!$this->requestFormDigest){
+
+                $request = new Request($this->options['webURL'] . '/_api/contextinfo', 'POST');
+
+                $request->setHeader('Accept', 'application/json; OData=verbose');
+
+                $response = $this->send($request);
+
+                $this->requestFormDigest = ake($response->body(), 'd.GetContextWebInformation.FormDigestValue');
+
+            }
+
+            $extra_headers['X-RequestDigest'] = $this->requestFormDigest;
+
+        }
 
         $request = new Request($url, $method, 'application/json; OData=verbose');
 
         $request->setHeader('Accept', 'application/json; OData=verbose');
+
+        if(is_array($extra_headers)){
+
+            foreach($extra_headers as $key => $value)
+                $request->setHeader($key, $value);
+
+        }
 
         $response = $this->send($request);
 
@@ -196,7 +225,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             $error = ake($response->body(), 'error');
 
-            throw new \Exception('Invalid response from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
+            throw new \Exception('Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
 
         }
 
@@ -204,14 +233,38 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    private function makeODataURL($path){
+    private function _object_url($path){
+
+        if(!($info = $this->info($path)))
+            return false;
+
+        return ($info->__metadata->type === 'SP.Folder') ? $this->_folder($path) : $this->_folder(dirname($path)) . "/Files('" . basename($path) . "')";
+
+    }
+
+    private function _folder($path = null, $suffix = null){
 
         $url = $this->options['webURL'] . '/_api/Web';
 
-        $parts = explode('/', trim($this->options['root'] . '/' . ltrim($path, ' /'), '/'));
+        if($path = $this->resolvePath($path))
+            $url .= "/GetFolderByServerRelativeUrl('$path')";
 
-        foreach($parts as $part)
-            $url .= "/folders/getbyurl('" . rawurlencode($part) . "')";
+        if($suffix !== null)
+            $url .= '/' . $suffix;
+
+        return $url;
+
+    }
+
+    private function _file($path = null, $suffix = null){
+
+        $url = $this->options['webURL'] . '/_api/Web';
+
+        if($path = $this->resolvePath($path))
+            $url .= "/GetFileByServerRelativeUrl('$path')";
+
+        if($suffix !== null)
+            $url .= '/' . $suffix;
 
         return $url;
 
@@ -222,10 +275,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $folder =& $this->root;
 
         $parts = explode('/', trim($path, ' /'));
-        
+
         //If there's no item, we're loading the root, so make some stuff up.
         if(!($item = array_pop($parts)) && !property_exists($folder, 'Name'))
-            $folder = ake($this->_get('/'), 'd');
+            $folder = ake($this->_query($this->_folder('/')), 'd');
 
         foreach($parts as $part){
 
@@ -251,7 +304,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 return $f;
 
         }
-        
+
         $null = null;
 
         return $null;
@@ -259,10 +312,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     }
 
     private function load($path){
-        
-        $folders = ake($this->_get($path, 'folders'), 'd.results');
-                
-        $files = ake($this->_get($path, 'files'), 'd.results');
+
+        $folders = ake($this->_query($this->_folder($path, 'folders')), 'd.results');
+
+        $files = ake($this->_query($this->_folder($path, 'files')), 'd.results');
 
         $sort = function($a, $b){
             if ($a->Name === $b->Name) return 0;
@@ -290,7 +343,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         foreach($info->items as $item)
             $files[] = $item->Name;
 
-         return $files;
+        return $files;
 
     }
 
@@ -315,7 +368,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function is_readable($path) {
 
-        if($info = $this->info($path))
+        if($this->info($path))
             return true;
 
         return false;
@@ -324,7 +377,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function is_writable($path) {
 
-        if($info = $this->info($path))
+        if($this->info($path))
             return true;
 
         return false;
@@ -364,9 +417,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!($info = $this->info($path)))
             return false;
 
-            dump($info);
+        $types = array('SP.Folder' => 'dir', 'SP.File' => 'file');
 
-        return false;
+        return ake($types, $info->__metadata->type, false);
 
     }
 
@@ -377,7 +430,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             return null;
 
         return strtotime($info->TimeCreated);
-        
+
     }
 
     //Returns the file modification time
@@ -393,7 +446,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Returns the file modification time
     public function fileatime($path) {
 
-        return null;
+        return time();
 
     }
 
@@ -401,105 +454,94 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         if(!($info = $this->info($path)))
             return false;
-        
+
         return intval(ake($info, 'Length', 0));
 
     }
 
     public function fileperms($path) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     public function chmod($path, $mode) {
 
-        die(__METHOD__);
-        
         return false;
 
     }
 
     public function chown($path, $user) {
 
-        die(__METHOD__);
-        
         return false;
 
     }
 
     public function chgrp($path, $group) {
 
-        die(__METHOD__);
-        
         return false;
 
     }
 
     public function unlink($path) {
 
-        die(__METHOD__);
-        
-        return false;
+        $url = $this->_object_url($path);
+
+        $this->_query($url, 'POST', array('X-HTTP-Method' => 'DELETE'), $response);
+
+        return ($response->status === 200);
 
     }
 
-    public function mime_content_type($path) {
+    public function mime_content_type($path, $hint = null) {
 
-        die(__METHOD__);
-        
+        if($type = Local::lookup_content_type(pathinfo($path, PATHINFO_EXTENSION)))
+            return $type;
+
         return false;
 
     }
 
     public function md5Checksum($path) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     public function thumbnail($path, $params = array()) {
 
-        die(__METHOD__);
-        
-        return FALSE;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     //Create a directory
     public function mkdir($path) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     public function rmdir($path, $recurse = false) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     //Copy a file from src to dst
     public function copy($src, $dst, $recursive = FALSE) {
 
-        die(__METHOD__);
-        
-        return false;
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . basename($src);
+
+        $url = $this->_object_url($src) . "/copyTo('/$dst')";
+
+        $result = $this->_query($url, 'POST');
+
+        return ($result instanceof \stdClass && property_exists($result, 'd'));
 
     }
 
     public function link($src, $dst) {
 
-        die(__METHOD__);
-        
         return false;
 
     }
@@ -507,35 +549,33 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Move a file from src to dst
     public function move($src, $dst) {
 
-        die(__METHOD__);
-        
-        return false;
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . basename($src);
+
+        $url = $this->_object_url($src) . "/moveTo('/$dst')";
+
+        $result = $this->_query($url, 'POST');
+
+        return ($result instanceof \stdClass && property_exists($result, 'd'));
 
     }
 
     //Read the contents of a file
     public function read($path) {
 
-        die(__METHOD__);
-        
-        return false;
+        return $this->_query($this->_folder(dirname($path)) . "/Files('" . basename($path) . "')/\$value");
 
     }
 
     //Write the contents of a file
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
     public function upload($path, $file, $overwrite = TRUE) {
 
-        die(__METHOD__);
-        
-        return false;
+        throw new \Exception('Method not implemented: ' . __METHOD__);
 
     }
 
@@ -564,7 +604,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         if($info->__metadata->type === 'SP.Folder')
             return null;
-            
+
         return $info->LinkingUri;
 
     }
