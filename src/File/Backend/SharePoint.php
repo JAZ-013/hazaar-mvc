@@ -188,7 +188,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    private function _query($url, $method = 'GET', $extra_headers = null, &$response = null){
+    private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
 
         if($method === 'POST'){
 
@@ -219,9 +219,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         }
 
+        if($body !== null)
+            $request->setBody(json_encode($body));
+
         $response = $this->send($request);
 
-        if($response->status !== 200){
+        if($response->status < 200 && $response->status > 299){
 
             $error = ake($response->body(), 'error');
 
@@ -242,12 +245,18 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    private function _web($path = null){
+
+        return $this->options['webURL'] . '/_api/Web' . ($path ? '/' . ltrim($path) : '');
+
+    }
+
     private function _folder($path = null, $suffix = null){
 
-        $url = $this->options['webURL'] . '/_api/Web';
-
         if($path = $this->resolvePath($path))
-            $url .= "/GetFolderByServerRelativeUrl('$path')";
+            $path = "GetFolderByServerRelativeUrl('$path')";
+
+        $url = $this->_web($path);
 
         if($suffix !== null)
             $url .= '/' . $suffix;
@@ -258,10 +267,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function _file($path = null, $suffix = null){
 
-        $url = $this->options['webURL'] . '/_api/Web';
-
         if($path = $this->resolvePath($path))
-            $url .= "/GetFileByServerRelativeUrl('$path')";
+            $url = "GetFileByServerRelativeUrl('$path')";
+
+        $url = $this->_web($path);
 
         if($suffix !== null)
             $url .= '/' . $suffix;
@@ -487,9 +496,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_object_url($path);
 
-        $this->_query($url, 'POST', array('X-HTTP-Method' => 'DELETE'), $response);
+        $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
 
-        return ($response->status === 200);
+        return true;
 
     }
 
@@ -517,13 +526,28 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Create a directory
     public function mkdir($path) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        $url = $this->_web('folders');
+
+        $body = array(
+            '__metadata' => array(
+                'type' => 'SP.Folder'
+            ),
+            'ServerRelativeUrl' => $this->options['root'] . $path
+        );
+
+        $result = $this->_query($url, 'POST', $body);
+
+        return (ake($result, 'd.Exists') === true);
 
     }
 
     public function rmdir($path, $recurse = false) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        $url = $this->_folder($path);
+
+        $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
+
+        return true;
 
     }
 
