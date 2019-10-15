@@ -52,7 +52,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $this->uncacheCookie($this->cache);
 
-        $this->root = new \stdClass;
+        $this->root = (object)array('Name' => 'Root');
 
     }
 
@@ -208,7 +208,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
 
-        if($method === 'POST')
+        if($method === 'POST' || $method === 'PUT')
             $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
         $request = new Request($url, $method, 'application/json; OData=verbose');
@@ -223,7 +223,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         }
 
         if($body !== null)
-            $request->setBody(json_encode($body));
+            $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
 
         $response = $this->send($request);
 
@@ -271,7 +271,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     private function _file($path = null, $suffix = null){
 
         if($path = $this->resolvePath($path))
-            $url = "GetFileByServerRelativeUrl('$path')";
+            $path = "GetFileByServerRelativeUrl('$path')";
 
         $url = $this->_web($path);
 
@@ -282,7 +282,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    private function &info($path){
+    private function &info($path, $new_item = null){
 
         $folder =& $this->root;
 
@@ -295,10 +295,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         foreach($parts as $part){
 
             if(!property_exists($folder, 'items'))
-                $folder->items = array();
+                $folder->items = array('test' => 'nothing');
 
             if(!array_key_exists($part, $folder->items))
-                $folder->items[$part] = new \stdClass;
+                $folder->items[] = (object)array('Name' => $part);
 
             $folder =& $folder->items[$part];
 
@@ -310,10 +310,24 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!property_exists($folder, 'items'))
             $folder->items = $this->load(implode('/', $parts));
 
-        foreach($folder->items as $f){
+        foreach($folder->items as &$f){
 
-            if($f->Name === $item)
+            if($f->Name === $item){
+
+                if($new_item !== null)
+                    $f = $new_item;
+
                 return $f;
+
+            }
+
+        }
+
+        if($new_item !== null){
+
+            $folder->items[] = $new_item;
+
+            return $new_item;
 
         }
 
@@ -376,7 +390,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         usort($files, $sort);
 
-        return array_merge($folders, $files);
+        $items = array();
+
+        foreach(array_merge($folders, $files) as $item)
+            $items[$item->Name] = $item;
+
+        return $items;
 
     }
 
@@ -634,7 +653,32 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Write the contents of a file
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        $url = $this->_folder(dirname($file), "Files/add(url='" . basename($file) . "',overwrite=true)");
+
+        if(!($result = $this->_query($url, 'POST', $data, null, $response)))
+            return false;
+
+        $folder =& $this->root;
+
+        $parts = explode('/', trim(dirname($file), '/ '));
+
+        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
+        foreach($parts as $part){
+
+            if(!$part)
+                continue;
+
+            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
+                break;
+
+            $folder =& $folder->items[$part];
+
+        }
+
+        if($folder instanceof \stdClass && property_exists($folder, 'items') && array_key_exists(basename($file), $folder->items))
+            $folder->items[basename($file)] = ake($result, 'd');
+
+        return true;
 
     }
 
