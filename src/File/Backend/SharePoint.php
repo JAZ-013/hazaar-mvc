@@ -188,25 +188,28 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
+    private function _getFormDigest(){
 
-        if($method === 'POST'){
+        if(!$this->requestFormDigest){
 
-            if(!$this->requestFormDigest){
+            $request = new Request($this->options['webURL'] . '/_api/contextinfo', 'POST');
 
-                $request = new Request($this->options['webURL'] . '/_api/contextinfo', 'POST');
+            $request->setHeader('Accept', 'application/json; OData=verbose');
 
-                $request->setHeader('Accept', 'application/json; OData=verbose');
+            $response = $this->send($request);
 
-                $response = $this->send($request);
-
-                $this->requestFormDigest = ake($response->body(), 'd.GetContextWebInformation.FormDigestValue');
-
-            }
-
-            $extra_headers['X-RequestDigest'] = $this->requestFormDigest;
+            $this->requestFormDigest = ake($response->body(), 'd.GetContextWebInformation.FormDigestValue');
 
         }
+
+        return $this->requestFormDigest;
+
+    }
+
+    private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
+
+        if($method === 'POST')
+            $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
         $request = new Request($url, $method, 'application/json; OData=verbose');
 
@@ -322,9 +325,47 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function load($path){
 
-        $folders = ake($this->_query($this->_folder($path, 'folders')), 'd.results');
+        $url = $this->options['webURL'] . '/_api/$batch';
 
-        $files = ake($this->_query($this->_folder($path, 'files')), 'd.results');
+        $request = new Request($url, 'POST');
+
+        $request->setHeader('Accept', 'application/json; OData=verbose');
+
+        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+
+        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+
+        $request->enableMultipart('multipart/mixed', 'batch_' . guid());
+
+        $headers = array('Content-Transfer-Encoding' => 'binary');
+
+        $request->addMultipart('GET ' . $this->_folder($path, 'folders')
+            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+
+        $request->addMultipart('GET ' . $this->_folder($path, 'files')
+            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+
+        $response = $this->send($request);
+
+        if($response->status !== 200)
+            throw new \Exception('Invalid batch response received!');
+
+        $responses = $response->body();
+
+        if(count($responses) !== 2)
+            throw new \Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
+
+        array_walk($responses, function(&$value){
+            $response = new \Hazaar\Http\Response();
+
+            $response->read($value['body']);
+
+            $value = $response;
+        });
+
+        $folders = ake($responses[0]->body(), 'd.results');
+
+        $files = ake($responses[1]->body(), 'd.results');
 
         $sort = function($a, $b){
             if ($a->Name === $b->Name) return 0;
