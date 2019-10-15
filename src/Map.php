@@ -178,15 +178,18 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
         }
 
+        if($defaults instanceof Map)
+            $filter_def = array_merge($filter_def, $defaults->filter);
+
+        if($extend instanceof Map)
+            $filter_def = array_merge($filter_def, $extend->filter);
+
         $this->filter = $filter_def;
 
         $this->populate($defaults);
 
-        if($extend) {
-
+        if($extend)
             $this->extend($extend);
-
-        }
 
     }
 

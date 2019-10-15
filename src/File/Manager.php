@@ -4,6 +4,13 @@ namespace Hazaar\File;
 
 class Manager {
 
+    static private $backend_aliases = array(
+        'googledrive' => 'GoogleDrive',
+        'mongodb'     => 'MongoDB',
+        'sharepoint'  => 'SharePoint',
+        'webdav'      => 'WebDAV'
+    );
+
     static public  $default_config = array(
         'enabled' => true,
         'auth' => false,
@@ -45,12 +52,9 @@ class Manager {
 
         }
 
-        if(class_exists($backend))
-            $class = $backend;
-        else
-            $class = 'Hazaar\File\Backend\\' . ucfirst($backend);
+        $class = 'Hazaar\File\Backend\\' . ake(self::$backend_aliases, $backend, ucfirst($backend));
 
-        if(! class_exists($class))
+        if(!class_exists($class))
             throw new Exception\BackendNotFound($backend);
 
         $this->backend_name = $backend;
@@ -202,7 +206,8 @@ class Manager {
      */
     public function authorise($redirect_uri = NULL) {
 
-        if(! method_exists($this->backend, 'authorise'))
+        if(! method_exists($this->backend, 'authorise')
+            || $this->backend->authorised())
             return TRUE;
 
         $result = $this->backend->authorise($redirect_uri);

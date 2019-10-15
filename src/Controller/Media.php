@@ -76,7 +76,8 @@ class Media extends \Hazaar\Controller\Action {
 
                 $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $id);
 
-                $connector->addSource($id, $manager, $source->get('name'));
+                if($manager->authorise())
+                    $connector->addSource($id, $manager, $source->get('name'));
 
             }
 
