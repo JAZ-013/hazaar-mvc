@@ -249,7 +249,8 @@ class Request extends \Hazaar\Map {
 
         }else{
 
-            $this->setContentType($content_type);
+            if($content_type)
+                $this->setContentType($content_type);
 
             $this->body = $body;
 
