@@ -579,7 +579,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function md5Checksum($path) {
 
-        return false;
+        if(!($info = $this->info($path)))
+            return false;
+
+        return md5($info->ContentTag);
 
     }
 
