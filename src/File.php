@@ -576,7 +576,10 @@ class File {
 
         //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
         //a cheap method of calculating the checksum
-        return $this->backend->md5Checksum($this->source_file);
+        if(!($md5 = $this->backend->md5Checksum($this->source_file)))
+            $md5 = md5($this->contents = $this->backend->read($this->source_file));
+
+        return $md5;
 
     }
 
