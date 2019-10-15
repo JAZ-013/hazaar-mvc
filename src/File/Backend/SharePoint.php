@@ -52,7 +52,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $this->uncacheCookie($this->cache);
 
-        $this->root = (object)array('Name' => 'Root');
+        $this->root = new \stdClass;
 
     }
 
@@ -192,6 +192,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         if(!$this->requestFormDigest){
 
+            $this->authorise();
+
             $request = new Request($this->options['webURL'] . '/_api/contextinfo', 'POST');
 
             $request->setHeader('Accept', 'application/json; OData=verbose');
@@ -207,6 +209,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     }
 
     private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
+
+        $this->authorise();
 
         if($method === 'POST' || $method === 'PUT')
             $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
@@ -295,10 +299,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         foreach($parts as $part){
 
             if(!property_exists($folder, 'items'))
-                $folder->items = array('test' => 'nothing');
+                $folder->items = array();
 
             if(!array_key_exists($part, $folder->items))
-                $folder->items[] = (object)array('Name' => $part);
+                $folder->items[$part] = (object)array('Name' => $part);
 
             $folder =& $folder->items[$part];
 
@@ -307,7 +311,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!$item)
             return $folder;
 
-        if(!property_exists($folder, 'items'))
+        if(!($folder instanceof \stdClass && property_exists($folder, 'items')))
             $folder->items = $this->load(implode('/', $parts));
 
         foreach($folder->items as &$f){
@@ -338,6 +342,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     }
 
     private function load($path){
+
+        $this->authorise();
 
         $url = $this->options['webURL'] . '/_api/$batch';
 
@@ -530,7 +536,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function fileperms($path) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        return false;
 
     }
 
@@ -573,13 +579,13 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function md5Checksum($path) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        return false;
 
     }
 
     public function thumbnail($path, $params = array()) {
 
-        throw new \Exception('Method not implemented: ' . __METHOD__);
+        return false;
 
     }
 
