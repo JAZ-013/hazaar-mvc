@@ -2,7 +2,7 @@
 
 namespace Hazaar\File\Backend;
 
-class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
+class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public  $separator  = '/';
     
@@ -11,6 +11,12 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
     private $cache;
 
     private $meta = array();
+
+    static public function label(){
+
+        return "WebDAV";
+
+    }
 
     public function __construct($options) {
 
@@ -411,7 +417,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
-    public function rmdir($path) {
+    public function rmdir($path, $recurse = false) {
 
         var_dump(__METHOD__);
 

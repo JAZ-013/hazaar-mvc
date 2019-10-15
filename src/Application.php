@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.4');
+define('HAZAAR_VERSION', '2.5');
 
 /**
  * @brief Constant containing the application environment current being used.
@@ -1017,6 +1017,22 @@ class Application {
     public function setResponseType($type){
 
         $this->response_type = $type;
+
+    }
+
+    /**
+     * Get the contents for the applications composer.json file
+     * 
+     * This is shorthand method to quickly get the application composer file.
+     * 
+     * @return boolean|\stdClass
+     */
+    public function composer(){
+
+        if(!($path = realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'composer.json')))
+            return false;
+
+        return json_decode(file_get_contents($path));
 
     }
 

@@ -14,6 +14,12 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     private $cursor;
 
+    static public function label(){
+
+        return 'Dropbox';
+
+    }
+    
     public function __construct($options) {
 
         parent::__construct();

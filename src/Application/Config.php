@@ -80,11 +80,11 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load(&$source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
+    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
 
         $options = array();
 
-        $search_sources = array($source);
+        $sources = array(array('name' => $source, 'ns' => true));
 
         if($override_paths){
 
@@ -92,19 +92,19 @@ class Config extends \Hazaar\Map {
                 $override_paths = array($override_paths);
 
             foreach($override_paths as $override)
-                $search_sources[] = $override . DIRECTORY_SEPARATOR . $source;
+                $sources[] = array('name' => $override . DIRECTORY_SEPARATOR . $source, 'ns' => $override_namespaces);
 
 
         }
 
-        foreach($search_sources as &$search_source){
+        foreach($sources as &$source_info){
 
-            $source = null;
+            $source_file = null;
 
             //If we have an extension, just use that file.
-            if(strrpos($search_source, '.') !== false){
+            if(strrpos($source_info['name'], '.') !== false){
 
-                $source = \Hazaar\Loader::getFilePath($path_type, $search_source);
+                $source_file = \Hazaar\Loader::getFilePath($path_type, $source_info['name']);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -112,9 +112,9 @@ class Config extends \Hazaar\Map {
 
                 foreach($extensions as $ext){
 
-                    $filename = $search_source . '.' . $ext;
+                    $filename = $source_info['name'] . '.' . $ext;
 
-                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
+                    if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
 
                 }
@@ -122,8 +122,11 @@ class Config extends \Hazaar\Map {
             }
 
             //If the file doesn't exist, then skip it.
-            if($source)
-                $options[] = $this->loadSourceFile($source);
+            if(!$source_file) continue;
+
+            $source_data = $this->loadSourceFile($source_file);
+
+            $options[] = ($source_info['ns'] === true) ? $source_data : array($this->env => $this->loadSourceFile($source_file));
 
         }
 
@@ -131,32 +134,12 @@ class Config extends \Hazaar\Map {
 
         $combined = array();
 
-        if($override_namespaces === true){
+        foreach($options as $o){
 
-            foreach($options as $o){
+            if(ake($combined, 'final') === true)
+                break;
 
-                if(ake($combined, 'final') === true)
-                    break;
-
-                $combined = array_replace_recursive($combined, $o);
-
-            }
-
-        }else{
-
-            $combined = array_shift($options);
-
-            if(!array_key_exists($this->env, $combined))
-                $combined[$this->env] = array();
-
-            foreach($options as $o){
-
-                if(ake($combined[$this->env], 'final') === true)
-                    break;
-
-                $combined[$this->env] = array_replace_recursive($combined[$this->env], $o);
-
-            }
+            $combined = array_replace_recursive($combined, $o);
 
         }
 

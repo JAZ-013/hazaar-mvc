@@ -334,10 +334,62 @@ class Response {
         if($raw === true)
             return $this->body;
 
-        $content_type = $this->getContentType();
+        $content_type = $this->getContentType($args);
 
-        if($content_type == 'application/json')
+        if($content_type === 'application/json'){
+
             return json_decode($this->body);
+
+        }elseif(substr($content_type, 0, 9) === 'multipart'){
+
+            if(!array_key_exists('boundary', $args))
+                throw new \Exception('Received multipart content type with no boundary!');
+
+            $parts = explode('--' . $args['boundary'], trim($this->body));
+
+            if(!($parts[0] === '' && $parts[count($parts)-1] === '--'))
+                throw new \Exception('Invalid multipart response received!');
+
+            $this->body = array();
+
+            for($i = 1; $i < (count($parts) - 1); $i++){
+
+                $offset = 2;
+
+                $headers = array();
+
+                while(($del = strpos($parts[$i], "\r\n", $offset)) !== FALSE) {
+
+                    //If we get an empty line, that's the end of the headers
+                    if($del == $offset) {
+
+                        $offset += 2;
+
+                        break;
+
+                    }
+
+                    $header = substr($parts[$i], $offset, $del - $offset);
+
+                    if($split = strpos($header, ':')){
+
+                        $param = strtolower(substr($header, 0, $split));
+
+                        $value = trim(substr($header, $split + ($param ? 1 : 0)));
+
+                        $headers[$param] = $value;
+
+                    }
+
+                    $offset = $del + 2;
+
+                }
+
+                $this->body[] = array('headers' => $headers, 'body' => substr($parts[$i], $offset));
+
+            }
+
+        }
 
         return $this->body;
 

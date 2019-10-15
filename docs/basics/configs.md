@@ -330,3 +330,47 @@ You can include another configuration if needed.
 ```
 
 This is useful for if you have a development server or other stripped down server. You can set all your options up in the [production] configuration, include that config, and then only add the settings that you want to override. For example, you may have debugging off by default, so you could include the production config and then just set debug = true.
+
+## Variables
+
+Configuration files can also even reference globally available constants using embedded tags in configuration values encapsulated by the `%` sign.
+
+For example, to refernce the APPLICATION_ENV constant, your config can contain the value `%APPLICATION_ENV%`.
+
+```json
+{
+    "development":{
+        "app": {
+            "title": "Application Environment - %APPLICATION_ENV%"
+        }
+    }
+}
+```
+
+Any globally available constant defined can be referenced using this method.
+
+Some of global constants supplied by Hazaar MVC include:
+
+* `APPLICATION_ENV` - The current application environment.
+* `APPLICATION_PATH` - The path on disk in which the application directory exists.
+* `APPLICATION_BASE` - The server relative URL path on the web host.
+* `APPLICATION_NAME` - The name of the application.  This is simply the base directory name that the application files are in.
+* `HAZAAR_EXEC_START` - Timestamp when the current request started.
+* `HAZAAR_VERSION` - The current version of Hazaar MVC.
+
+!!! info
+These tags are resolved at runtime, so the constant does not have to exist before the configuration file is loaded.  It only needs to exist at the time the value is referenced.
+
+If the constant is an array, such as with those supplied by PHP like $_SERVER, $_COOKIE, etc, then the elements inside these arrays can be referenced to using bracket notation the same as PHP, but omitting the single quotes (').  For example. to reference `$_SERVER['REMOTE_ADDR']`, then your config value would be `%_SERVER[REMOTE_ADDR]%`.
+
+Other global constants that are available are:
+
+* $GLOBALS
+* $_SERVER
+* $_GET
+* $_POST
+* $_FILES
+* $_COOKIE
+* $_SESSION
+* $_REQUEST
+* $_ENV

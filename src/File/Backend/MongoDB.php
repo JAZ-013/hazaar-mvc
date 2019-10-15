@@ -5,7 +5,7 @@ namespace Hazaar\File\Backend;
 class MongoDB implements _Interface {
 
     public  $separator  = '/';
-    
+
     private $options;
 
     private $db;
@@ -16,6 +16,12 @@ class MongoDB implements _Interface {
 
     private $rootObject;
 
+    static public function label(){
+
+        return "MongoDB GridFS";
+
+    }
+    
     public function __construct($options = array()) {
 
         $this->options = ($options instanceof \Hazaar\Map) ? $options : new \Hazaar\Map($options);

@@ -112,7 +112,7 @@ class Uri implements \ArrayAccess {
     public function path() {
 
         if(func_num_args() == 0)
-            return ake($this->parts, 'path');
+            return ake($this->parts, 'path', '/');
 
         return $this->parts['path'] = func_get_arg(0);
     }

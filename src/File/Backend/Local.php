@@ -12,6 +12,50 @@ class Local implements _Interface {
 
     private $meta = array();
 
+    static public function label(){
+
+        return 'Local Filesystem Storage';
+
+    }
+
+    static public function lookup_content_type($extension){
+
+        if(! is_array(self::$mime_types)) {
+
+            self::$mime_types = array();
+
+            $mt_file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
+
+            $h = fopen($mt_file, 'r');
+
+            while($line = fgets($h)) {
+
+                $line = trim($line);
+
+                if(substr($line, 0, 1) == '#' || strlen($line) == 0)
+                    continue;
+
+                if(preg_match('/^(\S*)\s*(.*)$/', $line, $matches)) {
+
+                    $extens = explode(' ', $matches[2]);
+
+                    foreach($extens as $value) {
+                        if($value)
+                            self::$mime_types[strtolower($value)] = $matches[1];
+                    }
+
+                }
+
+            }
+
+            fclose($h);
+
+        }
+
+        return ake(self::$mime_types, $extension);
+
+    }
+
     public function __construct($options = array()) {
 
         $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
@@ -267,44 +311,8 @@ class Local implements _Interface {
 
         $info = pathinfo($path);
 
-        if($extension = strtolower(ake($info, 'extension'))) {
-
-            if(! is_array(Local::$mime_types)) {
-
-                Local::$mime_types = array();
-
-                $mt_file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
-
-                $h = fopen($mt_file, 'r');
-
-                while($line = fgets($h)) {
-
-                    $line = trim($line);
-
-                    if(substr($line, 0, 1) == '#' || strlen($line) == 0)
-                        continue;
-
-                    if(preg_match('/^(\S*)\s*(.*)$/', $line, $matches)) {
-
-                        $extens = explode(' ', $matches[2]);
-
-                        foreach($extens as $value) {
-                            if($value)
-                                Local::$mime_types[strtolower($value)] = $matches[1];
-                        }
-
-                    }
-
-                }
-
-                fclose($h);
-
-            }
-
-            if($type = ake(Local::$mime_types, $extension))
-                return $type;
-
-        }
+        if($extension = strtolower(ake($info, 'extension')))
+            return self::lookup_content_type($extension);
 
         if(function_exists('finfo_open')){
 

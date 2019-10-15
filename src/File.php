@@ -203,14 +203,14 @@ class File {
 
     /**
      * Get the relative path of the file.
-     * 
+     *
      * If the file was returned from a [[Hazaar\File\Dir]] object, then it will have a stored
      * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File\\
      * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
      * be returned.
-     * 
+     *
      * @param mixed $path Optional path to use as the relative path.
-     * 
+     *
      * @return boolean|string The relative path.  False when $path is not valid
      */
     public function relativepath($path = null){
@@ -570,13 +570,12 @@ class File {
      */
     public function md5() {
 
-        //If the contents has been downloaded from the storage backend or updated in some way, use that instead
-        if($this->contents)
-            return md5($this->contents);
-
         //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
         //a cheap method of calculating the checksum
-        return $this->backend->md5Checksum($this->source_file);
+        if(($md5 = $this->backend->md5Checksum($this->source_file)) === false)
+            $md5 = md5($this->get_contents());
+
+        return $md5;
 
     }
 
