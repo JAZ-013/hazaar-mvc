@@ -295,7 +295,7 @@ class PDF extends \Hazaar\File {
         }
 
         if(!file_exists($cmd = $this->getCommand()))
-            throw new \Exception('PDF converter executable not found!');
+            throw new \Hazaar\Exception('PDF converter executable not found!');
 
         // number of copies
         $cmd .= (($this->copies > 1) ? ' --copies ' . $this->copies : '');
@@ -351,7 +351,7 @@ class PDF extends \Hazaar\File {
             $target = \Hazaar\Application::getInstance()->runtimePath('bin', true);
 
             if(! is_writable($target))
-                throw new \Exception('The runtime binary directory is not writable!');
+                throw new \Hazaar\Exception('The runtime binary directory is not writable!');
 
             $tmp_path = new \Hazaar\File\TempDir();
 
@@ -365,10 +365,10 @@ class PDF extends \Hazaar\File {
             $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases');
 
             if(!($response = $client->send($request)))
-                throw new \Exception('No response returned from Github API call!');
+                throw new \Hazaar\Exception('No response returned from Github API call!');
 
             if($response->status != 200)
-                throw new \Exception('Got ' . $response->status . ' from Github API call!');
+                throw new \Hazaar\Exception('Got ' . $response->status . ' from Github API call!');
 
             $releases = $response->body();
 
@@ -377,10 +377,10 @@ class PDF extends \Hazaar\File {
             foreach($releases as $info){
 
                 if(!$info instanceof \stdClass)
-                    throw new \Exception('Unable to parse Github API response body!');
+                    throw new \Hazaar\Exception('Unable to parse Github API response body!');
 
                 if(!($assets = ake($info, 'assets')))
-                    throw new \Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
+                    throw new \Hazaar\Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
 
                 foreach($assets as $asset){
 
@@ -396,7 +396,7 @@ class PDF extends \Hazaar\File {
             }
 
             if(!$source_url)
-                throw new \Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
+                throw new \Hazaar\Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
 
             $tmp_file = $tmp_path . DIRECTORY_SEPARATOR . basename($source_url);
 
@@ -405,7 +405,7 @@ class PDF extends \Hazaar\File {
                 copy($source_url, $tmp_file);
 
                 if(! file_exists($tmp_file))
-                    throw new \Exception('Failed to download installation file!');
+                    throw new \Hazaar\Exception('Failed to download installation file!');
 
             }
 
@@ -434,7 +434,7 @@ class PDF extends \Hazaar\File {
             }
 
             if(!file_exists($bin_file))
-                throw new \Exception('Unable to find executable in release file!');
+                throw new \Hazaar\Exception('Unable to find executable in release file!');
 
             copy($bin_file, $cmd);
 
@@ -443,7 +443,7 @@ class PDF extends \Hazaar\File {
             chdir($cwd);
 
             if(! file_exists($cmd))
-                throw new \Exception('Executable not found after installation!');
+                throw new \Hazaar\Exception('Executable not found after installation!');
 
             return true;
 

@@ -13,7 +13,7 @@ class Controller extends \Hazaar\Controller {
     public function __initialize(\Hazaar\Application\Request $request){
 
         if(!($path = trim($request->getPath(), '/')))
-            throw new \Exception('Not allowed!', 400);
+            throw new \Hazaar\Exception('Not allowed!', 400);
 
         $parts = explode('/', $path);
 
@@ -27,7 +27,7 @@ class Controller extends \Hazaar\Controller {
                 $className = 'Hazaar\\View\\Helper\\' . ucfirst($action);
 
                 if(!class_exists($className))
-                    throw new \Exception('Helper class not found!', 404);
+                    throw new \Hazaar\Exception('Helper class not found!', 404);
 
                 $this->helper = new $className();
 
@@ -49,7 +49,7 @@ class Controller extends \Hazaar\Controller {
                 break;
 
             default:
-                throw new \Exception('Method not allowed!', 403);
+                throw new \Hazaar\Exception('Method not allowed!', 403);
 
         }
 
@@ -60,7 +60,7 @@ class Controller extends \Hazaar\Controller {
     public function __run(){
 
         if(!method_exists($this->helper, $this->method))
-            throw new \Exception('Method not found!', 404);
+            throw new \Hazaar\Exception('Method not found!', 404);
 
         $response = call_user_func_array(array($this->helper, $this->method), $this->params);
 

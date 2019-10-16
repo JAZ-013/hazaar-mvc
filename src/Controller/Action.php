@@ -66,7 +66,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __get($plugin) {
 
-        throw new \Exception('Controller plugins not supported yet.  Called: ' . $plugin);
+        throw new \Hazaar\Exception('Controller plugins not supported yet.  Called: ' . $plugin);
 
         if(array_key_exists($plugin, $this->plugins))
             return $this->plugins[$plugin];

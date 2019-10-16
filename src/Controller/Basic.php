@@ -43,7 +43,7 @@ abstract class Basic extends \Hazaar\Controller {
          * To cache an action the caching library has to be installed
          */
         if(!class_exists('Hazaar\Cache'))
-            throw new \Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
+            throw new \Hazaar\Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
 
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
@@ -80,7 +80,7 @@ abstract class Basic extends \Hazaar\Controller {
             $response = $this->init($request);
 
             if($response === FALSE)
-                throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
 
         }
 

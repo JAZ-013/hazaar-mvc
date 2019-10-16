@@ -23,10 +23,10 @@ class Version {
     public function __construct($version) {
 
         if($version == NULL)
-            throw new \Exception('Version can not be null');
+            throw new \Hazaar\Exception('Version can not be null');
 
         if(! preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
-            throw new \Exception('Invalid version format');
+            throw new \Hazaar\Exception('Invalid version format');
 
         $this->version = $version;
 

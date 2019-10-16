@@ -46,7 +46,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
     public function addHelper($helper, $args = array(), $alias = null) {
 
         if(!$this->view instanceof \Hazaar\View)
-            throw new \Exception('Unable to add helper ' . $helper . '.  Please set a view first!');
+            throw new \Hazaar\Exception('Unable to add helper ' . $helper . '.  Please set a view first!');
 
         $this->view->addHelper($helper, $args, $alias);
 
@@ -240,7 +240,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
     public function requires($script, $charset = NULL, $cache_local = null) {
 
         if(! method_exists($this->view, 'requires'))
-            throw new \Exception('The current view does not support script imports');
+            throw new \Hazaar\Exception('The current view does not support script imports');
 
         $this->_requires[] = array($script, $charset, $cache_local);
 
@@ -249,7 +249,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
     public function link($href, $rel = NULL, $cache_local = null) {
 
         if(! method_exists($this->view, 'link'))
-            throw new \Exception('The current view does not support HTML links');
+            throw new \Hazaar\Exception('The current view does not support HTML links');
 
         $this->_links[] = array($href, $rel, $cache_local);
 
@@ -258,7 +258,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
     public function script($code) {
 
         if(! method_exists($this->view, 'script'))
-            throw new \Exception('The current view does not support JavaScript code');
+            throw new \Hazaar\Exception('The current view does not support JavaScript code');
 
         $this->_scripts[] = $code;
 

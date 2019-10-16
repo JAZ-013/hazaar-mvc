@@ -51,7 +51,7 @@ class Application extends Module {
             if($request->has('encrypt')){
 
                 if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $request->encrypt)))
-                    throw new \Exception('Config file not found!', 404);
+                    throw new \Hazaar\Exception('Config file not found!', 404);
 
                 $file = new \Hazaar\File($filename);
 

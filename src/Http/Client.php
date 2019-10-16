@@ -257,7 +257,7 @@ class Client {
 
         } else {
 
-            throw new \Exception('Error #' . $errno . ': ' . $errstr);
+            throw new \Hazaar\Exception('Error #' . $errno . ': ' . $errstr);
 
         }
 
@@ -491,7 +491,7 @@ class Client {
             if(\Hazaar\Http\Client::$encryption_default_key === null){
 
                 if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
-                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+                    throw new \Hazaar\Exception('Unable to encrypt.  No key provided and no default keyfile!');
 
                 \Hazaar\Http\Client::$encryption_default_key = trim(file_get_contents($keyfile));
 

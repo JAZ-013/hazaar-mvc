@@ -437,7 +437,7 @@ class Manager {
 
             }
 
-            throw new \Exception("Copy of source type '" . $file->type() . "' between different sources is currently not supported");
+            throw new \Hazaar\Exception("Copy of source type '" . $file->type() . "' between different sources is currently not supported");
 
         }
 
@@ -476,7 +476,7 @@ class Manager {
 
             }
 
-            throw new \Exception("Move of source type '" . $file->type() . "' between different sources is currently not supported.");
+            throw new \Hazaar\Exception("Move of source type '" . $file->type() . "' between different sources is currently not supported.");
 
         }
 

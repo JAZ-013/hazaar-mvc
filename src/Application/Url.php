@@ -96,7 +96,7 @@ class Url {
             if(preg_match('/\?/', $this->controller)) {
 
                 if($this->method)
-                    throw new \Exception('Parameters are not allowed in the controller when a method has been set!');
+                    throw new \Hazaar\Exception('Parameters are not allowed in the controller when a method has been set!');
 
                 list($this->controller, $m_params) = explode('?', $this->controller);
 

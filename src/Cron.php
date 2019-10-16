@@ -128,7 +128,7 @@ class Cron {
         $this->pcron = is_int($expression) ? $expression : $this->parse($expression);
 
         if($this->pcron === false)
-            throw new \Exception('Invalid CRON time expression');
+            throw new \Hazaar\Exception('Invalid CRON time expression');
 
     }
 

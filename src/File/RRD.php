@@ -179,7 +179,7 @@ class RRD {
                     $header = unpack('vversion/lticksec', $bytes);
 
                     if(intval($header['version']) != $this->version)
-                        throw new \Exception('RRD file version error.  File is version ' . $header['version'] . ' but RRD is version ' . $this->version);
+                        throw new \Hazaar\Exception('RRD file version error.  File is version ' . $header['version'] . ' but RRD is version ' . $this->version);
 
                     $this->tickSec = $header['ticksec'];
 

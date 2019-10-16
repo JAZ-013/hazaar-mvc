@@ -446,7 +446,7 @@ class Dir {
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
             if(!curl_exec($ch))
-                throw new \Exception(curl_error($ch));
+                throw new \Hazaar\Exception(curl_error($ch));
 
             curl_close($ch);
 
@@ -461,7 +461,7 @@ class Dir {
             );
 
             if(!($result = file_get_contents($url, false, stream_context_create($options))))
-                throw new \Exception('Download failed.  Zero bytes received.');
+                throw new \Hazaar\Exception('Download failed.  Zero bytes received.');
 
             $file->write($result);
 

@@ -490,7 +490,7 @@ class Application {
         }
 
         if(setlocale(LC_ALL, $locale) === FALSE)
-            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
+            throw new \Hazaar\Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
 
         $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
 
@@ -521,7 +521,7 @@ class Application {
                 $this->bootstrap = include($bootstrap);
 
                 if($this->bootstrap === FALSE)
-                    throw new \Exception('The application failed to start!');
+                    throw new \Hazaar\Exception('The application failed to start!');
 
             }
 
@@ -676,7 +676,7 @@ class Application {
     public function runStdin() {
 
         if(!class_exists('\Hazaar\Warlock\Config'))
-            throw new \Exception('Could not find default warlock config.  How is this even working!!?');
+            throw new \Hazaar\Exception('Could not find default warlock config.  How is this even working!!?');
 
         $defaults = \Hazaar\Warlock\Config::$default_config;
 
@@ -696,7 +696,7 @@ class Application {
         if($type = $protocol->decode($line, $payload)){
 
             if(!$payload instanceof \stdClass)
-                throw new \Exception('Got Hazaar protocol packet without payload!');
+                throw new \Hazaar\Exception('Got Hazaar protocol packet without payload!');
 
             //Synchronise the timezone with the server
             if($tz = ake($payload, 'timezone'))

@@ -26,7 +26,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
                                          ), $options);
 
         if(! $this->options->has('baseuri'))
-            throw new \Exception('WebDAV file browser backend requires a URL!');
+            throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
 
         parent::__construct($this->options->toArray());
 

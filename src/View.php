@@ -174,7 +174,7 @@ class View implements \ArrayAccess {
             $this->_viewfile = View::getViewPath($view, $this->name);
 
             if (!$this->_viewfile)
-                throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
+                throw new \Hazaar\Exception("File not found or permission denied accessing view '{$this->name}'.");
 
         }
 
@@ -353,7 +353,7 @@ class View implements \ArrayAccess {
     public function registerMethodHandler($handler) {
 
         if (! is_object($handler))
-            throw new \Exception('Error trying to register handler that is not an object.');
+            throw new \Hazaar\Exception('Error trying to register handler that is not an object.');
 
         $this->_methodHandler = $handler;
 
@@ -365,7 +365,7 @@ class View implements \ArrayAccess {
     public function __call($method, $args) {
 
         if (! $this->_methodHandler)
-            throw new \Exception('No method handler defined!');
+            throw new \Hazaar\Exception('No method handler defined!');
 
         if (method_exists($this->_methodHandler, $method)) {
 
@@ -382,7 +382,7 @@ class View implements \ArrayAccess {
             ), $args);
         }
 
-        throw new \Exception("Method not found calling " . get_class($this->_methodHandler) . ":$method()");
+        throw new \Hazaar\Exception("Method not found calling " . get_class($this->_methodHandler) . ":$method()");
 
     }
 
@@ -581,7 +581,7 @@ class View implements \ArrayAccess {
             ob_start();
 
             if (! ($file = $this->getViewFile()) || ! file_exists($file))
-                throw new \Exception("View does not exist ($this->name)", 404);
+                throw new \Hazaar\Exception("View does not exist ($this->name)", 404);
 
             include ($file);
 
