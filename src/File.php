@@ -84,7 +84,7 @@ class File {
                 $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
 
             if(! $backend instanceof File\Backend\_Interface)
-                throw new \Exception('Can not create new file object without a valid file backend!');
+                throw new \Hazaar\Exception('Can not create new file object without a valid file backend!');
 
             $this->backend = $backend;
 
@@ -665,7 +665,7 @@ class File {
             if(!$dir->exists($destination)){
 
                 if(!$create_dest)
-                    throw new \Exception('Destination does not exist!');
+                    throw new \Hazaar\Exception('Destination does not exist!');
 
                 $dir->create(true);
 
@@ -1269,7 +1269,7 @@ class File {
             $content = substr($data, 8);
 
             if($hash !== hash('crc32', $content))
-                throw new \Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
+                throw new \Hazaar\Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
 
         }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
 

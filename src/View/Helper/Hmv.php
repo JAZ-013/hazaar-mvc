@@ -367,7 +367,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }else{
 
-                    throw new \Exception('Unsupported array: ' . $name);
+                    throw new \Hazaar\Exception('Unsupported array: ' . $name);
 
                 }
 

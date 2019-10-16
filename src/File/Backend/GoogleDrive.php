@@ -113,7 +113,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
 
             if($state != $this->cache->pull('oauth2_state'))
-                throw new \Exception('Bad state!');
+                throw new \Hazaar\Exception('Bad state!');
 
             $request = new \Hazaar\Http\Request('https://accounts.google.com/o/oauth2/token', 'POST');
 
@@ -193,7 +193,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         while(++$count) {
 
             if($count > $this->options['refresh_attempts'])
-                throw new \Exception('Too many refresh attempts!');
+                throw new \Hazaar\Exception('Too many refresh attempts!');
 
             $request->setHeader('Authorization', $this->options['oauth2']['token_type'] . ' ' . $this->options['oauth2']['access_token']);
 
@@ -206,7 +206,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
             } elseif($response->status == 401) {
 
                 if(! $this->authorise())
-                    throw new \Exception('Unable to refresh access token!');
+                    throw new \Hazaar\Exception('Unable to refresh access token!');
 
             } else {
 
@@ -236,7 +236,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
                 }
 
-                throw new \Exception($message, $code);
+                throw new \Hazaar\Exception($message, $code);
 
             }
 
@@ -247,7 +247,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
             $meta = new \Hazaar\Map($response->body);
 
             if($meta->has('error'))
-                throw new \Exception($meta->error);
+                throw new \Hazaar\Exception($meta->error);
 
         } else {
 

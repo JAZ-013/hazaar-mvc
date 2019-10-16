@@ -88,7 +88,7 @@ class Response {
                 if($this->status === null){
 
                     if(!preg_match('/(HTTP\/[\d\.]+)\s+(\d+)\s+(.*)/', $header, $matches))
-                        throw new \Exception('Got bad HTTP response: ' . $header);
+                        throw new \Hazaar\Exception('Got bad HTTP response: ' . $header);
 
                     //Parse the response header so we can throw errors if needed
                     list($null, $this->version, $this->status, $this->name) = $matches;
@@ -142,7 +142,7 @@ class Response {
 
                 } else {
 
-                    throw new \Exception('Got bad HTTP response header: ' . $header);
+                    throw new \Hazaar\Exception('Got bad HTTP response header: ' . $header);
 
                 }
 
@@ -343,12 +343,12 @@ class Response {
         }elseif(substr($content_type, 0, 9) === 'multipart'){
 
             if(!array_key_exists('boundary', $args))
-                throw new \Exception('Received multipart content type with no boundary!');
+                throw new \Hazaar\Exception('Received multipart content type with no boundary!');
 
             $parts = explode('--' . $args['boundary'], trim($this->body));
 
             if(!($parts[0] === '' && $parts[count($parts)-1] === '--'))
-                throw new \Exception('Invalid multipart response received!');
+                throw new \Hazaar\Exception('Invalid multipart response received!');
 
             $this->body = array();
 

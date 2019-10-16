@@ -343,7 +343,7 @@ class GD extends BaseRenderer {
             }
 
             if($ret == false)
-                throw new \Exception('There was an error applying filter: ' . $filter);
+                throw new \Hazaar\Exception('There was an error applying filter: ' . $filter);
 
         }
 

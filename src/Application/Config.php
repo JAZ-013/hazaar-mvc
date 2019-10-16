@@ -199,19 +199,19 @@ class Config extends \Hazaar\Map {
         if($extention == 'json'){
 
             if(!$config = $file->parseJSON(true))
-                throw new \Exception('Failed to parse JSON config file: ' . $source);
+                throw new \Hazaar\Exception('Failed to parse JSON config file: ' . $source);
 
         }elseif($extention == 'ini'){
 
             if(!$config = parse_ini_string($file->get_contents(), true, INI_SCANNER_TYPED))
-                throw new \Exception('Failed to parse INI config file: ' . $source);
+                throw new \Hazaar\Exception('Failed to parse INI config file: ' . $source);
 
             foreach($config as &$array)
                 $array = array_from_dot_notation($array);
 
         }else{
 
-            throw new \Exception('Unknown file format: ' . $source);
+            throw new \Hazaar\Exception('Unknown file format: ' . $source);
 
         }
 

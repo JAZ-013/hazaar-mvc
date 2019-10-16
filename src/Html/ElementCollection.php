@@ -143,7 +143,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
                                 default:
 
-                                    throw new \Exception('Unsupported nth pseudo class class selector: ' . $pseudo_class);
+                                    throw new \Hazaar\Exception('Unsupported nth pseudo class class selector: ' . $pseudo_class);
 
                             }
 
@@ -153,7 +153,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
                     }else{
 
-                        throw new \Exception('Unsupported complex pseudo-class: ' . $func[1]);
+                        throw new \Hazaar\Exception('Unsupported complex pseudo-class: ' . $func[1]);
 
                     }
 

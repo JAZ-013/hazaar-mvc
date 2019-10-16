@@ -240,7 +240,7 @@ abstract class REST extends \Hazaar\Controller {
         if($full_path == '/'){
 
             if(!$this->allow_directory)
-                throw new \Exception('Directory listing is not allowed', 403);
+                throw new \Hazaar\Exception('Directory listing is not allowed', 403);
 
             return new \Hazaar\Controller\Response\Json($this->__describe_api());
 
@@ -278,7 +278,7 @@ abstract class REST extends \Hazaar\Controller {
         }
 
         if(!$this->__endpoint)
-            throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
+            throw new \Hazaar\Exception('REST API Endpoint not found: ' . $full_path, 404);
 
         if(method_exists($this, 'init'))
             $this->init($this->request);
@@ -405,7 +405,7 @@ abstract class REST extends \Hazaar\Controller {
         list($endpoint, $route, $args) = $endpoint;
 
         if(!($method = $route['func']) instanceof \ReflectionMethod)
-            throw new \Exception('Method is no longer a method!?', 500);
+            throw new \Hazaar\Exception('Method is no longer a method!?', 500);
 
         $params = array();
 
@@ -422,7 +422,7 @@ abstract class REST extends \Hazaar\Controller {
             elseif($p->isDefaultValueAvailable())
                 $value = $p->getDefaultValue();
             else
-                throw new \Exception("Missing value for parameter '$key'.", 400);
+                throw new \Hazaar\Exception("Missing value for parameter '$key'.", 400);
 
             $params[$p->getPosition()] = $value;
 

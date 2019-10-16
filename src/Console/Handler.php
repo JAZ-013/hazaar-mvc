@@ -45,7 +45,7 @@ class Handler {
         list($method, $code) = explode(' ', $authorization);
 
         if(strtolower($method) != 'basic')
-            throw new \Exception('Unsupported authorization method: ' . $method);
+            throw new \Hazaar\Exception('Unsupported authorization method: ' . $method);
 
         list($identity, $credential) = explode(':', base64_decode($code));
 
@@ -146,7 +146,7 @@ class Handler {
 
             }else{
 
-                throw new \Exception('Unsupported password encryption algorithm.');
+                throw new \Hazaar\Exception('Unsupported password encryption algorithm.');
 
             }
 
@@ -281,7 +281,7 @@ class Handler {
             $module_name = 'app';
 
         if(!$this->moduleExists($module_name))
-            throw new \Exception("Console module '$module_name' does not exist!", 404);
+            throw new \Hazaar\Exception("Console module '$module_name' does not exist!", 404);
 
         if(!($action = array_shift($parts)))
             $action = 'index';
@@ -289,7 +289,7 @@ class Handler {
         $module = $this->modules[$module_name];
 
         if(!method_exists($module, $action))
-            throw new \Exception("Method '$action' not found on module '$module_name'", 404);
+            throw new \Hazaar\Exception("Method '$action' not found on module '$module_name'", 404);
 
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);

@@ -442,7 +442,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
         $app_url = (string)\Hazaar\Application::getInstance()->url();
 
         if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
-            throw new \Exception('You are not allowed to access this resource!', 403);
+            throw new \Hazaar\Exception('You are not allowed to access this resource!', 403);
 
         $this->application->config->app['compress'] = false;
 
@@ -469,7 +469,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
                 $url .= '?' . http_build_query($params);
 
             if(!($content = @file_get_contents($url)))
-                throw new \Exception('Unable to cache from source ' . $url, 502);
+                throw new \Hazaar\Exception('Unable to cache from source ' . $url, 502);
 
             $headers = array();
 

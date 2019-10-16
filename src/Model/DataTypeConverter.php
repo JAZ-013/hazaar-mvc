@@ -174,7 +174,7 @@ abstract class DataTypeConverter  {
 
         }else{
 
-            throw new \Exception("Unable to convert value to unknown type or class '$type'.");
+            throw new \Hazaar\Exception("Unable to convert value to unknown type or class '$type'.");
 
         }
 

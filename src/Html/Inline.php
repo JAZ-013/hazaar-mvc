@@ -22,7 +22,7 @@ class Inline extends Element {
     public function renderObject() {
 
         if(!$this->type)
-            throw new \Exception('Unable to render inline HTML element that has not element type!');
+            throw new \Hazaar\Exception('Unable to render inline HTML element that has not element type!');
 
         return '<' . $this->type . (($this->parameters->count() > 0) ? ' ' . $this->parameters : null) . ' />';
 

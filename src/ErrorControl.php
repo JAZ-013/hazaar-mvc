@@ -155,7 +155,7 @@ if(function_exists('apache_get_modules')) {
 
     if(! in_array('mod_rewrite', apache_get_modules())) {
 
-        throw new \Exception('mod_rewrite MUST be enabled to use Hazaar!');
+        throw new \Hazaar\Exception('mod_rewrite MUST be enabled to use Hazaar!');
 
     }
 

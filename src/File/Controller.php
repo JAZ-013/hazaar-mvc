@@ -70,7 +70,7 @@ class Controller extends \Hazaar\Controller\Basic {
         }
 
         if(!$response instanceof \Hazaar\Controller\Response\File)
-            throw new \Exception('An error ocurred constructing a response object.');
+            throw new \Hazaar\Exception('An error ocurred constructing a response object.');
 
         $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 

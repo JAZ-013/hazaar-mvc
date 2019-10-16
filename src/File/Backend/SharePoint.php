@@ -74,7 +74,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             return true;
 
         if(!($token = $this->getSecurityToken($this->options['username'], $this->options['password'])))
-            throw new \Exception('Unable to get SharePoint security token!');
+            throw new \Hazaar\Exception('Unable to get SharePoint security token!');
 
         return $this->getAuthenticationCookies($token);
 
@@ -85,7 +85,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $xmlFile = __DIR__ . DIRECTORY_SEPARATOR . 'XML' . DIRECTORY_SEPARATOR . 'SAML.xml';
 
         if(!file_exists($xmlFile))
-            throw new \Exception('SAML XML authorisation template is missing!');
+            throw new \Hazaar\Exception('SAML XML authorisation template is missing!');
 
         $request = new Request(self::$STSAuthURL, 'POST');
 
@@ -104,14 +104,14 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $response = $this->send($request);
 
         if($response->status !== 200)
-            throw new \Exception('Invalid response requesting security token.');
+            throw new \Hazaar\Exception('Invalid response requesting security token.');
 
         $xml = new \DOMDocument();
 
         $xml->loadXML($response->body());
 
         if(!$xml instanceof \DOMDocument)
-            throw new \Exception('Invalid response authenticating SharePoint access.');
+            throw new \Hazaar\Exception('Invalid response authenticating SharePoint access.');
 
         $xpath = new \DOMXPath($xml);
 
@@ -144,7 +144,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $response = $this->send($request, false);
 
         if($response->status !== 302)
-            throw new \Exception('Invalid response requesting auth cookies: ' . $response->status);
+            throw new \Hazaar\Exception('Invalid response requesting auth cookies: ' . $response->status);
 
         $this->deleteCookie('fpc');
 
@@ -235,7 +235,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             $error = ake($response->body(), 'error');
 
-            throw new \Exception('Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
+            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
 
         }
 
@@ -370,12 +370,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $response = $this->send($request);
 
         if($response->status !== 200)
-            throw new \Exception('Invalid batch response received!');
+            throw new \Hazaar\Exception('Invalid batch response received!');
 
         $responses = $response->body();
 
         if(count($responses) !== 2)
-            throw new \Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
+            throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
 
         array_walk($responses, function(&$value){
             $response = new \Hazaar\Http\Response();

@@ -30,7 +30,7 @@ class WebDAV extends \Hazaar\Http\Client {
         $this->settings = $settings;
 
         if(! $this->settings->has('baseuri'))
-            throw new \Exception('WebDAV: No baseuri specified');
+            throw new \Hazaar\Exception('WebDAV: No baseuri specified');
 
         $this->settings->baseuri = rtrim($this->settings->baseuri, '/');
 
@@ -42,15 +42,15 @@ class WebDAV extends \Hazaar\Http\Client {
         if($options->status != 401) {
 
             if($options->status != 200)
-                throw new \Exception('WebDAV server returned status ' . $options->status . ': ' . $options->name);
+                throw new \Hazaar\Exception('WebDAV server returned status ' . $options->status . ': ' . $options->name);
 
             if(! array_key_exists('dav', $options->headers))
-                throw new \Exception('Base URI does not support WebDAV protocol.  URI=' . $this->settings->baseuri);
+                throw new \Hazaar\Exception('Base URI does not support WebDAV protocol.  URI=' . $this->settings->baseuri);
 
             $this->classes = explode(',', $options->headers['dav'][0]);
 
             if(! in_array(1, $this->classes))
-                throw new \Exception('Server must at least support WebDAV class 1!');
+                throw new \Hazaar\Exception('Server must at least support WebDAV class 1!');
 
             if(array_key_exists('allow', $options->headers))
                 $this->allow = explode(',', $options->headers['allow']);
@@ -120,7 +120,7 @@ class WebDAV extends \Hazaar\Http\Client {
         foreach($responseList as $response) {
 
             if(! ($href = rawurldecode($response->child('href')->value())))
-                throw new \Exception('No HREF in multi-status response');
+                throw new \Hazaar\Exception('No HREF in multi-status response');
 
             $propstat = $response->child('propstat');
 

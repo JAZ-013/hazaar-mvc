@@ -555,7 +555,7 @@ class Request extends \Hazaar\Map {
         if($local_pk){
 
             if(!file_exists((string)$local_pk))
-                throw new \Exception('Local private key specified but the file does not exist!');
+                throw new \Hazaar\Exception('Local private key specified but the file does not exist!');
 
             stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
 

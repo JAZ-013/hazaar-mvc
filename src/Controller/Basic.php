@@ -38,7 +38,6 @@ abstract class Basic extends \Hazaar\Controller {
     protected $__cache_key     = null;
 
     public function cacheAction($action, $timeout = 60, $public = false) {
-
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
 
@@ -74,7 +73,7 @@ abstract class Basic extends \Hazaar\Controller {
             $response = $this->init($request);
 
             if($response === FALSE)
-                throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
 
         }
 

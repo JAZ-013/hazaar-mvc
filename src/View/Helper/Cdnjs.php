@@ -149,7 +149,7 @@ class Cdnjs extends \Hazaar\View\Helper {
                 return null;
 
             if(!array_key_exists('assets', $library_info))
-                throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
+                throw new \Hazaar\Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
 
             if($version === null)
                 $version = $library_info['version'];
@@ -170,7 +170,7 @@ class Cdnjs extends \Hazaar\View\Helper {
         }
 
         if(!is_array($info) > 0)
-            throw new \Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
+            throw new \Hazaar\Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
 
         $info['priority'] = $priority;
 
@@ -207,7 +207,7 @@ class Cdnjs extends \Hazaar\View\Helper {
         }
 
         if(!($info = json_decode(file_get_contents('https://api.cdnjs.com/libraries/' . $name), true)))
-            throw new \Exception('CDNJS: Error parsing package info!');
+            throw new \Hazaar\Exception('CDNJS: Error parsing package info!');
 
         self::$cache->set($name, $info);
 

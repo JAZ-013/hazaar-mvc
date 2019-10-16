@@ -117,7 +117,7 @@ class Closure {
 
         } else {
 
-            throw new \Exception('Bad code: ' . $this->code);
+            throw new \Hazaar\Exception('Bad code: ' . $this->code);
 
         }
 
