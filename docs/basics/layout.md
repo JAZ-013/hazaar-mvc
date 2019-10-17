@@ -37,7 +37,7 @@ This is the application directory that contains all the models, views and contro
 ### library 
 
 !!! warning
-Since moving to composer libraries this directory has been **deprecated** and this documentation will be updated at some point.
+    Since moving to composer libraries this directory has been **deprecated** and this documentation will be updated at some point.
 
 This is where library files can be stored or linked. By default it has a link back to the Hazaar MVC library directory where you installed Hazaar MVC. For more advanced projects you will be able to store other 3rd part libraries in here and the Hazaar MVC autoloader will be able to find them. For now, you probably won't want to mess with this and it should just work as is. 
 
