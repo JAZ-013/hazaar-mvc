@@ -26,12 +26,10 @@ As stated, the default locale for Apache 2 is usually ‘C’. This is because i
 However, you can set the locale for your entire Apache instance if you choose. To set the locale for your entire Apache instance just look in the file /etc/apache2/envvars and either set the LANG variable to your locale (such as en_AU, or en_US), or set it to use your default system locale by uncommenting the line that loads the locale from /etc/default/locale.
 
 !!! Note
-
     This will set the locale for your entire Apache server and affect everything running on it. However if the application sets a locate separately
     (as above) then that will override the default locale. Setting the Apache locale will just make sure a locale is set by default.
 
 !!! Danger
-
     I can’t stress this enough so I’ll repeat. These locales MUST be enabled on your server. If they are not, then the call will fail and you will get an error.
 
 ## Setting System Locale on Debian
