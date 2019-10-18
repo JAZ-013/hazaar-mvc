@@ -98,9 +98,9 @@ class Dir {
 
     }
 
-    public function exists() {
+    public function exists($filename = null) {
 
-        return $this->backend->exists($this->path);
+        return $this->backend->exists(rtrim($this->path, '/') . ($filename ? '/' . $filename : ''));
 
     }
 
@@ -518,7 +518,8 @@ class Dir {
 
             }elseif($item instanceof \Hazaar\File){
 
-                $this->put($item, true);
+                if(!$this->exists($item->basename()))
+                    $this->put($item, true);
 
             }
 
