@@ -214,36 +214,52 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
 
-        $this->authorise();
+        $retries = 3;
 
-        if($method === 'POST' || $method === 'PUT')
-            $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
+        for($i = 0; $i <$retries; $i++){
 
-        $request = new Request($url, $method, 'application/json; OData=verbose');
+            $this->authorise();
 
-        $request->setHeader('Accept', 'application/json; OData=verbose');
+            if($method === 'POST' || $method === 'PUT')
+                $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
-        if(is_array($extra_headers)){
+            $request = new Request($url, $method, 'application/json; OData=verbose');
 
-            foreach($extra_headers as $key => $value)
-                $request->setHeader($key, $value);
+            $request->setHeader('Accept', 'application/json; OData=verbose');
 
-        }
+            if(is_array($extra_headers)){
 
-        if($body !== null)
-            $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
+                foreach($extra_headers as $key => $value)
+                    $request->setHeader($key, $value);
 
-        $response = $this->send($request);
+            }
 
-        if($response->status !== 200 && $response->status !== 201){
+            if($body !== null)
+                $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
+
+            $response = $this->send($request);
+
+            if(in_array($response->status, array(200, 201)))
+                return $response->body();
+            elseif(array($response->status, array(401, 403))){
+
+                $this->requestFormDigest = null;
+
+                if($response->status === 401)
+                    $this->deleteCookies();
+
+                continue;
+
+            }
 
             $error = ake($response->body(), 'error');
 
-            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
+            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code='
+                . $error->code . ' message=' . $error->message->value);
 
         }
 
-        return $response->body();
+        throw new \Exception('Query failed after ' . $retries . ' retried.  Giving up!');
 
     }
 
@@ -389,61 +405,77 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->options['webURL'] . '/_api/$batch';
 
-        $request = new Request($url, 'POST');
+        $retries = 3;
 
-        $request->setHeader('Accept', 'application/json; OData=verbose');
+        for($i = 0; $i < $retries; $i++){
 
-        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+            $request = new Request($url, 'POST');
 
-        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+            $request->setHeader('Accept', 'application/json; OData=verbose');
 
-        $request->enableMultipart('multipart/mixed', 'batch_' . guid());
+            $request->setHeader('X-RequestDigest', $this->_getFormDigest());
 
-        $headers = array('Content-Transfer-Encoding' => 'binary');
+            $request->setHeader('X-RequestDigest', $this->_getFormDigest());
 
-        $request->addMultipart('GET ' . $this->_folder($path, 'folders')
-            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+            $request->enableMultipart('multipart/mixed', 'batch_' . guid());
 
-        $request->addMultipart('GET ' . $this->_folder($path, 'files')
-            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+            $headers = array('Content-Transfer-Encoding' => 'binary');
 
-        $response = $this->send($request);
+            $request->addMultipart('GET ' . $this->_folder($path, 'folders')
+                . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
 
-        if($response->status !== 200)
-            throw new \Hazaar\Exception('Invalid batch response received!');
+            $request->addMultipart('GET ' . $this->_folder($path, 'files')
+                . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
 
-        $responses = $response->body();
+            $response = $this->send($request);
 
-        if(count($responses) !== 2)
-            throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
+            if($response->status !== 200){
 
-        array_walk($responses, function(&$value){
-            $response = new \Hazaar\Http\Response();
+                $this->requestFormDigest = null;
 
-            $response->read($value['body']);
+                if($response->status === 401)
+                    $this->deleteCookies();
 
-            $value = $response;
-        });
+                continue;
 
-        $folders = ake($responses[0]->body(), 'd.results');
+            }
 
-        $files = ake($responses[1]->body(), 'd.results');
+            $responses = $response->body();
 
-        $sort = function($a, $b){
-            if ($a->Name === $b->Name) return 0;
-            return ($a->Name < $b->Name) ? -1 : 1;
-        };
+            if(count($responses) !== 2)
+                throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
 
-        usort($folders, $sort);
+            array_walk($responses, function(&$value){
+                $response = new \Hazaar\Http\Response();
 
-        usort($files, $sort);
+                $response->read($value['body']);
 
-        $items = array();
+                $value = $response;
+            });
 
-        foreach(array_merge($folders, $files) as $item)
-            $items[$item->Name] = $item;
+            $folders = ake($responses[0]->body(), 'd.results');
 
-        return $items;
+            $files = ake($responses[1]->body(), 'd.results');
+
+            $sort = function($a, $b){
+                if ($a->Name === $b->Name) return 0;
+                return ($a->Name < $b->Name) ? -1 : 1;
+            };
+
+            usort($folders, $sort);
+
+            usort($files, $sort);
+
+            $items = array();
+
+            foreach(array_merge($folders, $files) as $item)
+                $items[$item->Name] = $item;
+
+            return $items;
+
+        }
+
+        throw new \Exception('Unable to load folder info after ' . $retries . ' retried.  Giving up!');
 
     }
 
