@@ -38,6 +38,9 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $this->client_secret = $client_secret;
 
+        if(!$this->session->has('oauth2_metadata'))
+            $this->session->oauth2_metadata = json_decode(file_get_contents($this->target_url . '/.well-known/oauth-authorization-server'));
+
     }
 
     public function addScope($scope){
@@ -119,7 +122,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        if(is_array($data)){
+        if($data !== false){
 
             $this->session->oauth2_data = $data;//, ake($data, 'expires_in'));
 
@@ -172,7 +175,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         if(($code = ake($_REQUEST, 'code')) && ake($_REQUEST, 'state') == $this->session->state){
 
-            $target_url = (is_array($this->target_url) ? ake($this->target_url, 1, ake($this->target_url, 0)) : $this->target_url);
+            $target_url = $this->session->oauth2_metadata->token_endpoint;
 
             $request = new \Hazaar\Http\Request($target_url, 'POST');
 
@@ -193,14 +196,12 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
             $response = $this->http_client->send($request);
 
-            if($response->status == 200)
-                return  json_decode($response->body, true);
-
-            die($response->body);
+            if($response->status === 200)
+                return $response->body();
 
             return false;
 
-        }elseif(array_key_exists('access_token', $_REQUEST) && ake($_REQUEST, 'state') == $this->session->state){
+        }elseif(array_key_exists('access_token', $_REQUEST) && ake($_REQUEST, 'state') === $this->session->state){
 
             return $_REQUEST;
 
@@ -246,7 +247,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             if(count($this->scopes) > 0)
                 $params['scope'] = implode(' ' , $this->scopes);
 
-            $target_url = (is_array($this->target_url) ? ake($this->target_url, 1, ake($this->target_url, 0)) : $this->target_url);
+            $target_url = $this->session->oauth2_metadata->authorization_endpoint;
 
             $url = $target_url . '?' . array_flatten($params, '=', '&');
 
@@ -304,7 +305,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function getRedirectUri(){
 
-        return (boolify($_SERVER['HTTPS']) ? 'https' : 'http' )
+        return (array_key_exists('HTTPS', $_SERVER) && boolify($_SERVER['HTTPS']) ? 'https' : 'http' )
             . '://' . $_SERVER['SERVER_NAME']
             . ':' . ake($_SERVER, 'SERVER_PORT', 80)
             . $_SERVER['REQUEST_URI'];
@@ -347,6 +348,35 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
+    public function logout(){
+
+        if(!$this->authenticated())
+            return true;
+
+        if(array_key_exists('state', $_REQUEST) && $_REQUEST['state'] === $this->session->state){
+
+            $this->session->clear();
+
+            return $this->deauth();
+
+        }
+
+        $metadata = $this->session->get('oauth2_metadata');
+
+        $this->session->state = md5(uniqid());
+        
+        $data = ake($this->session->oauth2_data, 'id_token');
+
+        $params = array(
+            'id_token_hint' => $data,
+            'post_logout_redirect_uri' => $this->getRedirectUri(),
+            'state' => $this->session->state
+        );
+
+        header('Location: ' . $metadata->end_session_endpoint . '?' . \http_build_query($params));
+
+        exit;
+
+    }
+
 }
-
-
