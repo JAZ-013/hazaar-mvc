@@ -406,9 +406,9 @@ class Dir {
      *
      * @return mixed
      */
-    public function put(\Hazaar\File $file){
+    public function put(\Hazaar\File $file, $overwrite = false){
 
-        return $file->copyTo($this->path, false, $this->backend);
+        return $file->copyTo($this->path, $overwrite, false, $this->backend);
 
     }
 
@@ -497,6 +497,34 @@ class Dir {
     public function get_meta($key = NULL) {
 
         return $this->backend->get_meta($this->path, $key);
+
+    }
+
+    public function sync(Dir $source, $recursive = false){
+
+        while($item = $source->read()){
+
+            if($item instanceof Dir){
+
+                if($recursive === false)
+                    continue;
+
+                $dir = $this->get($item->basename(), true);
+
+                if(!$dir->exists())
+                    $dir->create();
+
+                $dir->sync($item, $recursive);
+
+            }elseif($item instanceof \Hazaar\File){
+
+                $this->put($item, true);
+
+            }
+
+        }
+
+        return true;
 
     }
 
