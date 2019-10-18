@@ -478,6 +478,14 @@ class Client {
 
     }
 
+    public function deleteCookies(){
+        
+        $this->cookies = array();
+
+        return true;
+
+    }
+
     public function disableRedirect() {
 
         $this->auto_redirect = FALSE;
