@@ -20,6 +20,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private $root = null;
 
+    private $host_info;
+
     static public function label(){
 
         return "Microsoft SharePoint";
@@ -53,6 +55,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $this->uncacheCookie($this->cache);
 
         $this->root = new \stdClass;
+
+        $this->host_info = parse_url($this->options['webURL']);
 
     }
 
@@ -343,6 +347,42 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    private function update_info($info){
+
+        if(!$info instanceof \stdClass)
+            return false;
+
+        if(property_exists($info, 'd'))
+            $info = $info->d;
+
+        $folder =& $this->root;
+
+        $name = str_ireplace($this->host_info['path'] . '/' . ltrim($this->options['root'], '/'), '', $info->ServerRelativeUrl);
+
+        $parts = explode('/', trim(dirname($name), '/ '));
+
+        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
+        foreach($parts as $part){
+
+            if(!$part)
+                continue;
+
+            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
+                break;
+
+            $folder =& $folder->items[$part];
+
+        }
+
+        $key = basename($name);
+
+        if($folder instanceof \stdClass && property_exists($folder, 'items'))
+            $folder->items[$key] = $info;
+
+        return true;
+
+    }
+
     private function load($path){
 
         $this->authorise();
@@ -564,9 +604,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_object_url($path);
 
-        $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
+        $result = $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
 
-        return true;
+        return $this->update_info($result);
 
     }
 
@@ -608,7 +648,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST', $body);
 
-        return (ake($result, 'd.Exists') === true);
+        return $this->update_info($result);
 
     }
 
@@ -631,7 +671,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST');
 
-        return ($result instanceof \stdClass && property_exists($result, 'd'));
+        return $this->update_info($result);
 
     }
 
@@ -650,7 +690,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST');
 
-        return ($result instanceof \stdClass && property_exists($result, 'd'));
+        return $this->update_info($result);
 
     }
 
@@ -666,30 +706,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_folder(dirname($file), "Files/add(url='" . rawurlencode(basename($file)) . "',overwrite=" . strbool($overwrite) . ")");
 
-        if(!($result = $this->_query($url, 'POST', $data, null, $response)))
-            return false;
+        $result = $this->_query($url, 'POST', $data, null, $response);
 
-        $folder =& $this->root;
-
-        $parts = explode('/', trim(dirname($file), '/ '));
-
-        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
-        foreach($parts as $part){
-
-            if(!$part)
-                continue;
-
-            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
-                break;
-
-            $folder =& $folder->items[$part];
-
-        }
-
-        if($folder instanceof \stdClass && property_exists($folder, 'items') && array_key_exists(basename($file), $folder->items))
-            $folder->items[basename($file)] = ake($result, 'd');
-
-        return true;
+        return $this->update_info($result);
 
     }
 
