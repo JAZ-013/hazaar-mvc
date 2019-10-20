@@ -12,17 +12,17 @@ namespace Hazaar\Auth\Adapter;
  */
 class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
-    private $http_client;
+    protected $http_client;
 
-    private $target_url;
+    protected $target_url;
 
-    private $grant_type;
+    protected $grant_type;
 
-    private $client_id;
+    protected $client_id;
 
-    private $client_secret;
+    protected $client_secret;
 
-    private $scopes = array();
+    protected $scopes = array();
 
     function __construct($target_url, $client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
 
@@ -376,6 +376,20 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         header('Location: ' . $metadata->end_session_endpoint . '?' . \http_build_query($params));
 
         exit;
+
+    }
+
+    public function query($endpoint){
+
+        $url = rtrim($this->target_url, '/') . '/' . $endpoint;
+
+        $request = new \Hazaar\Http\Request($url);
+
+        $request->authorisation($this);
+
+        $response = $this->http_client->send($request);
+
+        return $response->body();
 
     }
 
