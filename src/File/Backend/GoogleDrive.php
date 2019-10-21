@@ -41,17 +41,18 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         return 'GoogleDrive';
 
     }
-    
+
     public function __construct($options) {
 
         parent::__construct();
 
         $this->options = new \Hazaar\Map(array(
-                                             'cache_backend'    => 'file',
-                                             'oauth2'           => array('access_token' => NULL),
-                                             'refresh_attempts' => 5,
-                                             'maxResults'       => 100
-                                         ), $options);
+            'cache_backend'    => 'file',
+            'oauth2'           => array('access_token' => NULL),
+            'refresh_attempts' => 5,
+            'maxResults'       => 100,
+            'root'             => '/'
+        ), $options);
 
         if(! ($this->options->has('client_id') && $this->options->has('client_secret')))
             throw new Exception\DropboxError('Google Drive filesystem backend requires both client_id and client_secret.');
@@ -550,6 +551,19 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
             return FALSE;
 
         return strtotime($item['modifiedDate']);
+
+    }
+
+    public function touch($path){
+
+        if(! ($item = $this->resolvePath($path)))
+            return FALSE;
+
+        $request = new \Hazaar\Http\Request('https://www.googleapis.com/drive/v2/files/' . $item['id'], 'PATCH', 'application/json');
+
+        $request->modifiedDate = time();
+
+        return $this->sendRequest($request, FALSE);
 
     }
 

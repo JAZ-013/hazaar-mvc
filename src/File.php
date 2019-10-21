@@ -388,6 +388,15 @@ class File {
 
     }
 
+    public function touch(){
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->touch($this->source_file);
+
+    }
+
     public function atime() {
 
         if(!$this->exists())

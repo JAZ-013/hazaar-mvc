@@ -598,6 +598,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    public function touch($path){
+
+        return false;
+
+    }
+
     //Returns the file modification time
     public function fileatime($path) {
 

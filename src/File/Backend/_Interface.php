@@ -11,6 +11,8 @@ interface _Interface {
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE);
 
+    public function touch($path);
+
     //Check if file/path exists
     public function exists($path);
 
