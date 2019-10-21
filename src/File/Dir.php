@@ -502,26 +502,62 @@ class Dir {
 
     public function sync(Dir $source, $recursive = false){
 
+        if(!$this->exists())
+            $this->create();
+
         while($item = $source->read()){
 
-            if($item instanceof Dir){
+            $retries = 3;
 
-                if($recursive === false)
-                    continue;
+            for($i = 0; $i < $retries; $i++){
 
-                $dir = $this->get($item->basename(), true);
+                try{
 
-                if(!$dir->exists())
-                    $dir->create();
+                    if($item instanceof Dir){
 
-                $dir->sync($item, $recursive);
+                        if($recursive === false)
+                            continue;
 
-            }elseif($item instanceof \Hazaar\File){
+                        $dir = $this->get($item->basename(), true);
 
-                if(!$this->exists($item->basename()))
-                    $this->put($item, true);
+                        if(!$dir->exists())
+                            $dir->create();
+
+                        $dir->sync($item, $recursive);
+
+                    }elseif($item instanceof \Hazaar\File){
+
+                        if(!($sync = (!$this->exists($item->basename())))){
+
+                            $target_file = $this->get($item->basename());
+
+                            $sync = $item->mtime() > $target_file->mtime();
+
+                        }
+
+                        if($sync){
+
+                            $item->touch();
+
+                            $this->put($item, true);
+
+                        }
+
+                    }
+
+                    continue 2;
+
+                }
+                catch(\Throwable $e){
+
+                    //If we get an exception, it could be due to a network issue, so hang back for sec and try again
+                    sleep(1);
+
+                }
 
             }
+
+            throw (isset($e) ? $e : new \Exception('Unknown error!'));
 
         }
 
