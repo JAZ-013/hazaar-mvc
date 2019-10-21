@@ -26,7 +26,8 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         'editable',
         'mimeType',
         'createdDate',
-        'modifiedDate', 'fileSize',
+        'modifiedDate',
+        'fileSize',
         'downloadUrl',
         'exportLinks',
         'thumbnailLink',
@@ -41,17 +42,18 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         return 'GoogleDrive';
 
     }
-    
+
     public function __construct($options) {
 
         parent::__construct();
 
         $this->options = new \Hazaar\Map(array(
-                                             'cache_backend'    => 'file',
-                                             'oauth2'           => array('access_token' => NULL),
-                                             'refresh_attempts' => 5,
-                                             'maxResults'       => 100
-                                         ), $options);
+            'cache_backend'    => 'file',
+            'oauth2'           => array('access_token' => NULL),
+            'refresh_attempts' => 5,
+            'maxResults'       => 100,
+            'root'             => '/'
+        ), $options);
 
         if(! ($this->options->has('client_id') && $this->options->has('client_secret')))
             throw new Exception\DropboxError('Google Drive filesystem backend requires both client_id and client_secret.');
@@ -318,13 +320,13 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         foreach($response->items->toArray() as $item) {
 
-            if($item['deleted'] == TRUE && array_key_exists($item['fileId'], $this->meta)) {
+            if($item['deleted'] === TRUE && array_key_exists($item['fileId'], $this->meta)) {
 
                 $items = array_merge($items, $this->resolveItem($this->meta[$item['fileId']]));
 
                 $deleted[] = $item['fileId'];
 
-            } else {
+            } elseif(array_key_exists('file', $item)) {
 
                 $file = array_intersect_key($item['file'], array_flip($this->meta_items));
 
@@ -361,13 +363,13 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     private function resolvePath($path) {
 
-        $path = '/' . ltrim($path, '/');
+        $path = '/' . trim($this->options['root'], '/') . '/' . ltrim($path, '/');
 
         $parent = NULL;
 
         foreach($this->meta as $item) {
 
-            if($item['parents'] === NULL) {
+            if(count($item['parents']) === 0) {
 
                 $parent = $item;
 
@@ -400,7 +402,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
                 foreach($this->meta as $item) {
 
-                    if($item['title'] == $part && $this->itemHasParent($item, $id))
+                    if(array_key_exists('title', $item) && $item['title'] === $part && $this->itemHasParent($item, $id))
                         $parent = $item;
 
                 }
@@ -448,9 +450,9 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $items = array();
 
-        foreach($this->meta as $id => $item) {
+        foreach($this->meta as $item) {
 
-            if(! $item['parents'] || $item['labels']['trashed'])
+            if(!(array_key_exists('parents', $item) && $item['parents']) || $item['labels']['trashed'])
                 continue;
 
             if($this->itemHasParent($item, $parent['id']))
@@ -550,6 +552,19 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
             return FALSE;
 
         return strtotime($item['modifiedDate']);
+
+    }
+
+    public function touch($path){
+
+        if(! ($item = $this->resolvePath($path)))
+            return FALSE;
+
+        $request = new \Hazaar\Http\Request('https://www.googleapis.com/drive/v2/files/' . $item['id'], 'PATCH', 'application/json');
+
+        $request->modifiedDate = date('c');
+
+        return $this->sendRequest($request, FALSE);
 
     }
 

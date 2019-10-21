@@ -98,9 +98,9 @@ class Dir {
 
     }
 
-    public function exists() {
+    public function exists($filename = null) {
 
-        return $this->backend->exists($this->path);
+        return $this->backend->exists(rtrim($this->path, '/') . ($filename ? '/' . $filename : ''));
 
     }
 
@@ -406,9 +406,9 @@ class Dir {
      *
      * @return mixed
      */
-    public function put(\Hazaar\File $file){
+    public function put(\Hazaar\File $file, $overwrite = false){
 
-        return $file->copyTo($this->path, false, $this->backend);
+        return $file->copyTo($this->path, $overwrite, false, $this->backend);
 
     }
 
@@ -497,6 +497,71 @@ class Dir {
     public function get_meta($key = NULL) {
 
         return $this->backend->get_meta($this->path, $key);
+
+    }
+
+    public function sync(Dir $source, $recursive = false){
+
+        if(!$this->exists())
+            $this->create();
+
+        while($item = $source->read()){
+
+            $retries = 3;
+
+            for($i = 0; $i < $retries; $i++){
+
+                try{
+
+                    if($item instanceof Dir){
+
+                        if($recursive === false)
+                            continue;
+
+                        $dir = $this->get($item->basename(), true);
+
+                        if(!$dir->exists())
+                            $dir->create();
+
+                        $dir->sync($item, $recursive);
+
+                    }elseif($item instanceof \Hazaar\File){
+
+                        if(!($sync = (!$this->exists($item->basename())))){
+
+                            $target_file = $this->get($item->basename());
+
+                            $sync = $item->mtime() > $target_file->mtime();
+
+                        }
+
+                        if($sync){
+
+                            $item->touch();
+
+                            $this->put($item, true);
+
+                        }
+
+                    }
+
+                    continue 2;
+
+                }
+                catch(\Throwable $e){
+
+                    //If we get an exception, it could be due to a network issue, so hang back for sec and try again
+                    sleep(1);
+
+                }
+
+            }
+
+            throw (isset($e) ? $e : new \Exception('Unknown error!'));
+
+        }
+
+        return true;
 
     }
 
