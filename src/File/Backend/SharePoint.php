@@ -72,6 +72,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    private function encodePath($value){
+
+        return rawurlencode(basename(str_replace("'", "''", $value)));
+
+    }
+
     public function authorise($redirect_uri = NULL) {
 
         if($this->authorised())
@@ -241,7 +247,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             if(in_array($response->status, array(200, 201)))
                 return $response->body();
-            elseif(array($response->status, array(401, 403))){
+            elseif(in_array($response->status, array(401, 403))){
 
                 $this->requestFormDigest = null;
 
@@ -259,7 +265,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         }
 
-        throw new \Exception('Query failed after ' . $retries . ' retried.  Giving up!');
+        throw new \Exception('Query failed after ' . $retries . ' retries with code ' . $response->status . '.  Giving up!');
 
     }
 
@@ -270,7 +276,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         return ($info->__metadata->type === 'SP.Folder')
             ? $this->_folder($path)
-            : $this->_folder(dirname($path)) . "/Files('" . rawurlencode(basename($path)) . "')";
+            : $this->_folder(dirname($path)) . "/Files('" . $this->encodePath($path) . "')";
 
     }
 
@@ -697,7 +703,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Copy a file from src to dst
     public function copy($src, $dst, $recursive = FALSE) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . rawurlencode(basename($src));
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
 
         $url = $this->_object_url($src) . "/copyTo('$dst')";
 
@@ -716,7 +722,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Move a file from src to dst
     public function move($src, $dst) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . rawurlencode(basename($src));
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
 
         $url = $this->_object_url($src) . "/moveTo('$dst')";
 
@@ -729,14 +735,14 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Read the contents of a file
     public function read($path) {
 
-        return $this->_query($this->_folder(dirname($path)) . "/Files('" . rawurlencode(basename($path)) . "')/\$value");
+        return $this->_query($this->_folder(dirname($path)) . "/Files('" . $this->encodePath($path) . "')/\$value");
 
     }
 
     //Write the contents of a file
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        $url = $this->_folder(dirname($file), "Files/add(url='" . rawurlencode(basename($file)) . "',overwrite=" . strbool($overwrite) . ")");
+        $url = $this->_folder(dirname($file), "Files/add(url='" . $this->encodePath($file) . "',overwrite=" . strbool($overwrite) . ")");
 
         $result = $this->_query($url, 'POST', $data, null, $response);
 
