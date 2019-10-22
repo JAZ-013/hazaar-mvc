@@ -86,6 +86,12 @@ class Dir {
 
     }
 
+    public function ctime(){
+
+        return $this->backend->filectime($this->fixPath($this->path));
+
+    }
+
     public function mtime(){
 
         return $this->backend->filemtime($this->fixPath($this->path));
