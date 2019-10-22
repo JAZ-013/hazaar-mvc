@@ -74,6 +74,12 @@ class Dir {
 
     }
 
+    public function name(){
+
+        return pathinfo($this->fixPath($this->path), PATHINFO_FILENAME);
+
+    }
+
     public function basename(){
 
         return basename($this->fixPath($this->path));
