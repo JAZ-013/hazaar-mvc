@@ -388,6 +388,15 @@ class File {
 
     }
 
+    public function touch(){
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->touch($this->source_file);
+
+    }
+
     public function atime() {
 
         if(!$this->exists())
@@ -614,11 +623,11 @@ class File {
 
     }
 
-    public function moveTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+    public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         $move = $this->exists();
 
-        if(!$this->copyTo($destination, $create_dest, $dstBackend))
+        if(!$this->copyTo($destination, $overwrite, $create_dest, $dstBackend))
             return false;
 
         if($move){
@@ -639,10 +648,11 @@ class File {
     /**
      * Copy the file to another folder
      *
-     * @param mixed $destination The destination folder to copy the file into
-     * @param mixed $create_dest Flag that indicates if the destination folder should be created.  If the
-     *                              destination does not exist an error will be thrown.
-     * @param mixed $dstBackend The destination backend.  Defaults to the same backend as the source.
+     * @param string  $destination The destination folder to copy the file into
+     * @param boolean $overwrite   Overwrite the destination file if it exists.
+     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                             destination does not exist an error will be thrown.
+     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
      *
      * @throws \Exception
      *
@@ -651,7 +661,7 @@ class File {
      *
      * @return mixed
      */
-    public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
             $dstBackend = $this->backend;
@@ -662,7 +672,7 @@ class File {
 
             $dir = new File\Dir($destination, $dstBackend, $this->manager);
 
-            if(!$dir->exists($destination)){
+            if(!$dir->exists()){
 
                 if(!$create_dest)
                     throw new \Hazaar\Exception('Destination does not exist!');
@@ -677,10 +687,10 @@ class File {
 
         }
 
-        if(! $this->exists())
+        if(!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(! $dstBackend->exists($destination)) {
+        if(!$dstBackend->exists($destination)) {
 
             if($create_dest)
                 $dstBackend->mkdir($destination);
@@ -690,7 +700,10 @@ class File {
 
         }
 
-        return $dstBackend->copy($this->source_file, $destination, $this->backend);
+        if($dstBackend === $this->backend)
+            return $dstBackend->copy($this->source_file, $destination);
+
+        return $dstBackend->write(rtrim($destination, '/') . '/' . $this->basename(), $this->get_contents(), $this->mime_content_type(), $overwrite);
 
     }
 

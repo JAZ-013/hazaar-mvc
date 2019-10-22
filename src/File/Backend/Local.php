@@ -348,6 +348,11 @@ class Local implements _Interface {
 
     }
 
+    /**
+     * Makes directory
+     * @param mixed $path
+     * @return bool
+     */
     public function mkdir($path) {
 
         $path = $this->resolvePath($path);
@@ -359,6 +364,12 @@ class Local implements _Interface {
 
     }
 
+    /**
+     * Removes directory
+     * @param mixed $path
+     * @param mixed $recurse
+     * @return bool
+     */
     public function rmdir($path, $recurse = false) {
 
         $realPath = $this->resolvePath($path);
@@ -403,71 +414,128 @@ class Local implements _Interface {
 
     }
 
-    //Check if file/path exists
+    /**
+     * Checks whether a file or directory exists
+     * @param mixed $path
+     * @return bool
+     */
     public function exists($path) {
 
         return file_exists($this->resolvePath($path));
 
     }
 
+    /**
+     * Returns canonicalized absolute pathname
+     * @param mixed $path
+     * @return string
+     */
     public function realpath($path) {
 
         return realpath($this->resolvePath($path));
 
     }
 
+    /**
+     * true if path is a readable
+     * @param mixed $path
+     * @return bool
+     */
     public function is_readable($path) {
 
         return is_readable($this->resolvePath($path));
 
     }
 
+    /**
+     * true if path is writable
+     * @param mixed $path
+     * @return bool
+     */
     public function is_writable($path) {
 
         return is_writable($this->resolvePath($path));
 
     }
 
-    //true if path is a directory
+    /**
+     * true if path is a directory
+     * @param mixed $path
+     * @return bool
+     */
     public function is_dir($path) {
 
         return is_dir($this->resolvePath($path));
 
     }
 
-    //true if path is a symlink
+    /**
+     * true if path is a symlink
+     * @param mixed $path
+     * @return bool
+     */
     public function is_link($path) {
 
         return is_link($this->resolvePath($path));
 
     }
 
-    //true if path is a normal file
+    /**
+     * true if path is a normal file
+     * @param mixed $path
+     * @return bool
+     */
     public function is_file($path) {
 
         return is_file($this->resolvePath($path));
 
     }
 
-    //Returns the file type
+    /**
+     * Returns the file type
+     * @param mixed $path
+     * @return string
+     */
     public function filetype($path) {
 
         return filetype($this->resolvePath($path));
 
     }
 
-    //Returns the file create time
+    /**
+     * Returns the file create time
+     * @param mixed $path
+     * @return int
+     */
     public function filectime($path) {
 
         return filectime($this->resolvePath($path));
 
     }
 
-    //Returns the file modification time
+    /**
+     * Returns the file modification time
+     * @param mixed $path
+     * @return int
+     */
     public function filemtime($path) {
 
         return filemtime($this->resolvePath($path));
 
+    }
+
+    /**
+     * Sets access and modification time of file
+     *
+     * @param mixed $path
+     *
+     * @return bool
+     */
+    public function touch($path){
+
+        $path = $this->resolvePath($path);
+
+        return touch($path);
     }
 
     //Returns the file access time

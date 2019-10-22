@@ -257,6 +257,9 @@ class Client {
 
         } else {
 
+            if($errno === 0 && !$errstr)
+                $errstr = 'Possible error initialising socket';
+
             throw new \Hazaar\Exception('Error #' . $errno . ': ' . $errstr);
 
         }
@@ -475,6 +478,14 @@ class Client {
         $this->cookies = array();
 
         return FALSE;
+
+    }
+
+    public function deleteCookies(){
+        
+        $this->cookies = array();
+
+        return true;
 
     }
 

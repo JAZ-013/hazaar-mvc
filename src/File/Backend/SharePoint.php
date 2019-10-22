@@ -20,6 +20,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private $root = null;
 
+    private $host_info;
+
     static public function label(){
 
         return "Microsoft SharePoint";
@@ -54,6 +56,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $this->root = new \stdClass;
 
+        $this->host_info = parse_url($this->options['webURL']);
+
     }
 
     public function __destruct() {
@@ -65,6 +69,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     }
 
     public function reset() {
+
+    }
+
+    private function encodePath($value){
+
+        return rawurlencode(basename(str_replace("'", "''", $value)));
 
     }
 
@@ -210,36 +220,52 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function _query($url, $method = 'GET', $body = null, $extra_headers = null, &$response = null){
 
-        $this->authorise();
+        $retries = 3;
 
-        if($method === 'POST' || $method === 'PUT')
-            $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
+        for($i = 0; $i <$retries; $i++){
 
-        $request = new Request($url, $method, 'application/json; OData=verbose');
+            $this->authorise();
 
-        $request->setHeader('Accept', 'application/json; OData=verbose');
+            if($method === 'POST' || $method === 'PUT')
+                $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
-        if(is_array($extra_headers)){
+            $request = new Request($url, $method, 'application/json; OData=verbose');
 
-            foreach($extra_headers as $key => $value)
-                $request->setHeader($key, $value);
+            $request->setHeader('Accept', 'application/json; OData=verbose');
 
-        }
+            if(is_array($extra_headers)){
 
-        if($body !== null)
-            $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
+                foreach($extra_headers as $key => $value)
+                    $request->setHeader($key, $value);
 
-        $response = $this->send($request);
+            }
 
-        if($response->status !== 200 && $response->status !== 201){
+            if($body !== null)
+                $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
+
+            $response = $this->send($request);
+
+            if(in_array($response->status, array(200, 201)))
+                return $response->body();
+            elseif(in_array($response->status, array(401, 403))){
+
+                $this->requestFormDigest = null;
+
+                if($response->status === 401)
+                    $this->deleteCookies();
+
+                continue;
+
+            }
 
             $error = ake($response->body(), 'error');
 
-            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value);
+            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code='
+                . $error->code . ' message=' . $error->message->value);
 
         }
 
-        return $response->body();
+        throw new \Exception('Query failed after ' . $retries . ' retries with code ' . $response->status . '.  Giving up!');
 
     }
 
@@ -250,7 +276,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         return ($info->__metadata->type === 'SP.Folder')
             ? $this->_folder($path)
-            : $this->_folder(dirname($path)) . "/Files('" . rawurlencode(basename($path)) . "')";
+            : $this->_folder(dirname($path)) . "/Files('" . $this->encodePath($path) . "')";
 
     }
 
@@ -313,7 +339,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!$item)
             return $folder;
 
-        if(!($folder instanceof \stdClass && property_exists($folder, 'items')))
+        if(!($folder instanceof \stdClass && property_exists($folder, 'Exists')))
+            $folder = (object)array_merge((array)ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array)$folder);
+
+        if(!property_exists($folder, 'items'))
             $folder->items = $this->load(implode('/', $parts));
 
         foreach($folder->items as &$f){
@@ -343,82 +372,136 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    private function update_info($info){
+
+        if(!$info instanceof \stdClass)
+            return false;
+
+        if(property_exists($info, 'd'))
+            $info = $info->d;
+
+        $folder =& $this->root;
+
+        $name = str_ireplace($this->host_info['path'] . '/' . ltrim($this->options['root'], '/'), '', $info->ServerRelativeUrl);
+
+        $parts = explode('/', trim(dirname($name), '/ '));
+
+        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
+        foreach($parts as $part){
+
+            if(!$part)
+                continue;
+
+            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
+                break;
+
+            $folder =& $folder->items[$part];
+
+        }
+
+        $key = basename($name);
+
+        if($folder instanceof \stdClass && property_exists($folder, 'items'))
+            $folder->items[$key] = $info;
+
+        return true;
+
+    }
+
     private function load($path){
 
         $this->authorise();
 
         $url = $this->options['webURL'] . '/_api/$batch';
 
-        $request = new Request($url, 'POST');
+        $retries = 3;
 
-        $request->setHeader('Accept', 'application/json; OData=verbose');
+        for($i = 0; $i < $retries; $i++){
 
-        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+            $request = new Request($url, 'POST');
 
-        $request->setHeader('X-RequestDigest', $this->_getFormDigest());
+            $request->setHeader('Accept', 'application/json; OData=verbose');
 
-        $request->enableMultipart('multipart/mixed', 'batch_' . guid());
+            $request->setHeader('X-RequestDigest', $this->_getFormDigest());
 
-        $headers = array('Content-Transfer-Encoding' => 'binary');
+            $request->setHeader('X-RequestDigest', $this->_getFormDigest());
 
-        $request->addMultipart('GET ' . $this->_folder($path, 'folders')
-            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+            $request->enableMultipart('multipart/mixed', 'batch_' . guid());
 
-        $request->addMultipart('GET ' . $this->_folder($path, 'files')
-            . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
+            $headers = array('Content-Transfer-Encoding' => 'binary');
 
-        $response = $this->send($request);
+            $request->addMultipart('GET ' . $this->_folder($path, 'folders')
+                . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
 
-        if($response->status !== 200)
-            throw new \Hazaar\Exception('Invalid batch response received!');
+            $request->addMultipart('GET ' . $this->_folder($path, 'files')
+                . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
 
-        $responses = $response->body();
+            $response = $this->send($request);
 
-        if(count($responses) !== 2)
-            throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
+            if($response->status !== 200){
 
-        array_walk($responses, function(&$value){
-            $response = new \Hazaar\Http\Response();
+                $this->requestFormDigest = null;
 
-            $response->read($value['body']);
+                if($response->status === 401)
+                    $this->deleteCookies();
 
-            $value = $response;
-        });
+                continue;
 
-        $folders = ake($responses[0]->body(), 'd.results');
+            }
 
-        $files = ake($responses[1]->body(), 'd.results');
+            $responses = $response->body();
 
-        $sort = function($a, $b){
-            if ($a->Name === $b->Name) return 0;
-            return ($a->Name < $b->Name) ? -1 : 1;
-        };
+            if(count($responses) !== 2)
+                throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
 
-        usort($folders, $sort);
+            array_walk($responses, function(&$value){
+                $response = new \Hazaar\Http\Response();
 
-        usort($files, $sort);
+                $response->read($value['body']);
 
-        $items = array();
+                $value = $response;
+            });
 
-        foreach(array_merge($folders, $files) as $item)
-            $items[$item->Name] = $item;
+            $folders = ake($responses[0]->body(), 'd.results');
 
-        return $items;
+            $files = ake($responses[1]->body(), 'd.results');
+
+            $sort = function($a, $b){
+                if ($a->Name === $b->Name) return 0;
+                return ($a->Name < $b->Name) ? -1 : 1;
+            };
+
+            usort($folders, $sort);
+
+            usort($files, $sort);
+
+            $items = array();
+
+            foreach(array_merge($folders, $files) as $item)
+                $items[$item->Name] = $item;
+
+            return $items;
+
+        }
+
+        throw new \Exception('Unable to load folder info after ' . $retries . ' retried.  Giving up!');
 
     }
 
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE) {
 
-        $info =& $this->info($path);
-
-        if(!isset($info->items) || $info->ItemCount !== count($info->items))
-            $info->items = $this->load($path);
-
         $files = array();
 
-        foreach($info->items as $item)
-            $files[] = $item->Name;
+        if($info =& $this->info($path)){
+
+            if(!(isset($info->items) && isset($info->ItemCount)) || $info->ItemCount !== count($info->items))
+                $info->items = $this->load($path);
+
+            foreach($info->items as $item)
+                $files[] = $item->Name;
+
+        }
 
         return $files;
 
@@ -520,6 +603,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    public function touch($path){
+
+        return false;
+
+    }
+
     //Returns the file modification time
     public function fileatime($path) {
 
@@ -564,9 +653,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_object_url($path);
 
-        $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
+        $result = $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
 
-        return true;
+        return $this->update_info($result);
 
     }
 
@@ -608,7 +697,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST', $body);
 
-        return (ake($result, 'd.Exists') === true);
+        return $this->update_info($result);
 
     }
 
@@ -625,13 +714,13 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Copy a file from src to dst
     public function copy($src, $dst, $recursive = FALSE) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . rawurlencode(basename($src));
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
 
         $url = $this->_object_url($src) . "/copyTo('$dst')";
 
         $result = $this->_query($url, 'POST');
 
-        return ($result instanceof \stdClass && property_exists($result, 'd'));
+        return $this->update_info($result);
 
     }
 
@@ -644,52 +733,31 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Move a file from src to dst
     public function move($src, $dst) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . rawurlencode(basename($src));
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
 
         $url = $this->_object_url($src) . "/moveTo('$dst')";
 
         $result = $this->_query($url, 'POST');
 
-        return ($result instanceof \stdClass && property_exists($result, 'd'));
+        return $this->update_info($result);
 
     }
 
     //Read the contents of a file
     public function read($path) {
 
-        return $this->_query($this->_folder(dirname($path)) . "/Files('" . rawurlencode(basename($path)) . "')/\$value");
+        return $this->_query($this->_folder(dirname($path)) . "/Files('" . $this->encodePath($path) . "')/\$value");
 
     }
 
     //Write the contents of a file
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        $url = $this->_folder(dirname($file), "Files/add(url='" . rawurlencode(basename($file)) . "',overwrite=" . strbool($overwrite) . ")");
+        $url = $this->_folder(dirname($file), "Files/add(url='" . $this->encodePath($file) . "',overwrite=" . strbool($overwrite) . ")");
 
-        if(!($result = $this->_query($url, 'POST', $data, null, $response)))
-            return false;
+        $result = $this->_query($url, 'POST', $data, null, $response);
 
-        $folder =& $this->root;
-
-        $parts = explode('/', trim(dirname($file), '/ '));
-
-        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
-        foreach($parts as $part){
-
-            if(!$part)
-                continue;
-
-            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
-                break;
-
-            $folder =& $folder->items[$part];
-
-        }
-
-        if($folder instanceof \stdClass && property_exists($folder, 'items') && array_key_exists(basename($file), $folder->items))
-            $folder->items[basename($file)] = ake($result, 'd');
-
-        return true;
+        return $this->update_info($result);
 
     }
 

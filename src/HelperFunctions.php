@@ -1185,7 +1185,7 @@ function dump($data = NULL) {
 
         $style = "<style>
 body { padding: 0; margin: 0; font-family: Arial, Helvetica, sans-serif; }
-.exec_time { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
+.exec_time, .endtime { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
 .exec_time.good { background-color: #33bb33; }
 .exec_time.ok { background-color: gold; color: #333; }
 .exec_time.bad { background-color: #ea4040; }
@@ -1198,6 +1198,8 @@ pre { margin: 30px; }
         $speed_class = ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : 'good';
 
         echo "<div class=\"exec_time $speed_class\">{$exec_time}ms</div>";
+
+        echo "<div class=\"endtime\">" . date('c') . "</div>";
 
         echo "<h2>Dump</h2>\n\n";
 
