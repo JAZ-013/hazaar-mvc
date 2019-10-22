@@ -256,7 +256,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
                 continue;
 
-            }
+            }elseif($response->status === 500)
+                return false;
 
             $error = ake($response->body(), 'error');
 
