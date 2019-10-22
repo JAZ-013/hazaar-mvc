@@ -12,25 +12,25 @@ namespace Hazaar\Auth\Adapter;
  */
 class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
-    protected $http_client;
-
-    protected $target_url;
-
-    protected $grant_type;
-
     protected $client_id;
 
     protected $client_secret;
 
+    protected $grant_type = 'code';
+
+    protected $http_client;
+
+    protected $auth_uri;
+
+    protected $token_uri;
+
     protected $scopes = array();
 
-    function __construct($target_url, $client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
+    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
 
         parent::__construct($cache_config, $cache_backend);
 
         $this->http_client = new \Hazaar\Http\Client();
-
-        $this->target_url = $target_url;
 
         $this->grant_type = $grant_type;
 
@@ -38,17 +38,57 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $this->client_secret = $client_secret;
 
-        if(!$this->session->has('oauth2_metadata'))
-            $this->session->oauth2_metadata = json_decode(file_get_contents($this->target_url . '/.well-known/oauth-authorization-server'));
+    }
+
+    public function setAuthURI($uri){
+
+        $this->auth_uri = $uri;
 
     }
 
-    public function addScope($scope){
+    public function setTokenURI($uri){
 
-        if(is_array($scope))
-            $this->scopes = array_merge($this->scopes, $scope);
-        else
-            $this->scopes[] = $scope;
+        $this->token_uri = $uri;
+
+    }
+
+    public function discover($uri){
+
+        $key = md5($uri);
+
+        if(!$this->session->has('oauth2_metadata'))
+            $this->session->oauth2_metadata = array();
+
+        $metadata = $this->session->oauth2_metadata;
+            
+        if(!array_key_exists($key, $metadata)){
+
+            $metadata[$key] = json_decode(file_get_contents($uri));
+
+            $this->session->oauth2_metadata = $metadata;
+
+        }
+
+        $this->auth_uri = ake($metadata[$key], 'authorization_endpoint');
+
+        $this->token_uri = ake($metadata[$key], 'token_endpoint');
+
+        return true;
+
+    }
+
+    public function addScope(){
+
+        $scopes = func_get_args();
+
+        foreach($scopes as $scope){
+
+            if(is_array($scope))
+                $this->addScope($scope);
+            else
+                $this->scopes[] = $scope;
+
+        }
 
     }
 
@@ -175,9 +215,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         if(($code = ake($_REQUEST, 'code')) && ake($_REQUEST, 'state') == $this->session->state){
 
-            $target_url = $this->session->oauth2_metadata->token_endpoint;
-
-            $request = new \Hazaar\Http\Request($target_url, 'POST');
+            $request = new \Hazaar\Http\Request($this->token_uri, 'POST');
 
             $request->client_id = $this->client_id;
 
@@ -247,9 +285,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             if(count($this->scopes) > 0)
                 $params['scope'] = implode(' ' , $this->scopes);
 
-            $target_url = $this->session->oauth2_metadata->authorization_endpoint;
-
-            $url = $target_url . '?' . array_flatten($params, '=', '&');
+            $url = $this->auth_uri . '?' . array_flatten($params, '=', '&');
 
             header('Location: ' . $url);
 
@@ -345,51 +381,6 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     public function getTokenType(){
 
         return ake($this->session->oauth2_data, 'token_type', 'Bearer');
-
-    }
-
-    public function logout(){
-
-        if(!$this->authenticated())
-            return true;
-
-        if(array_key_exists('state', $_REQUEST) && $_REQUEST['state'] === $this->session->state){
-
-            $this->session->clear();
-
-            return $this->deauth();
-
-        }
-
-        $metadata = $this->session->get('oauth2_metadata');
-
-        $this->session->state = md5(uniqid());
-        
-        $data = ake($this->session->oauth2_data, 'id_token');
-
-        $params = array(
-            'id_token_hint' => $data,
-            'post_logout_redirect_uri' => $this->getRedirectUri(),
-            'state' => $this->session->state
-        );
-
-        header('Location: ' . $metadata->end_session_endpoint . '?' . \http_build_query($params));
-
-        exit;
-
-    }
-
-    public function query($endpoint){
-
-        $url = rtrim($this->target_url, '/') . '/' . $endpoint;
-
-        $request = new \Hazaar\Http\Request($url);
-
-        $request->authorisation($this);
-
-        $response = $this->http_client->send($request);
-
-        return $response->body();
 
     }
 
