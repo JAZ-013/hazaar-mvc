@@ -339,7 +339,10 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!$item)
             return $folder;
 
-        if(!($folder instanceof \stdClass && property_exists($folder, 'items')))
+        if(!($folder instanceof \stdClass && property_exists($folder, 'Exists')))
+            $folder = (object)array_merge((array)ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array)$folder);
+
+        if(!property_exists($folder, 'items'))
             $folder->items = $this->load(implode('/', $parts));
 
         foreach($folder->items as &$f){
@@ -488,15 +491,17 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE) {
 
-        $info =& $this->info($path);
-
-        if(!isset($info->items) || $info->ItemCount !== count($info->items))
-            $info->items = $this->load($path);
-
         $files = array();
 
-        foreach($info->items as $item)
-            $files[] = $item->Name;
+        if($info =& $this->info($path)){
+
+            if(!(isset($info->items) && isset($info->ItemCount)) || $info->ItemCount !== count($info->items))
+                $info->items = $this->load($path);
+
+            foreach($info->items as $item)
+                $files[] = $item->Name;
+
+        }
 
         return $files;
 
