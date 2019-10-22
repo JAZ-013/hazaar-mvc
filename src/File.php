@@ -672,7 +672,7 @@ class File {
 
             $dir = new File\Dir($destination, $dstBackend, $this->manager);
 
-            if(!$dir->exists($destination)){
+            if(!$dir->exists()){
 
                 if(!$create_dest)
                     throw new \Hazaar\Exception('Destination does not exist!');
