@@ -58,6 +58,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $this->host_info = parse_url($this->options['webURL']);
 
+        //Forces loading the root folder
+        $this->info('/');
+
     }
 
     public function __destruct() {
@@ -326,7 +329,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             if(!($folder = ake($this->_query($this->_folder('/')), 'd'))){
 
-                if(!$this->mkdir('/'))
+                if(!$this->mkdir('/', true))
                     throw new \Exception('Root folder does not exist and could not be created automatically!');
 
                 $folder =& $this->root;
@@ -353,27 +356,31 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!($folder instanceof \stdClass && property_exists($folder, 'Exists')))
             $folder = (object)array_merge((array)ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array)$folder);
 
-        if(!property_exists($folder, 'items'))
-            $folder->items = $this->load(implode('/', $parts));
+        if(ake($folder, 'Exists')){
 
-        foreach($folder->items as &$f){
+            if(ake($folder, 'Exists') && !property_exists($folder, 'items'))
+                $folder->items = $this->load(implode('/', $parts));
 
-            if($f->Name === $item){
+            foreach($folder->items as &$f){
 
-                if($new_item !== null)
-                    $f = $new_item;
+                if($f->Name === $item){
 
-                return $f;
+                    if($new_item !== null)
+                        $f = $new_item;
+
+                    return $f;
+
+                }
 
             }
 
-        }
+            if($new_item !== null){
 
-        if($new_item !== null){
+                $folder->items[] = $new_item;
 
-            $folder->items[] = $new_item;
+                return $new_item;
 
-            return $new_item;
+            }
 
         }
 
@@ -532,7 +539,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!($info = $this->info($path)))
             return false;
 
-        return $info->Exists;
+        return ake($info, 'Exists', false);
 
     }
 

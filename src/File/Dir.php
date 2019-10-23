@@ -134,9 +134,9 @@ class Dir {
 
     }
 
-    public function create($recursive = FALSE) {
+    public function create($recursive = false) {
 
-        if(! $recursive)
+        if($recursive !== true)
             return $this->backend->mkdir($this->path);
 
         $parents = array();
@@ -150,7 +150,7 @@ class Dir {
             //Gets dirname an ensures separator is a forward slash (/).
             $last = str_replace(DIRECTORY_SEPARATOR, $this->backend->separator, dirname($last));
 
-            if($last == $this->backend->separator)
+            if($last === $this->backend->separator)
                 break;
 
         }
