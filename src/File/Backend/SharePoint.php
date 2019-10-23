@@ -321,9 +321,19 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $parts = explode('/', trim($path, ' /'));
 
-        //If there's no item, we're loading the root, so make some stuff up.
-        if(!($item = array_pop($parts)) && !property_exists($folder, 'Name'))
-            $folder = ake($this->_query($this->_folder('/')), 'd');
+        //If there's no item, we're loading the root, so query for the root
+        if(!($item = array_pop($parts)) && !property_exists($folder, 'Name')){
+
+            if(!($folder = ake($this->_query($this->_folder('/')), 'd'))){
+
+                if(!$this->mkdir('/'))
+                    throw new \Exception('Root folder does not exist and could not be created automatically!');
+
+                $folder =& $this->root;
+
+            }
+
+        }
 
         foreach($parts as $part){
 
@@ -385,25 +395,33 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $name = str_ireplace($this->host_info['path'] . '/' . ltrim($this->options['root'], '/'), '', $info->ServerRelativeUrl);
 
-        $parts = explode('/', trim(dirname($name), '/ '));
+        if($name === ''){
 
-        //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
-        foreach($parts as $part){
+            $this->root = $info;
 
-            if(!$part)
-                continue;
+        }else{
 
-            if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
-                break;
+            $parts = explode('/', trim(dirname($name), '/ '));
 
-            $folder =& $folder->items[$part];
+            //Update any existing file metadata.  Here, if the metadata has not been loaded then we don't need to update.
+            foreach($parts as $part){
+
+                if(!$part)
+                    continue;
+
+                if(!(property_exists($folder, 'items') && array_key_exists($part, $folder->items)))
+                    break;
+
+                $folder =& $folder->items[$part];
+
+            }
+
+            $key = basename($name);
+
+            if($folder instanceof \stdClass && property_exists($folder, 'items'))
+                $folder->items[$key] = $info;
 
         }
-
-        $key = basename($name);
-
-        if($folder instanceof \stdClass && property_exists($folder, 'items'))
-            $folder->items[$key] = $info;
 
         return true;
 
