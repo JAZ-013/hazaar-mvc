@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller;
 
-class Media extends \Hazaar\Controller\Basic {
+class Media extends \Hazaar\Controller\WebDAV {
 
     private $allowPreview   = array(
         '/^image\//'
