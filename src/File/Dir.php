@@ -397,6 +397,12 @@ class Dir {
 
     }
 
+    public function mime_content_type(){
+
+        return 'httpd/unix-directory';
+
+    }
+
     public function dir($child) {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
