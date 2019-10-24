@@ -21,14 +21,12 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
     public function __construct($options) {
 
         $this->options = new \Hazaar\Map(array(
-                                             'cache_backend' => 'file',
-                                             'cache_meta'    => TRUE
-                                         ), $options);
+            'cache_backend' => 'file',
+            'cache_meta'    => TRUE
+        ), $options);
 
         if(! $this->options->has('baseuri'))
             throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
-
-        parent::__construct($this->options->toArray());
 
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username));
 
@@ -38,6 +36,8 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
                 $this->meta = $meta;
 
         }
+
+        parent::__construct($this->options->toArray());
 
     }
 
@@ -56,7 +56,10 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     private function updateMeta($path) {
 
-        $meta = array_merge($this->meta, $this->propfind($path));
+        if(!($meta = $this->propfind($path)))
+            return false;
+
+        $meta = array_merge($this->meta, $meta);
 
         foreach($meta as $name => $info) {
 
@@ -67,6 +70,8 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
             $this->meta[$name] = $info;
 
         }
+
+        return true;
 
     }
 
@@ -108,7 +113,8 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if($meta = ake($this->meta, $path))
             return $meta;
 
-        $this->updateMeta($path);
+        if(!$this->updateMeta($path))
+            return null;
 
         return ake($this->meta, $path);
 
@@ -226,6 +232,12 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
             return false;
 
         return strtotime($info['getlastmodified']);
+
+    }
+
+    public function touch($path){
+
+        return false;
 
     }
 

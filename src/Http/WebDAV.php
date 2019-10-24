@@ -222,7 +222,7 @@ class WebDAV extends \Hazaar\Http\Client {
         $response = parent::send($request);
 
         if($response->status != 207)
-            return NULL;
+            throw new \Exception('WebDAV server returned: ' . $response->body(), $response->status);
 
         if($return_response)
             return $response;
