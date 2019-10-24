@@ -213,6 +213,9 @@ class Client {
 
             fclose($sck_fd);
 
+            if(!$response->status > 0)
+                throw new \Exception('Host returned no data', 503);
+
             if($this->auto_redirect && ($response->status == 301 || $response->status == 302)) {
 
                 if(in_array($request->method, $this->redirect_methods)) {
