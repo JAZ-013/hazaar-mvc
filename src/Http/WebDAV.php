@@ -143,7 +143,7 @@ class WebDAV extends \Hazaar\Http\Client {
         if(preg_match('/\w\:\/\/.*/', $url))
             return $url;
 
-        return $this->settings->baseuri . '/' . str_replace(' ', '%20', ltrim($url, '/'));
+        return $this->settings->baseuri . '/' . ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
 
     }
 
@@ -184,7 +184,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
         $xml = new \Hazaar\Xml\Element();
 
-        $xml->addNamespace('d', 'DAV');
+        $xml->addNamespace('d', 'DAV:');
 
         $propfind = $xml->add('d:propfind');
 

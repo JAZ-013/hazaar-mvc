@@ -24,7 +24,8 @@ class Client {
 
     private $redirect_methods   = array(
         'GET',
-        'OPTIONS'
+        'OPTIONS',
+        'PROPFIND'
     );
 
     private $username;
