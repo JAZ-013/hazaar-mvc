@@ -67,12 +67,12 @@ chdir(APPLICATION_PATH);
  *
  * ### Example usage:
  *
- * <code>
+ * ```php
  * define('APPLICATION_ENV', 'development');
  * $config = 'application.ini';
  * $application = new Hazaar\Application(APPLICATION_ENV, $config);
  * $application->bootstrap()->run();
- * </code>
+ * ```
  */
 class Application {
 

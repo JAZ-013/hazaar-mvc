@@ -19,7 +19,7 @@ namespace Hazaar\Controller;
  *              ## Overview
  *              Unlike other controllers, the rest controller works using annotations.  Such as:
  *
- *              <code>
+ *              ```php
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
@@ -32,7 +32,7 @@ namespace Hazaar\Controller;
  *                  }
  *
  *              }
- *              </code>
+ *              ```
  *
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/1234
  *
@@ -44,7 +44,7 @@ namespace Hazaar\Controller;
  *
  *              Do define another version of the above example using versions you could:
  *
- *              <code>
+ *              ```php
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
@@ -69,7 +69,7 @@ namespace Hazaar\Controller;
  *                  }
  *
  *              }
- *              </code>
+ *              ```
  *
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/2040-01-01/1234
  *
@@ -78,11 +78,12 @@ namespace Hazaar\Controller;
  *
  *              Such as:
  *
- *              <code>
+ *              ```php
  *              /**
  *                * @route('/v1/dothething/<date:when>/<int:thingstodo>', methodsGET'])
  *                * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
  *               **\/
+ *              ```
  *
  *              ## Endpoint Directories
  *              Endpoint directories are simply a list of the available endpoints with some basic information

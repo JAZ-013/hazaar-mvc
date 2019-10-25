@@ -757,10 +757,10 @@ function bytes_str($string) {
  * Multiple interval support is also possible. Intervals can be separated with a comma (,) or the word
  * 'and', for example:
  *
- * <pre><code class="php">
+ * ```php
  * $foo = seconds('1 week, 2 days');
  * $bar = seconds('1 week and 2 days');
- * </code></pre>
+ * ```
  *
  * Both of these function calls will yeild the same result.
  *
@@ -1245,12 +1245,9 @@ pre { margin: 30px; }
  *
  * @param array   $patterns   An array of patterns to search for, as a string.
  * @param string  $subject    The input string.
- * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that     *                          matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
- *                            subpattern, and so on.
- * @param integer $flags      For details on available flags, see the "preg_match()":http://php.net/manual/en/function.preg-match.php
- *                            documentation.
- * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can
- *                            be used to specify the alternate place from which to start the search (in bytes).
+ * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized subpattern, and so on.
+ * @param integer $flags      For details on available flags, see the [preg_match()](http://php.net/manual/en/function.preg-match.php) documentation.
+ * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can be used to specify the alternate place from which to start the search (in bytes).
  *
  * @return boolean|integer
  */

@@ -93,16 +93,17 @@ define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRE
  *
  * ### Example
  *
- * <code class="php">
+ * ```php
  * $loader = Hazaar\Loader::getInstance();
  * $loader->loadController('index');
- * </code>
+ * ```
  *
- * p(notice notice-info) . The loader class is loaded automatically when starting the application.
- * There should be no need to use the Loader instance directly and static methods have been provided for
- * some extra functionality.</div>
+ * !!! notice
+ * The loader class is loaded automatically when starting the application.  There should be no need to use the
+ * Loader instance directly and static methods have been provided for some extra functionality.
  *
- * p(notice notice-warning) . Instantiating this class directly can have undefined results.</div>
+ * !!! warning
+ * Instantiating this class directly can have undefined results.
  *
  * @since 1.0.0
  */
@@ -117,8 +118,8 @@ class Loader {
 	/**
      * @brief Initialise a new loader
      *
-     * @detail p(notice notice-warning) . Do NOT instantiate this class directly. See Loader::getInstance()
-     * on how to get a new Loader instance.</div>
+     * !!! warning
+     * Do NOT instantiate this class directly. See Loader::getInstance() on how to get a new Loader instance.
      */
 	function __construct($application){
 

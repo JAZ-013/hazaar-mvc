@@ -18,7 +18,7 @@ namespace Hazaar\Application;
  *
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
- *              For examples see "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls in the
+ *              For examples see [Generating URLs](/basics/urls.md) in the
  *              Hazaar MVC support documentation.
  *
  * @since       1.0.0
@@ -273,12 +273,16 @@ class Url {
      *
      * ## Example:
      *
-     * <code>
+     * ```php
      * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));
      * echo $url->toString(array('id' => 1234));
-     * </code>
+     * ```
      *
-     * This will output something like: @http://localhost/controller/action?id=1234@
+     * This will output something like:
+     *
+     * ```
+     * http://localhost/controller/action?id=1234
+     * ```
      *
      * @param boolean $values
      *
