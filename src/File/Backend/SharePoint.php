@@ -35,14 +35,14 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $this->disableRedirect();
 
         $this->options = new \Hazaar\Map(array(
-            'webURL'        => '',
-            'username'      => '',
-            'password'      => '',
+            'webURL'        => null,
+            'username'      => null,
+            'password'      => null,
             'root'          => 'Shared Documents',
             'cache_backend' => 'file'
         ), $options);
 
-        if($this->options->isEmpty('webURL') || $this->options->isEmpty('username') || $this->options->isEmpty('password'))
+        if($this->options->webURL === null || $this->options->username === null || $this->options->password === null)
             throw new Exception\DropboxError('SharePoint filesystem backend requires a webURL, username and password.');
 
         $cache_options = array(
