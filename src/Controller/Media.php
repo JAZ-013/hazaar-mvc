@@ -20,7 +20,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     private $config;
 
-    private $file;
+    private $object;
 
     public function init($request) {
 
@@ -161,9 +161,9 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $target = $this->request->getPath();
 
-        $this->file = $source->get($target);
+        $this->object = $source->get($target);
 
-        if(! $this->file->exists())
+        if(! $this->object->exists())
             throw new \Hazaar\Exception('File not found!', 404);
 
         $params = $this->request->getParams();
@@ -187,6 +187,27 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         }
 
+        if($this->object instanceof \Hazaar\File\Dir){
+
+            if($this->config->global->allow['dir'] !== true)
+                throw new \Hazaar\Exception('Directory listings are currently disabled.', 403);
+
+            $response = new \Hazaar\Controller\Response\View('@media/dir');
+
+            $response->source = $source->getOption('name');
+
+            $response->path =  $this->object->fullpath();
+
+            $response->vpath = '/' . $source_name . ($target ? '/' . $target : '');
+
+            $response->root = ($this->object->fullpath() === '/');
+
+            $response->dir = $this->object;
+
+            return $response;
+
+        }
+
         /*
          * Check if we can offload this preview to the content provider.
          *
@@ -196,10 +217,10 @@ class Media extends \Hazaar\Controller\WebDAV {
          */
         if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
 
-            if($preview_uri = $this->file->preview_uri($params))
+            if($preview_uri = $this->object->preview_uri($params))
                 $this->redirect($preview_uri);
 
-        } else if($direct_uri = $this->file->direct_uri()) {
+        } else if($direct_uri = $this->object->direct_uri()) {
 
             $direct_uri = new \Hazaar\Http\Uri($direct_uri, $this->request->getParams());
 
@@ -207,166 +228,143 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         }
 
-        if($this->file->is_dir()){
+        $response = new \Hazaar\Controller\Response\File($this->object);
 
-            if($this->config->global->allow['dir'] !== true)
-                throw new \Hazaar\Exception('Directory listings are currently disabled.', 403);
+        if(preg_match_array($this->allowPreview, $this->object->mime_content_type()) > 0)
+            $response = new \Hazaar\Controller\Response\Image($this->object);
 
-            $response = new \Hazaar\Controller\Response\View('@media/dir');
+        if($this->request->has('download') && boolify($this->request->download))
+            $response->setDownloadable(TRUE);
 
-            $response->source = $source->getOption('name');
+        if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
 
-            $response->path =  $this->file->fullpath();
+            $cache_dir = NULL;
 
-            $response->vpath = '/' . $source_name . ($target ? '/' . $target : '');
+            $cache = ($this->config[$source->name]->has('cache') ? $this->config[$source->name]->cache : $this->global_cache);
 
-            $response->root = ($this->file->fullpath() === '/');
+            if($cache = boolify($this->request->get('cache', $cache))) {
 
-            $dir = $this->file->dir();
+                try {
 
-            $response->dir = $this->file->dir();
+                    $cache_dir = $this->application->runtimePath('imagecache', TRUE);
 
-        }else{
+                }
+                catch(Exception $e) {
 
-            $response = new \Hazaar\Controller\Response\File($this->file);
-
-            if(preg_match_array($this->allowPreview, $this->file->mime_content_type()) > 0)
-                $response = new \Hazaar\Controller\Response\Image($this->file);
-
-            if($this->request->has('download') && boolify($this->request->download))
-                $response->setDownloadable(TRUE);
-
-            if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
-
-                $cache_dir = NULL;
-
-                $cache = ($this->config[$source->name]->has('cache') ? $this->config[$source->name]->cache : $this->global_cache);
-
-                if($cache = boolify($this->request->get('cache', $cache))) {
-
-                    try {
-
-                        $cache_dir = $this->application->runtimePath('imagecache', TRUE);
-
-                    }
-                    catch(Exception $e) {
-
-                        $cache = FALSE;
-
-                    }
+                    $cache = FALSE;
 
                 }
 
-                $hash = md5($this->file->fullpath() . '-' . json_encode($params));
+            }
 
-                $cache_file = $cache_file = $cache_dir . '/' . $hash;
+            $hash = md5($this->object->fullpath() . '-' . json_encode($params));
 
-                /**
-                 * Check the cache first for an image with these same request params.
-                 */
-                if($cache && file_exists($cache_file) && filesize($cache_file) > 0) {
+            $cache_file = $cache_file = $cache_dir . '/' . $hash;
 
-                    $response->setLastModified(filemtime($cache_file));
+            /**
+             * Check the cache first for an image with these same request params.
+             */
+            if($cache && file_exists($cache_file) && filesize($cache_file) > 0) {
 
-                    //If the file has been modified, setUnmodified will return false because a 304 header is not set so we must load the content
-                    if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
+                $response->setLastModified(filemtime($cache_file));
 
-                        $response->setHeader('X-Media-Cached', 'true');
+                //If the file has been modified, setUnmodified will return false because a 304 header is not set so we must load the content
+                if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
 
-                        $response->setContent(file_get_contents($cache_file));
+                    $response->setHeader('X-Media-Cached', 'true');
 
-                        $response->setContentType(file_get_contents($cache_file . '.info'));
+                    $response->setContent(file_get_contents($cache_file));
 
-                    }
+                    $response->setContentType(file_get_contents($cache_file . '.info'));
+
+                }
+
+            } else {
+
+                $params['ratio'] = ($this->request->has('ratio') ? $this->request->ratio : NULL);
+
+                if($this->request->has('format'))
+                    $response->setFormat($this->request->format);
+
+                if($thumbnail = $this->object->thumbnail($params)) {
+
+                    $response->setContent($thumbnail);
 
                 } else {
 
-                    $params['ratio'] = ($this->request->has('ratio') ? $this->request->ratio : NULL);
+                    switch($this->object->mime_content_type()) {
+                        case 'application/pdf':
+                        case 'image/svg+xml':
 
-                    if($this->request->has('format'))
-                        $response->setFormat($this->request->format);
+                            if(! in_array('imagick', get_loaded_extensions()))
+                                throw new \Hazaar\Exception('Not supported', 406);
 
-                    if($thumbnail = $this->file->thumbnail($params)) {
+                            $temp_dir = $this->application->runtimePath('temp', TRUE);
 
-                        $response->setContent($thumbnail);
+                            $temp_file = $temp_dir . '/' . $hash;
 
-                    } else {
+                            file_put_contents($temp_file, $this->object->get_contents());
 
-                        switch($this->file->mime_content_type()) {
-                            case 'application/pdf':
-                            case 'image/svg+xml':
+                            $pdf = new \Imagick($temp_file . '[0]');
 
-                                if(! in_array('imagick', get_loaded_extensions()))
-                                    throw new \Hazaar\Exception('Not supported', 406);
+                            $pdf->setResolution(300, 300);
 
-                                $temp_dir = $this->application->runtimePath('temp', TRUE);
+                            $pdf->setImageFormat('png');
 
-                                $temp_file = $temp_dir . '/' . $hash;
+                            $response->setContent($pdf->getImageBlob());
 
-                                file_put_contents($temp_file, $this->file->get_contents());
+                            unlink($temp_file);
 
-                                $pdf = new \Imagick($temp_file . '[0]');
+                            break;
 
-                                $pdf->setResolution(300, 300);
+                        default:
 
-                                $pdf->setImageFormat('png');
+                            if($quality = ake($params, 'quality'))
+                                $response->quality(intval($quality));
 
-                                $response->setContent($pdf->getImageBlob());
+                            $xwidth = intval(ake($params, 'xwidth'));
 
-                                unlink($temp_file);
+                            $xheight = intval(ake($params, 'xheight'));
 
-                                break;
+                            if($xwidth > 0 || $xheight > 0)
+                                $response->expand($xwidth, $xheight, ake($params, 'align'), ake($params, 'xoffsettop'), ake($params, 'xoffsetleft'));
 
-                            default:
+                            $width = intval(ake($params, 'width'));
 
-                                if($quality = ake($params, 'quality'))
-                                    $response->quality(intval($quality));
+                            $height = intval(ake($params, 'height'));
 
-                                $xwidth = intval(ake($params, 'xwidth'));
+                            if($width > 0 || $height > 0) {
 
-                                $xheight = intval(ake($params, 'xheight'));
+                                $align = $this->request->get('align', (boolify(ake($params, 'center', 'false')) ? 'center' : NULL));
 
-                                if($xwidth > 0 || $xheight > 0)
-                                    $response->expand($xwidth, $xheight, ake($params, 'align'), ake($params, 'xoffsettop'), ake($params, 'xoffsetleft'));
+                                $response->resize($width, $height, boolify(ake($params, 'crop', FALSE)), $align, boolify(ake($params, 'aspect', TRUE)), ! boolify(ake($params, 'enlarge')), ake($params, 'ratio'), intval(ake($params, 'offsettop')), intval(ake($params, 'offsetleft')));
 
-                                $width = intval(ake($params, 'width'));
+                            }
 
-                                $height = intval(ake($params, 'height'));
+                            if($filter = ake($params, 'filter'))
+                                $response->filter($filter);
 
-                                if($width > 0 || $height > 0) {
-
-                                    $align = $this->request->get('align', (boolify(ake($params, 'center', 'false')) ? 'center' : NULL));
-
-                                    $response->resize($width, $height, boolify(ake($params, 'crop', FALSE)), $align, boolify(ake($params, 'aspect', TRUE)), ! boolify(ake($params, 'enlarge')), ake($params, 'ratio'), intval(ake($params, 'offsettop')), intval(ake($params, 'offsetleft')));
-
-                                }
-
-                                if($filter = ake($params, 'filter'))
-                                    $response->filter($filter);
-
-                                break;
-
-                        }
+                            break;
 
                     }
-
-                    if($cache && is_writable($cache_dir)) {
-
-                        file_put_contents($cache_file, $response->getContent());
-
-                        file_put_contents($cache_file . '.info', $response->getContentType());
-
-                    }
-
-                    $response->setLastModified(time());
 
                 }
 
-            }else{
+                if($cache && is_writable($cache_dir)) {
 
-                $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
+                    file_put_contents($cache_file, $response->getContent());
+
+                    file_put_contents($cache_file . '.info', $response->getContentType());
+
+                }
+
+                $response->setLastModified(time());
 
             }
+
+        }else{
+
+            $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         }
 
