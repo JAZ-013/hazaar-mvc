@@ -28,6 +28,9 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(! $this->options->has('baseuri'))
             throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
 
+        if($this->options->has('cookies'))
+            $this->setCookie($this->options->cookies);
+
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username));
 
         if($this->options->get('cache_meta', FALSE)) {
