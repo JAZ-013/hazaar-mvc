@@ -462,7 +462,7 @@ class Request extends \Hazaar\Map {
         /*
          * Build the header section
          */
-        $access_uri = $uri->path() . $uri->queryString();
+        $access_uri = implode('/', array_map('rawurlencode', explode('/', $uri->path()))) . $uri->queryString();
 
         $http_request = "{$this->method} {$access_uri} HTTP/1.1\r\n";
 

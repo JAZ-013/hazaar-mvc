@@ -188,9 +188,9 @@ class Btree {
      *
      * To get all data, use:
      *
-     * <code>
+     * ```php
      * $values = $btree->range("\x00", "\xff");
-     * </code>
+     * ```
      *
      * @param string $startkey
      * @param string $endkey

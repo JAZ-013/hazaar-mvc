@@ -64,18 +64,15 @@ class Bootstrap extends \Hazaar\View\Helper {
      *
      *              Here is an example using the Font Awesome helper to include an icon on the button.
      *
-     *              <pre><code class="php">
+     *              ```php
      *              <div class="container">
-     *
-     *                  <?=$this->bootstrap->button($this->fontawesome->icon('cog') . ' Settings');
-     *
-     * ?>
-     *
+     *                  <?=$this->bootstrap->button($this->fontawesome->icon('cog') . ' Settings'); ?>
      *              </div>
-     *              </code></pre>
+     *              ```
      *
-     *              p(notice notice-info). Take note of the space before the string label.  This is required to
-     *              add a nice gap between the icon and the label.</div>
+     *              !!! notice
+     *              Take note of the space before the string label.  This is required to add a nice gap between the
+     *              icon and the label.
      *
      * @since       1.0.0
      *

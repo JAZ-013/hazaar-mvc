@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller;
 
-class Media extends \Hazaar\Controller\Action {
+class Media extends \Hazaar\Controller\Basic {
 
     private $allowPreview   = array(
         '/^image\//'

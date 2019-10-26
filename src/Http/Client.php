@@ -24,7 +24,8 @@ class Client {
 
     private $redirect_methods   = array(
         'GET',
-        'OPTIONS'
+        'OPTIONS',
+        'PROPFIND'
     );
 
     private $username;
@@ -212,6 +213,9 @@ class Client {
             }
 
             fclose($sck_fd);
+
+            if(!$response->status > 0)
+                throw new \Exception('Host returned no data', 503);
 
             if($this->auto_redirect && ($response->status == 301 || $response->status == 302)) {
 

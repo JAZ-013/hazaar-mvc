@@ -24,10 +24,10 @@ define('IDX_YEAR', 5);
  *
  * ### Example
  *
- * <code>
+ * ```php
  * $cron = new \Hazaar\Cron('0,30 9-17 \* \* 1-5');
  * $next = $cron->getNextOccurrence();
- * </code>
+ * ```
  *
  * This will get the next occurrence from the schedule which should return dates and times for every 0th and 30th minute
  * between 9am and 5pm, Monday to Friday.

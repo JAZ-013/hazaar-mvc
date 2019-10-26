@@ -13,15 +13,15 @@ namespace Hazaar\File;
  *
  * Save all uploaded files to a directory:
  *
- * <code>
+ * ```php
  * $upload = new \Hazaar\File\Upload();
  *
  * $upload->saveAll('/home/user', true);
- * </code>
+ * ```
  *
  * Save a single file into a database if it has been uploaded:
  *
- * <code>
+ * ```php
  * $upload = new \Hazaar\File\Upload();
  *
  * if($upload->has('my_new_file')){
@@ -35,7 +35,7 @@ namespace Hazaar\File;
  *      ));
  *
  * }
- * </code>
+ * ```
  */
 class Upload {
 
@@ -192,7 +192,7 @@ class Upload {
      * The $name argument is also checked after the function call to give the callback
      * function a chance to alter the destination filename (see example).
      *
-     * <code>
+     * ```php
      * $files->saveAll('/home/user', false, function($key, &$name, $size, $type)){
      *
      *      if($type == 'image/jpeg'){
@@ -205,7 +205,7 @@ class Upload {
      *
      *      return false;
      * });
-     * </code>
+     * ```
      *
      * @param string  $destination The destination directory into which we copy the files
      *

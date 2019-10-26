@@ -8,17 +8,18 @@ namespace Hazaar\Xml;
  * @detail      XML document creation and parsing has been greatly simplified with the class.  Documents can be created
  *              rapidly and will full support for attributes and namespaces.
  *
- *              <code class="php">
+ *              ```php
  *              $xml = new Hazaar\Xml\Element('list');
  *              $xml->properties['name'] = 'myProperties';
  *              $xml->properties->add('property', 'Property #1');
  *              $xml->properties->add('property', 'Property #2');
  *              echo $xml;
- *              </code>
+ *              ```
  *
  *              The above example will output the following XML:
  *
- *              pre. <?xml version="1.0" encoding="utf-8" ?>
+ *              ```xml
+ *              <?xml version="1.0" encoding="utf-8" ?>
  *              <list>
  *                  <properties name="myProperties">
  *                     <property>
@@ -29,6 +30,7 @@ namespace Hazaar\Xml;
  *                      </property>
  *                  </properties>
  *              </list>
+ *              ```
  *
  * @since 2.0.0
  */
@@ -245,9 +247,9 @@ class Element implements \ArrayAccess, \Iterator {
      * Namespaces can be specifed using the colon separator.  eg: 'namespace:name'.
      *
      *
-     * <code class="php">
-     *      $node->setName('C:mynode');
-     * </code>
+     * ```php
+     * $node->setName('C:mynode');
+     * ```
      *
      * @since 2.0.0.0
      *

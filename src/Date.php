@@ -19,10 +19,10 @@ if (!ini_get('date.timezone'))
  *
  * ### Example
  *
- * <code class="php">
+ * ```php
  * $date = new Hazaar\Date('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
- * </code>
+ * ```
  *
  * ## Timezones
  *
@@ -32,7 +32,7 @@ if (!ini_get('date.timezone'))
  *
  * pre. php.date.timezone = Australia/ACT
  *
- * See the PHP Manual for a "list of valid timezones":http://php.net/manual/en/timezones.php.
+ * See the PHP Manual for a [list of valid timezones](http://php.net/manual/en/timezones.php).
  *
  * If a timezone is not set in the application.ini file, nor is one set in the global PHP configuration then
  * as a last ditch effort the Date class will default to UTC. This is because not having an ini setting in
@@ -470,7 +470,7 @@ class Date extends \DateTime {
     /**
      * Add a date/time interval to the current date/time.
      *
-     * See the PHP documentation on how to use the "DateInterval":http://au2.php.net/manual/en/class.dateinterval.php object.
+     * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
      * @param mixed $interval
      *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
@@ -502,13 +502,11 @@ class Date extends \DateTime {
     /**
      * Subtract a date/time interval from the current date/time.
      *
-     * See the PHP documentation on how to use the "DateInterval":http://au2.php.net/manual/en/class.dateinterval.php object.
+     * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
-     * @param mixed $interval
-     *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
+     * @param mixed $interval Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
      *
-     * @param bool $return_new
-     *            Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
+     * @param bool $return_new Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
      *
      * @return Date
      */
