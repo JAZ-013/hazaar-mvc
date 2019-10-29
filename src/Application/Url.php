@@ -18,7 +18,7 @@ namespace Hazaar\Application;
  *
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
- *              For examples see "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls in the
+ *              For examples see [Generating URLs](/basics/urls.md) in the
  *              Hazaar MVC support documentation.
  *
  * @since       1.0.0
@@ -96,7 +96,7 @@ class Url {
             if(preg_match('/\?/', $this->controller)) {
 
                 if($this->method)
-                    throw new \Exception('Parameters are not allowed in the controller when a method has been set!');
+                    throw new \Hazaar\Exception('Parameters are not allowed in the controller when a method has been set!');
 
                 list($this->controller, $m_params) = explode('?', $this->controller);
 
@@ -207,12 +207,15 @@ class Url {
             /*
              * Figure out the hostname and protocol
              */
-            $host = $_SERVER['HTTP_HOST'];
+            $host = ake($_SERVER, 'HTTP_HOST', 'localhost');
 
-            if(strpos($host, ':') === false && $_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443)
+            if(strpos($host, ':') === false
+                && array_key_exists('SERVER_PORT', $_SERVER)
+                && $_SERVER['SERVER_PORT'] != 80
+                && $_SERVER['SERVER_PORT'] != 443)
                 $host .= ':' . $_SERVER['SERVER_PORT'];
 
-            $proto = (($_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http');
+            $proto = ((ake($_SERVER, 'SERVER_PORT') == 443) ? 'https' : 'http');
 
             $url = $proto . '://' . $host;
 
@@ -270,12 +273,16 @@ class Url {
      *
      * ## Example:
      *
-     * <code>
+     * ```php
      * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));
      * echo $url->toString(array('id' => 1234));
-     * </code>
+     * ```
      *
-     * This will output something like: @http://localhost/controller/action?id=1234@
+     * This will output something like:
+     *
+     * ```
+     * http://localhost/controller/action?id=1234
+     * ```
      *
      * @param boolean $values
      *

@@ -16,13 +16,17 @@ namespace Hazaar\Controller;
  */
 class Script extends \Hazaar\Controller {
 
+    protected $request;
+
     private $source;
 
     private $filename;
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->filename = $request->getRawPath();
+        $this->request = $request;
+
+        $this->filename = $request->getPath();
 
         $this->source = $this->application->loader->getFilePath(FILE_PATH_VIEW, 'scripts/' . $this->filename);
 

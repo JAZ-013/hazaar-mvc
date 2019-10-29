@@ -1,7 +1,7 @@
 <?php
-namespace Hazaar\Controller\Response\Exception;
+namespace Hazaar\File\Exception\WKPDF;
 
-class WKPDFInstallFailed extends \Hazaar\Exception {
+class InstallFailed extends \Hazaar\Exception {
 
     function __construct($cmd, $error) {
 

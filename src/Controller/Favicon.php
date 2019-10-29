@@ -4,7 +4,11 @@ namespace Hazaar\Controller;
 
 class Favicon extends \Hazaar\Controller {
 
+    protected $request;
+
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        $this->request = $request;
 
     }
 

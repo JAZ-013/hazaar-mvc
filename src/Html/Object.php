@@ -43,7 +43,7 @@ class Object extends Block {
 
             } elseif(!$arg instanceof Param) {
 
-                throw new \Exception('You can only add elements of type \Hazaar\Html\Param to ' . get_class());
+                throw new \Hazaar\Exception('You can only add elements of type \Hazaar\Html\Param to ' . get_class());
 
             } else {
 

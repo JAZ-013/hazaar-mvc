@@ -121,7 +121,10 @@ abstract class Extender {
      */
     public function __call($method, $args = array()) {
 
-        if(array_key_exists($method, $this->methods)) {
+        if(array_key_exists($method, $this->methods)
+            || (array_key_exists('__call', $this->methods)
+                && ($args = array($method, $args))
+                && ($method = '__call'))) {
 
             list($class, $rm) = $this->methods[$method];
 
@@ -129,27 +132,14 @@ abstract class Extender {
 
                 $trace = debug_backtrace();
 
-                if($rm->isPrivate()) {
+                $calling_class = $trace[1]['class'];
 
-                    throw new Exception\ExtenderInvokeFailed('private', $class, $method, get_class($this));
-
-                } elseif(array_key_exists('class', $trace[2]) && $trace[2]['class'] == get_class($this)) {
-
-                    $call = true;
-
-                } elseif($rm->isProtected()) {
-
-                    throw new Exception\ExtenderInvokeFailed('protected', $class, $method, get_class($this));
-
-                }
+                $call = (!$rm->isPrivate() && $this->instanceof($calling_class));
 
             }
 
-            if($call) {
-
+            if($call)
                 return $rm->invokeArgs($this->children[$class], $args);
-
-            }
 
         }
 
@@ -275,6 +265,35 @@ abstract class Extender {
         }
 
         return $this->$property = $value;
+
+    }
+
+    /**
+     * Test if the class extends another class.
+     *
+     * This implements the "instanceof" functionality of PHP and searches all the child classes to see if any of them extend
+     * the specified class.
+     *
+     * @param string $class The name of the class to test
+     *
+     * @return boolean True if any of the child classes extend the specified class.
+     *
+     * @since 2.5.1
+     */
+    public function instanceof($class){
+
+        if($this instanceof $class)
+            return true;
+
+        foreach($this->children as $child){
+
+            if($child instanceof $class
+                || ($child instanceof Extender && $child->instanceof($class)))
+                return true;
+
+        }
+
+        return false;
 
     }
 

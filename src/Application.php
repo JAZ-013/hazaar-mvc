@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.4');
+define('HAZAAR_VERSION', '2.5');
 
 /**
  * @brief Constant containing the application environment current being used.
@@ -39,9 +39,9 @@ define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
  */
 define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..')), -1))[0]);
 
-require_once('ErrorControl.php');
-
 require_once('HelperFunctions.php');
+
+require_once('ErrorControl.php');
 
 putenv('HOME=' . APPLICATION_PATH);
 
@@ -67,12 +67,12 @@ chdir(APPLICATION_PATH);
  *
  * ### Example usage:
  *
- * <code>
+ * ```php
  * define('APPLICATION_ENV', 'development');
  * $config = 'application.ini';
  * $application = new Hazaar\Application(APPLICATION_ENV, $config);
  * $application->bootstrap()->run();
- * </code>
+ * ```
  */
 class Application {
 
@@ -91,6 +91,8 @@ class Application {
     public $config;
 
     public $loader;
+
+    public $router;
 
     public $environment = 'development';
 
@@ -146,6 +148,7 @@ class Application {
 
         //Store the search paths in the GLOBALS container so they can be used in config includes.
         $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
+        Application\Config::$override_paths = array('host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'), 'local');
 
         /*
          * Load it with a config object. if the file doesn't exist
@@ -202,7 +205,15 @@ class Application {
 
         }
 
-        $this->request = Application\Request\Loader::load($this->config);
+        /*
+         * Create a new router object for evaluating routes
+         */
+        $this->router = new Application\Router($this->config);
+
+        /*
+         * Create the request object
+         */
+        $this->request = Application\Request\Loader::load();
 
         /*
          * Create a timer for performance measuring
@@ -216,6 +227,17 @@ class Application {
             $this->timer->stop('init');
 
         }
+
+        /*
+         * Check if we require SSL and if so, redirect here.
+         */
+        /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+
+        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+
+        exit;
+
+        }*/
 
     }
 
@@ -285,17 +307,15 @@ class Application {
 
     public function getDefaultConfig(){
 
-        $is_cli = (substr(php_sapi_name(), 0, 3) === 'cli');
-
         return array(
             'app' => array(
-                'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
+                'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'errorController' => null,
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
-                'rewrite' => (!$is_cli),
+                'rewrite' => true,
                 'files' => array(
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',
@@ -336,7 +356,7 @@ class Application {
 
     static public function setRoot($value){
 
-        Application::$root = rtrim($value, '/') . '/';
+        Application::$root = rtrim(str_replace('\\', '/', $value), '/') . '/';
 
     }
 
@@ -437,7 +457,7 @@ class Application {
      */
     public function getRequestedController() {
 
-        return $this->request->getControllerName();
+        return $this->router->getController();
 
     }
 
@@ -484,7 +504,7 @@ class Application {
      * @return \Hazaar\Application Returns a reference to itself to allow chaining
      *
      */
-    public function bootstrap($simple_mode = FALSE) {
+    public function bootstrap() {
 
         if($this->timer) {
 
@@ -514,24 +534,25 @@ class Application {
         }
 
         if(setlocale(LC_ALL, $locale) === FALSE)
-            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
+            throw new \Hazaar\Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
 
         $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
 
         if(!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
 
-        Application\Url::$aliases = $this->config->app->get('alias');
+        Application\Url::$aliases = $this->config->app->getArray('alias');
 
-        if($this->getRequestedController() !== 'hazaar') {
+        if(!$this->router->evaluate($this->request))
+            throw new Application\Exception\RouteNotFound($this->request->getPath());
+
+        if(($controller = $this->router->getController()) !== 'hazaar') {
 
             /*
              * Check that all required modules are loaded
              */
-            if(!isset($this->config->module['require']))
-                $this->config->module->require = array();
-
-            if(count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
+            if($this->config->module->has('require')
+                && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
                 throw new Application\Exception\ModuleMissing($missing);
 
             /*
@@ -544,40 +565,7 @@ class Application {
                 $this->bootstrap = include($bootstrap);
 
                 if($this->bootstrap === FALSE)
-                    throw new \Exception('The application failed to start!');
-
-            }
-
-        }
-
-        if($simple_mode === FALSE) {
-
-            if(!$this->request->processRoute())
-                throw new Application\Exception\RouteFailed();
-
-            /*
-             * Load the controller and check it was successful
-             */
-            $this->controller = $this->loader->loadController($this->request->getControllerName());
-
-            if(!($this->controller instanceof Controller))
-                throw new Application\Exception\RouteNotFound($this->request->getControllerName());
-
-            $this->controller->setRequest($this->request);
-
-            /*
-             * Initialise the controller with the current request
-             */
-            $response = $this->controller->__initialize($this->request);
-
-            //If we get a response now, the controller wants out, so display it and quit.
-            if($response instanceof \Hazaar\Controller\Response){
-
-                $response->__writeOutput();
-
-                $this->controller->__shutdown();
-
-                exit;
+                    throw new \Hazaar\Exception('The application failed to start!');
 
             }
 
@@ -621,10 +609,35 @@ class Application {
 
         }
 
-        if(!$controller)
-            $controller = $this->controller;
-
         try {
+
+            if(!$controller instanceof Controller) {
+
+                /*
+                 * Load the controller and check it was successful
+                 */
+                $controller = $this->loader->loadController($this->router->getController(), $this->router->getControllerName());
+
+                if(!($controller instanceof Controller))
+                    throw new Application\Exception\RouteNotFound($this->request->getBasePath());
+
+            }
+
+            /*
+             * Initialise the controller with the current request
+             */
+            $response = $controller->__initialize($this->request);
+
+            //If we get a response now, the controller wants out, so display it and quit.
+            if($response instanceof \Hazaar\Controller\Response){
+
+                $response->__writeOutput();
+
+                $controller->__shutdown();
+
+                return 0;
+
+            }
 
             /*
              * Execute the controllers run method.
@@ -686,6 +699,8 @@ class Application {
 
         }
 
+        return 0;
+
     }
 
     /**
@@ -705,7 +720,7 @@ class Application {
     public function runStdin() {
 
         if(!class_exists('\Hazaar\Warlock\Config'))
-            throw new \Exception('Could not find default warlock config.  How is this even working!!?');
+            throw new \Hazaar\Exception('Could not find default warlock config.  How is this even working!!?');
 
         $defaults = \Hazaar\Warlock\Config::$default_config;
 
@@ -725,7 +740,7 @@ class Application {
         if($type = $protocol->decode($line, $payload)){
 
             if(!$payload instanceof \stdClass)
-                throw new \Exception('Got Hazaar protocol packet without payload!');
+                throw new \Hazaar\Exception('Got Hazaar protocol packet without payload!');
 
             //Synchronise the timezone with the server
             if($tz = ake($payload, 'timezone'))
@@ -744,7 +759,7 @@ class Application {
 
                     if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
 
-                        $code = $container->exec($payload->function, ake($payload, 'params'));
+                        $code = $container->exec($payload->exec, ake($payload, 'params'));
 
                     }else{
 
@@ -852,7 +867,7 @@ class Application {
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
-     * For examples see: "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls
+     * For examples see: [Generating URLs](/basics/urls.md)
      *
      * @since 1.0.0
      *
@@ -1002,6 +1017,22 @@ class Application {
     public function setResponseType($type){
 
         $this->response_type = $type;
+
+    }
+
+    /**
+     * Get the contents for the applications composer.json file
+     * 
+     * This is shorthand method to quickly get the application composer file.
+     * 
+     * @return boolean|\stdClass
+     */
+    public function composer(){
+
+        if(!($path = realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'composer.json')))
+            return false;
+
+        return json_decode(file_get_contents($path));
 
     }
 

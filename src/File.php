@@ -84,7 +84,7 @@ class File {
                 $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
 
             if(! $backend instanceof File\Backend\_Interface)
-                throw new \Exception('Can not create new file object without a valid file backend!');
+                throw new \Hazaar\Exception('Can not create new file object without a valid file backend!');
 
             $this->backend = $backend;
 
@@ -201,7 +201,46 @@ class File {
 
     }
 
-    public function relativepath(){
+    /**
+     * Get the relative path of the file.
+     *
+     * If the file was returned from a [[Hazaar\File\Dir]] object, then it will have a stored
+     * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File\\
+     * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
+     * be returned.
+     *
+     * @param mixed $path Optional path to use as the relative path.
+     *
+     * @return boolean|string The relative path.  False when $path is not valid
+     */
+    public function relativepath($path = null){
+
+        if($path !== null){
+
+            if($path instanceof File)
+                $path = $path->dirname();
+            if($path instanceof File\Dir)
+                $path = $path->fullpath();
+            elseif(!is_string($path))
+                return false;
+
+            $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->source_file)), '/'));
+
+            $path = explode('/', trim(str_replace('\\', '/', $path), '/'));
+
+            $index = 0;
+
+            while (isset($source_path[$index])
+                && isset($path[$index])
+                && $source_path[$index] === $path[$index])
+                $index++;
+
+            $diff = count($source_path) - $index;
+
+            return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
+
+        }
+
 
         if(!$this->relative_path)
             return $this->fullpath();
@@ -349,6 +388,15 @@ class File {
 
     }
 
+    public function touch(){
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->touch($this->source_file);
+
+    }
+
     public function atime() {
 
         if(!$this->exists())
@@ -405,7 +453,7 @@ class File {
 
         $content_type = null;
 
-        if(!is_resource($this->source_file))
+        if(!is_resource($this->handle))
             $content_type = $this->mime_content_type();
 
         if(!$content_type)
@@ -483,7 +531,7 @@ class File {
      */
     public function save() {
 
-        return $this->put_contents($this->contents, TRUE);
+        return $this->put_contents($this->get_contents(), TRUE);
 
     }
 
@@ -531,13 +579,12 @@ class File {
      */
     public function md5() {
 
-        //If the contents has been downloaded from the storage backend or updated in some way, use that instead
-        if($this->contents)
-            return md5($this->contents);
-
         //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
         //a cheap method of calculating the checksum
-        return $this->backend->md5Checksum($this->source_file);
+        if(($md5 = $this->backend->md5Checksum($this->source_file)) === false)
+            $md5 = md5($this->get_contents());
+
+        return $md5;
 
     }
 
@@ -576,11 +623,11 @@ class File {
 
     }
 
-    public function moveTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+    public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         $move = $this->exists();
 
-        if(!$this->copyTo($destination, $create_dest, $dstBackend))
+        if(!$this->copyTo($destination, $overwrite, $create_dest, $dstBackend))
             return false;
 
         if($move){
@@ -601,10 +648,11 @@ class File {
     /**
      * Copy the file to another folder
      *
-     * @param mixed $destination The destination folder to copy the file into
-     * @param mixed $create_dest Flag that indicates if the destination folder should be created.  If the
-     *                              destination does not exist an error will be thrown.
-     * @param mixed $dstBackend The destination backend.  Defaults to the same backend as the source.
+     * @param string  $destination The destination folder to copy the file into
+     * @param boolean $overwrite   Overwrite the destination file if it exists.
+     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                             destination does not exist an error will be thrown.
+     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
      *
      * @throws \Exception
      *
@@ -613,7 +661,7 @@ class File {
      *
      * @return mixed
      */
-    public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
             $dstBackend = $this->backend;
@@ -624,10 +672,10 @@ class File {
 
             $dir = new File\Dir($destination, $dstBackend, $this->manager);
 
-            if(!$dir->exists($destination)){
+            if(!$dir->exists()){
 
                 if(!$create_dest)
-                    throw new \Exception('Destination does not exist!');
+                    throw new \Hazaar\Exception('Destination does not exist!');
 
                 $dir->create(true);
 
@@ -639,10 +687,10 @@ class File {
 
         }
 
-        if(! $this->exists())
+        if(!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(! $dstBackend->exists($destination)) {
+        if(!$dstBackend->exists($destination)) {
 
             if($create_dest)
                 $dstBackend->mkdir($destination);
@@ -652,7 +700,10 @@ class File {
 
         }
 
-        return $dstBackend->copy($this->source_file, $destination, $this->backend);
+        if($dstBackend === $this->backend)
+            return $dstBackend->copy($this->source_file, $destination);
+
+        return $dstBackend->write(rtrim($destination, '/') . '/' . $this->basename(), $this->get_contents(), $this->mime_content_type(), $overwrite);
 
     }
 
@@ -693,7 +744,7 @@ class File {
 
         if($set_path !== null){
 
-            if(!$set_path instanceof \Hazaar\Http\Uri)
+            if(!($set_path instanceof \Hazaar\Http\Uri || $set_path instanceof \Hazaar\Application\Url))
                 $set_path = new \Hazaar\Http\Uri($set_path);
 
             $this->__media_uri = $set_path;
@@ -1010,6 +1061,36 @@ class File {
     }
 
     /**
+     * Rewind the position of a file pointer
+     *
+     * Sets the file position indicator for handle to the beginning of the file stream.
+     *
+     * @return boolean
+     */
+    public function rewind(){
+
+        if(!$this->handle)
+            return false;
+
+        return rewind($this->handle);
+
+    }
+
+    /**
+     * Tests for end-of-file on a file pointer
+     *
+     * @return boolean TRUE if the file pointer is at EOF or an error occurs; otherwise returns FALSE.
+     */
+    public function eof(){
+
+        if(!$this->handle)
+            return false;
+
+        return feof($this->handle);
+
+    }
+
+    /**
      * Portable advisory file locking
      *
      * @param mixed $operation operation is one of the following:
@@ -1201,7 +1282,7 @@ class File {
             $content = substr($data, 8);
 
             if($hash !== hash('crc32', $content))
-                throw new \Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
+                throw new \Hazaar\Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
 
         }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
 

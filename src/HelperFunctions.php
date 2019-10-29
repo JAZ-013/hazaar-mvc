@@ -15,10 +15,10 @@
  * Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
- * 
+ *
  * Keys may also be specified using dot-notation.  This allows ake to called only once instead of for each
  * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
- * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if 
+ * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if
  * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
  * if the child is not an array or object.
  *
@@ -43,10 +43,14 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
         if ($array instanceof \Hazaar\Model\Strict)
             return $array->ake($key, $default, $non_empty);
 
-        if(is_object($array)
-            && property_exists($array, $key)
-            && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
-            return $array->$key;
+        if(is_object($array)){
+
+            if(property_exists($array, $key) && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
+                return $array->$key;
+            elseif($array instanceof \ArrayAccess && array_key_exists($key, $array))
+                return $array[$key];
+
+        }
 
         if(strpos($key, '.') !== false){
 
@@ -305,11 +309,11 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
  *
  * @param mixed $array The array to collate.
  * @param mixed $key_item The value to use as the key.
- * @param mixed $value_item The value to use as the value.
+ * @param mixed $value_item The value to use as the value.  If not supplied, the whole element will be the value.  Allows re-keying a mult-dimensional array by an array element.
  * @param mixed $group_item Optional value to group items by.
  * @return array
  */
-function array_collate($array, $key_item, $value_item, $group_item = null){
+function array_collate($array, $key_item, $value_item = null, $group_item = null){
 
     $result = array();
 
@@ -321,7 +325,7 @@ function array_collate($array, $key_item, $value_item, $group_item = null){
         if($group_item !== null)
             $result[ake($item, $group_item)][$item[$key_item]] = ake($item, $value_item);
         else
-            $result[$item[$key_item]] = ake($item, $value_item);
+            $result[$item[$key_item]] = ($value_item === null) ? $item : ake($item, $value_item);
 
     }
 
@@ -732,10 +736,10 @@ function bytes_str($string) {
  * Multiple interval support is also possible. Intervals can be separated with a comma (,) or the word
  * 'and', for example:
  *
- * <pre><code class="php">
+ * ```php
  * $foo = seconds('1 week, 2 days');
  * $bar = seconds('1 week and 2 days');
- * </code></pre>
+ * ```
  *
  * Both of these function calls will yeild the same result.
  *
@@ -886,11 +890,20 @@ function years($interval) {
  *
  * @since 1.0.0
  *
- * @return int Number of years from the specified date to now.
+ * @return int|boolean Number of years from the specified date to now, or FALSE on error.
  */
 function age($date) {
 
-    return years(time() - strtotime($date));
+    if($date instanceof \DateTime)
+        $time = $date->getTimestamp();
+
+    elseif(is_string($date))
+        $time = strtotime($date);
+
+    else
+        return false;
+
+    return years(time() - $time);
 
 }
 
@@ -904,9 +917,7 @@ function age($date) {
  *
  * @return string Minutes in interval
  */
-function uptime($seconds) {
-
-    $interval = $seconds . ' seconds';
+function uptime($interval) {
 
     $d = floor(days($interval));
 
@@ -1174,7 +1185,7 @@ function dump($data = NULL) {
 
         $style = "<style>
 body { padding: 0; margin: 0; font-family: Arial, Helvetica, sans-serif; }
-.exec_time { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
+.exec_time, .endtime { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
 .exec_time.good { background-color: #33bb33; }
 .exec_time.ok { background-color: gold; color: #333; }
 .exec_time.bad { background-color: #ea4040; }
@@ -1187,6 +1198,8 @@ pre { margin: 30px; }
         $speed_class = ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : 'good';
 
         echo "<div class=\"exec_time $speed_class\">{$exec_time}ms</div>";
+
+        echo "<div class=\"endtime\">" . date('c') . "</div>";
 
         echo "<h2>Dump</h2>\n\n";
 
@@ -1214,13 +1227,9 @@ pre { margin: 30px; }
  *
  * @param array   $patterns   An array of patterns to search for, as a string.
  * @param string  $subject    The input string.
- * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that
- *                            matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
- *                            subpattern, and so on.
- * @param integer $flags      For details on available flags, see the "preg_match()":http://php.net/manual/en/function.preg-match.php
- *                            documentation.
- * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can
- *                            be used to specify the alternate place from which to start the search (in bytes).
+ * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized subpattern, and so on.
+ * @param integer $flags      For details on available flags, see the [preg_match()](http://php.net/manual/en/function.preg-match.php) documentation.
+ * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can be used to specify the alternate place from which to start the search (in bytes).
  *
  * @return boolean|integer
  */
@@ -1589,6 +1598,28 @@ function object_to_array($object){
 }
 
 /**
+ * Recursively convert an array into an object.
+ *
+ * This is the inverse of object_to_array().
+ *
+ * @param array $object The array to convert.
+ * @return object|boolean Returns the converted array as a \stdClass object or false on failure.
+ */
+function array_to_object($array){
+
+    if(!is_array($array))
+        return false;
+
+    $object = new \stdClass;
+
+    foreach($array as $key => $value)
+        $object->{$key} = is_array($value) ? array_to_object($value) : $value;
+
+    return $object;
+
+}
+
+/**
  * Searches the array using a callback function and returns the first corresponding key if successful.
  *
  * @param mixed $haystack The array.
@@ -1648,6 +1679,14 @@ function array_remove_empty(&$array){
 
 }
 
+/**
+ * Generate a truly random string of characters.
+ *
+ * @param mixed $length The length of the random string being created.
+ * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
+ *
+ * @return string A totally random string of characters.
+ */
 function str_random($length, $include_special = false){
 
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -1663,5 +1702,29 @@ function str_random($length, $include_special = false){
         $randomString .= $characters[rand(0, $count - 1)];
 
     return $randomString;
+
+}
+
+/**
+ * Pull an item out of an array by is key
+ *
+ * This function is similar to array_pop() and array_shift(), except that instead of popping the last/first element off the
+ * array, it pops an element with the specified key.
+ *
+ * @param array $array The array to pull the element from.
+ * @param int|string $key The key of the element.
+ *
+ * @return mixed The element returned from the array.
+ */
+function array_pull(&$array, $key){
+
+    if(!array_key_exists($key, $array))
+        return null;
+
+    $item = $array[$key];
+
+    unset($array[$key]);
+
+    return $item;
 
 }

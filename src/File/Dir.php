@@ -16,7 +16,9 @@ class Dir {
 
     private $__media_uri;
 
-    function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
+    private $relative_path;
+
+    function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null, $relative_path = null) {
 
         if(!is_string($path))
             throw new \Exception('Invalid path specification');
@@ -29,6 +31,8 @@ class Dir {
         $this->manager = $manager;
 
         $this->path = $this->fixPath($path);
+
+        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
 
     }
 
@@ -73,9 +77,21 @@ class Dir {
 
     }
 
+    public function name(){
+
+        return pathinfo($this->fixPath($this->path), PATHINFO_FILENAME);
+
+    }
+
     public function basename(){
 
         return basename($this->fixPath($this->path));
+
+    }
+
+    public function ctime(){
+
+        return $this->backend->filectime($this->fixPath($this->path));
 
     }
 
@@ -97,9 +113,9 @@ class Dir {
 
     }
 
-    public function exists() {
+    public function exists($filename = null) {
 
-        return $this->backend->exists($this->path);
+        return $this->backend->exists(rtrim($this->path, '/') . ($filename ? '/' . $filename : ''));
 
     }
 
@@ -121,9 +137,9 @@ class Dir {
 
     }
 
-    public function create($recursive = FALSE) {
+    public function create($recursive = false) {
 
-        if(! $recursive)
+        if($recursive !== true)
             return $this->backend->mkdir($this->path);
 
         $parents = array();
@@ -137,7 +153,7 @@ class Dir {
             //Gets dirname an ensures separator is a forward slash (/).
             $last = str_replace(DIRECTORY_SEPARATOR, $this->backend->separator, dirname($last));
 
-            if($last == $this->backend->separator)
+            if($last === $this->backend->separator)
                 break;
 
         }
@@ -236,10 +252,12 @@ class Dir {
 
         }
 
-        if($this->backend->is_dir($this->fixPath($this->path, $file)))
-            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
+        if($this->backend->is_dir($this->fixPath($this->path, $file)))
+            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager, $relative_path);
+
+        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $relative_path);
 
     }
 
@@ -260,11 +278,10 @@ class Dir {
      *                                  single character and first character is the same as the last.
      * @param bool $recursive If TRUE the search will recurse into sub directories.
      * @param bool $case_sensitive If TRUE character case will be honoured.
-     * @param string $start String path to start at if the search should start at a sub directory.
-     * @param bool $relative Return a path relative to the search path, default is to return absolute paths.
+     * @param int $depth Recursion depth.  NULL will always recurse.  0 will prevent recursion.
      * @return array    Returns an array of matches files.
      */
-    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE) {
+    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
         $start = rtrim($this->path, $this->backend->separator) . $this->backend->separator;
 
@@ -273,6 +290,8 @@ class Dir {
         if(!($dir = $this->backend->scandir($start, NULL, TRUE)))
             return null;
 
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
         foreach($dir as $file) {
 
             if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
@@ -280,25 +299,26 @@ class Dir {
 
             $item = $start . $file;
 
-            if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
+            if($this->backend->is_dir($item) && ($depth === null || $depth > 0)) {
 
-                if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
+                $subdir = new \Hazaar\File\Dir($item, $this->backend, $this->manager, $relative_path);
+
+                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
+                    $list = array_merge($list, $subdiritems);
+
+            }else{
+
+                if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
+
+                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
+                        continue;
+
+                } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                     continue;
 
-            } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
-                continue;
+                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $relative_path);
 
-            if($this->backend->is_dir($item)) {
-
-                $dir = new \Hazaar\File\Dir($item, $this->backend, $this->manager);
-
-                if($subdir = $dir->find($pattern, $show_hidden, $case_sensitive))
-                    $list = array_merge($list, $subdir);
-
-                $list[] = $dir;
-
-            }else
-                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $this->path);
+            }
 
         }
 
@@ -374,13 +394,17 @@ class Dir {
         if($force_dir === true || (file_exists($path) && is_dir($path)))
             return new \Hazaar\File\Dir($path, $this->backend, $this->manager);
 
-        return new \Hazaar\File($this->path($child), $this->backend, $this->manager, $this->path);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
+        return new \Hazaar\File($this->path($child), $this->backend, $this->manager, $relative_path);
 
     }
 
     public function dir($child) {
 
-        return new \Hazaar\File\Dir($this->path($child), $this->backend, $this->manager);
+        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+
+        return new \Hazaar\File\Dir($this->path($child), $this->backend, $this->manager, $relative_path);
 
     }
 
@@ -397,9 +421,9 @@ class Dir {
      *
      * @return mixed
      */
-    public function put(\Hazaar\File $file){
+    public function put(\Hazaar\File $file, $overwrite = false){
 
-        return $file->copyTo($this->path, false, $this->backend);
+        return $file->copyTo($this->path, $overwrite, false, $this->backend);
 
     }
 
@@ -437,7 +461,7 @@ class Dir {
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
             if(!curl_exec($ch))
-                throw new \Exception(curl_error($ch));
+                throw new \Hazaar\Exception(curl_error($ch));
 
             curl_close($ch);
 
@@ -452,7 +476,7 @@ class Dir {
             );
 
             if(!($result = file_get_contents($url, false, stream_context_create($options))))
-                throw new \Exception('Download failed.  Zero bytes received.');
+                throw new \Hazaar\Exception('Download failed.  Zero bytes received.');
 
             $file->write($result);
 
@@ -482,6 +506,77 @@ class Dir {
             return null;
 
         return $this->manager->uri($this->fullpath());
+
+    }
+
+    public function get_meta($key = NULL) {
+
+        return $this->backend->get_meta($this->path, $key);
+
+    }
+
+    public function sync(Dir $source, $recursive = false){
+
+        if(!$this->exists())
+            $this->create();
+
+        while($item = $source->read()){
+
+            $retries = 3;
+
+            for($i = 0; $i < $retries; $i++){
+
+                try{
+
+                    if($item instanceof Dir){
+
+                        if($recursive === false)
+                            continue;
+
+                        $dir = $this->get($item->basename(), true);
+
+                        if(!$dir->exists())
+                            $dir->create();
+
+                        $dir->sync($item, $recursive);
+
+                    }elseif($item instanceof \Hazaar\File){
+
+                        if(!($sync = (!$this->exists($item->basename())))){
+
+                            $target_file = $this->get($item->basename());
+
+                            $sync = $item->mtime() > $target_file->mtime();
+
+                        }
+
+                        if($sync){
+
+                            $item->touch();
+
+                            $this->put($item, true);
+
+                        }
+
+                    }
+
+                    continue 2;
+
+                }
+                catch(\Throwable $e){
+
+                    //If we get an exception, it could be due to a network issue, so hang back for sec and try again
+                    sleep(1);
+
+                }
+
+            }
+
+            throw (isset($e) ? $e : new \Exception('Unknown error!'));
+
+        }
+
+        return true;
 
     }
 

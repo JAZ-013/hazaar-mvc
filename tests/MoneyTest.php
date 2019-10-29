@@ -2,7 +2,7 @@
 
 namespace HazaarTest;
 
-class MoneyTest extends \PHPUnit_Framework_TestCase {
+class MoneyTest extends \PHPUnit\Framework\TestCase {
 
     public function testCanDoAdd() {
 
@@ -10,13 +10,13 @@ class MoneyTest extends \PHPUnit_Framework_TestCase {
 
         $b = new \Hazaar\Money(100, 'AUD');
 
-        $this->assertInternalType('float', $a->toFloat());
+        $this->assertIsFloat($a->toFloat());
 
-        $this->assertInternalType('float', $b->toFloat());
+        $this->assertIsFloat($b->toFloat());
 
         $a->add($b);
 
-        $this->assertInternalType('float', $a->toFloat());
+        $this->assertIsFloat($a->toFloat());
 
     }
 
@@ -26,7 +26,7 @@ class MoneyTest extends \PHPUnit_Framework_TestCase {
 
         $rate = $a->getExchangeRate('USD');
 
-        $this->assertInternalType('float', $rate);
+        $this->assertIsFloat($rate);
 
         $this->assertGreaterThan(0, $rate);
 
@@ -38,7 +38,7 @@ class MoneyTest extends \PHPUnit_Framework_TestCase {
 
         $a->convertTo('AUD');
 
-        $this->assertInternalType('string', $a->toString());
+        $this->assertIsString($a->toString());
 
     }
 

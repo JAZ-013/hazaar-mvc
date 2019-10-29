@@ -29,6 +29,9 @@ class Tbody extends Block {
 
     public function addRow($fields) {
 
+        if($fields instanceof Tr)
+            return parent::add($fields);
+
         $tr = new Tr();
 
         foreach($fields as $field) {

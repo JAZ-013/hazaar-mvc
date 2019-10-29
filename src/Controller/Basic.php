@@ -25,6 +25,8 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
+    protected $request;
+
     protected $__action        = 'index';
 
     protected $__actionArgs    = array();
@@ -35,8 +37,9 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $__cache_key     = null;
 
-    public function cacheAction($action, $timeout = 60, $public = false) {
+    protected $__stream        = FALSE;
 
+    public function cacheAction($action, $timeout = 60, $public = false) {
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
 
@@ -60,9 +63,11 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
+        $this->request = $request;
+
         $response = null;
 
-        if(!($this->__action = $request->getActionName()))
+        if(!($this->__action = $request->popPath()))
             $this->__action = 'index';
 
         if(method_exists($this, 'init')) {
@@ -70,12 +75,12 @@ abstract class Basic extends \Hazaar\Controller {
             $response = $this->init($request);
 
             if($response === FALSE)
-                throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
 
         }
 
-        if($path = $request->getPath())
-            $this->__actionArgs = explode('/', $path);
+        if($request->getPath())
+            $this->__actionArgs = explode('/', $request->getPath());
 
         return $response;
 
@@ -96,22 +101,24 @@ abstract class Basic extends \Hazaar\Controller {
      */
     protected function __runAction(&$action = null) {
 
-        $action = $this->__action;
+        if(!$action)
+            $action = $this->__action;
 
         /*
-         * Check that the requested controller is this one.  If not then we probably got re-routed to the
-         * default controller so check for the __default() method. Then check if the action method exists
-         * and if not check for the __default() method.
+         * Check if we have routed to the default controller, or the action method does not
+         * exist and if not check for the __default() method.  Otherwise we have nothing
+         * to execute so throw a nasty exception.
          */
-        if($this->request->getControllerName() !== $this->name || !method_exists($this, $action)) {
+        if($this->application->router->is_default_controller === true
+            || !method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 
                 array_unshift($this->__actionArgs, $action);
 
-                array_unshift($this->__actionArgs, $this->application->getRequestedController());
+                array_unshift($this->__actionArgs, $this->name);
 
-                $action = '__default';
+                $this->__action = $action = '__default';
 
             } else {
 
@@ -144,6 +151,9 @@ abstract class Basic extends \Hazaar\Controller {
             throw new Exception\ActionNotPublic(get_class($this), $action);
 
         $response = $method->invokeArgs($this, $this->__actionArgs);
+
+        if($this->__stream)
+            return new Response\Stream($response);
 
         return $response;
 
@@ -215,9 +225,11 @@ abstract class Basic extends \Hazaar\Controller {
         }
 
         if(! $controller)
-            $controller = $this->getName();
+            $controller = '/' . $this->getName();
 
-        $is_controller = strcasecmp($this->getName(), $controller) == 0;
+        $controller = '/' . trim($controller, '/');
+
+        $is_controller = strcasecmp('/' . trim(substr($this->getName(), 0, strlen($controller)), '/'), $controller) === 0;
 
         if(! $action)
             return $is_controller;
@@ -237,6 +249,49 @@ abstract class Basic extends \Hazaar\Controller {
         $is_action = (strcasecmp($this->getAction(), $action) == 0);
 
         return ($is_controller && $is_action && $params_match);
+
+    }
+
+    public function stream($value) {
+
+        if(! headers_sent()) {
+
+            if(count(ob_get_status()) > 0)
+                ob_end_clean();
+
+            header('Content-Type: application/octet-stream;charset=ISO-8859-1');
+
+            header('Content-Encoding: none');
+
+            header("Cache-Control: no-cache, must-revalidate");
+
+            header("Pragma: no-cache");
+
+            header('X-Accel-Buffering: no');
+
+            header('X-Response-Type: stream');
+
+            flush();
+
+            $this->__stream = TRUE;
+
+            ob_implicit_flush();
+
+        }
+
+        $type = 's';
+
+        if(is_array($value)){
+
+            $value = json_encode($value);
+
+            $type = 'a';
+
+        }
+
+        echo dechex(strlen($value)) . "\0" . $type . $value;
+
+        return TRUE;
 
     }
 

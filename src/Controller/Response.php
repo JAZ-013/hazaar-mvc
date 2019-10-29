@@ -50,8 +50,8 @@ abstract class Response implements Response\_Interface {
 
         } else {
 
-            if(! is_array($this->headers[$key]))
-                $this->headers[$key] = array();
+            if(!(array_key_exists($key, $this->headers) && is_array($this->headers[$key])))
+                $this->headers[$key] = isset($this->headers[$key]) ? array($this->headers[$key]) : array();
 
             $this->headers[$key][] = $value;
 
@@ -244,7 +244,7 @@ abstract class Response implements Response\_Interface {
 
         if($this->modified()){
 
-            if($this->tidy && substr($this->content_type, 0, 4) == 'text') {
+            if($this->tidy && substr($this->getContentType(), 0, 4) === 'text') {
 
                 $tidy = new \tidy();
 

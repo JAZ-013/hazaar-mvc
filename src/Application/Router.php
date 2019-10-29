@@ -11,38 +11,212 @@ namespace Hazaar\Application;
 
 class Router {
 
+    private $aliases = array();
+
     private $file;
 
     private $route;
 
-    function __construct($route_file) {
+    private $controller;
 
-        if(! file_exists($route_file))
-            throw new \Exception('Routing file does not exist!');
+    private $controller_name;
 
-        $this->file = $route_file;
+    private $path;
+
+    private $use_default_controller = false;
+
+    private $default_controller;
+
+    public $is_default_controller = false;
+
+    static public $internal = array(
+        'hazaar'        => 'Hazaar\Controller\Router',
+        'media'         => 'Hazaar\Controller\Media',
+        'style'         => 'Hazaar\Controller\Style',
+        'script'        => 'Hazaar\Controller\Script',
+        'favicon.png'   => 'Hazaar\Controller\Favicon',
+        'favicon.ico'   => 'Hazaar\Controller\Favicon'
+    );
+
+    function __construct(Config $config) {
+
+        if($aliases = $config->app->get('alias'))
+            $this->aliases = $aliases->toArray();
+
+        $this->file = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($config->app->files, 'route', 'route.php');
+
+        $this->use_default_controller = boolify($config->app->useDefaultController);
+
+        $this->default_controller = $config->app->defaultController;
 
     }
 
-    public function exec($current = NULL) {
+    public function evaluate(Request $request) {
 
-        $this->route = $current;
+        $this->route = $request->getPath();
 
-        include($this->file);
+        if($this->file && file_exists($this->file))
+            include($this->file);
 
-        return (($this->route == $current) ? TRUE : $this->route);
+        if($this->route = trim($this->route, '/')){
+
+            $parts = explode('/', $this->route);
+
+            if($this->aliases){
+
+                $match_parts = array_map('strtolower', $parts);
+
+                foreach($this->aliases as $match => $alias){
+
+                    $alias_parts = explode('/', strtolower($match));
+
+                    if($alias_parts !== array_slice($match_parts, 0, count($alias_parts)))
+                        continue;
+
+                    $leftovers = array_slice($parts, count($alias_parts));
+
+                    $parts = explode('/', $alias);
+
+                    foreach($parts as &$part){
+
+                        if($part[0] !== '$')
+                            continue;
+
+                        if(substr($part, 1) === 'path')
+                            $part = implode('/', $leftovers);
+
+                    }
+
+                    break;
+
+                }
+
+            }
+
+            if(array_key_exists($parts[0], self::$internal)){
+
+                $this->controller = array_shift($parts);
+
+            }else{
+
+                $this->controller = $this->findController($parts);
+
+            }
+
+            if(count($parts) > 0)
+                $this->path = implode('/', $parts);
+
+            $request->setPath($this->path);
+
+        }else $this->controller = $this->findController($this->default_controller);
+
+        //If there is no controller and the default controller is active, search for that too.
+        if(!$this->controller && $this->use_default_controller === true){
+
+            $this->controller = $this->findController($this->default_controller);
+
+            $this->controller_name = $request->popPath();
+
+            $this->is_default_controller = true;
+
+        }
+
+        return true;
 
     }
 
+    private function findController(&$parts){
+
+        if(!is_array($parts))
+            $parts = explode('/', $parts);
+
+        $index = 0;
+
+        $controller = null;
+
+        $controller_root = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
+
+        $controller_path = DIRECTORY_SEPARATOR;
+
+        $controller_index = null;
+
+        foreach($parts as $index => $part){
+
+            $found = false;
+
+            $path = $controller_root . $controller_path;
+
+            $controller_path .= $part . DIRECTORY_SEPARATOR;
+
+            if(is_dir($path . $part)){
+
+                $found = true;
+
+                if(file_exists($controller_root . $controller_path . 'Index.php')){
+
+                    $controller = implode('/', array_slice($parts, 0, $index + 1)) . '/index';
+
+                    $controller_index = $index;
+
+                }
+
+            }
+
+            if(file_exists($path . ucfirst($part) . '.php')){
+
+                $found = true;
+
+                $controller = (($index > 0) ? implode('/', array_slice($parts, 0, $index)) . '/' : null) . $part;
+
+                $controller_index = $index;
+
+            }
+
+            if($found === false)
+                break;
+
+        }
+
+        if($controller)
+            $parts = array_slice($parts, $controller_index + 1);
+
+        return $controller;
+
+    }
+    /**
+     * Get the currently set route
+     *
+     * @return string
+     */
     private function get() {
 
         return $this->route;
 
     }
 
+    /**
+     * Set the route to a specified value
+     *
+     * @param mixed $route
+     */
     private function set($route) {
 
-        $this->route = $route;
+        $this->route = trim($route, '/');
+
+    }
+
+    public function getController() {
+
+        return $this->controller;
+
+    }
+
+    public function getControllerName(){
+
+        if($this->controller_name)
+            return $this->controller_name;
+
+        return $this->controller;
 
     }
 

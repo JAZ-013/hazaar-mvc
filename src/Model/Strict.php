@@ -36,6 +36,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     protected $convert_nulls = false;
 
     /**
+     * Automatically convert empty strings to nulls
+     * @var bool
+     */
+    protected $convert_empty = false;
+
+    /**
      * The field definition.
      * @var mixed
      */
@@ -201,10 +207,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                     /*
                      * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
                      */
-                    if ($type == 'array' || $type == 'list' ) {
+                    if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
 
-                        if (array_key_exists('arrayOf', $def))
-                            $value = new ChildArray($def['arrayOf'], $value);
+                        $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
                     }elseif($type == 'model') {
@@ -256,6 +261,31 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      * @return boolean
      */
     public function has($key) {
+
+        if(strpos($key, '.') !== false){
+
+            $value = $this;
+
+            $parts = explode('.', $key);
+
+            end($parts);
+
+            $lastKey = key($parts);
+
+            foreach($parts as $key => $part){
+
+                if($value instanceof Strict)
+                    $value = ($lastKey === $key) ? $value->has($part) : $value->get($part, false);
+                elseif(is_array($value))
+                    $value = ($lastKey === $key) ? array_key_exists($part, $value) : ake($value, $part);
+                else
+                    $value = false;
+
+            }
+
+            return $value;
+
+        }
 
         return array_key_exists($key, $this->fields);
 
@@ -324,15 +354,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     $value = ake($value, $part);
 
-                }elseif(is_array($value)){
+                }elseif(($value = ake($value, $part)) === null){
 
-                    $value = ake($value, $part);
-
-                }else{
-
-                    $null = null;
-
-                    return $null;
+                    return $value;
 
                 }
 
@@ -766,6 +790,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = call_user_func($cb_def, $value, $key);
 
+        } elseif (method_exists($this, $cb_def)){
+            
+            $value = call_user_func(array($this, $cb_def), $value, $key);
+
         }
 
         return $value;
@@ -928,8 +956,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
-            if($value === null && ake(ake($this->fields, $key), 'type', 'string') && $this->convert_nulls)
-                $value = '';
+            if(gettype($value) === 'string'){
+
+                if($this->convert_nulls === true && $value === null)
+                    $value = '';
+                elseif($this->convert_empty === true && trim($value) === '')
+                    $value = null;
+
+            }
 
             $result[$key] = $value;
 
@@ -1291,7 +1325,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     public function __call($func, $argv){
 
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
-            throw new \BadMethodCallException(__CLASS__.'->'.$func);
+            throw new \BadMethodCallException(get_class($this).'->'.$func);
 
         $values = $this->values;
 

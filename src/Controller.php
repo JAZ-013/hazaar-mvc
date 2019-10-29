@@ -18,17 +18,15 @@ abstract class Controller implements Controller\_Interface {
 
     protected $name;
 
-    protected $request;
-
     public    $statusCode;
 
     public    $base_path;    //Optional base_path for controller relative url() calls.
 
-    public function __construct($name, $application) {
+    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         $this->name = $name;
 
-        $this->setApplication($application);
+        $this->application = $application;
 
     }
 
@@ -45,22 +43,6 @@ abstract class Controller implements Controller\_Interface {
     public function getName() {
 
         return $this->name;
-
-    }
-
-    public function setApplication($application) {
-
-        if(! $application instanceof \Hazaar\Application)
-            throw new Exception("Error setting application on controller " . get_class($this) . ". Object of type " . get_class($application) . " is not an application object!");
-
-        $this->application = $application;
-
-    }
-
-    public function setRequest($request) {
-
-        if($request instanceof Application\Request)
-            $this->request = $request;
 
     }
 
@@ -112,7 +94,7 @@ abstract class Controller implements Controller\_Interface {
 
                 list($controller, $method) = $args[0];
 
-            } elseif(count($args) == 2) {
+            } elseif(count($args) === 2) {
 
                 list($controller, $method) = $args;
 
@@ -132,7 +114,7 @@ abstract class Controller implements Controller\_Interface {
 
                 }
 
-            } elseif(count($args) == 3) {
+            } elseif(count($args) === 3) {
 
                 list($controller, $method, $params) = $args;
 
@@ -145,7 +127,7 @@ abstract class Controller implements Controller\_Interface {
         }
 
         if(! $controller)
-            $controller = $this->request->getControllerName();
+            $controller = $this->getName();
 
         return $this->application->url($controller, $method, $params, $this->base_path);
 

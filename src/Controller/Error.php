@@ -35,7 +35,7 @@ class Error extends \Hazaar\Controller\Action {
 
     private $status_codes = array();
 
-    function __construct($name, $application){
+    function __construct($name, \Hazaar\Application $application){
 
         parent::__construct($name, $application, false);
 
@@ -276,7 +276,8 @@ class Error extends \Hazaar\Controller\Action {
                 'type' => $this->errno,
                 'status' => $this->status,
                 'str' => $this->errstr
-            )
+            ),
+            'timestamp' => time()
         );
 
         if(ini_get('display_errors')){
@@ -342,6 +343,8 @@ class Error extends \Hazaar\Controller\Action {
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
         $out .= "Environment:\t" . APPLICATION_ENV . "\n";
+
+        $out .= "Timestamp:\t" . date('c') . "\n";
 
         if ($this->errno > 0)
             $out .= "Error:\t\t#" . $this->errno . "\n";

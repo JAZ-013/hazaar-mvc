@@ -17,11 +17,11 @@ namespace Hazaar;
  *
  *              ### Example
  *
- *              <code class="php">
+ *              ```php
  *              $aud = new Money(500, 'AUD');
  *              $usd = new Money(200, 'USD');
  *              $total = $aud->add($usd);
- *              </code>
+ *              ```
  *
  *              The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
  *              $123.45. You can specify the format when retrieving the amount (see Money::format()) or you can set the
@@ -34,10 +34,10 @@ namespace Hazaar;
  *
  *              ### Example bootstrap.php
  *
- *              <code class="php">
+ *              ```php
  *              Hazaar\Money::$money_format = '%.0n';
  *              Hazaar\Money::$default_currency = 'AUD';
- *              </code>
+ *              ```
  */
 class Money {
 
@@ -176,9 +176,9 @@ class Money {
      *
      *              ### Example
      *
-     *              <code class="php">
+     *              ```php
      *              echo $currency->getCode('au');  //This will echo the string 'AUD'.
-     *              </code>
+     *              ```
      *
      * @param       string $country Optional country code to look up a currency code for.
      *

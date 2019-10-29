@@ -38,7 +38,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
         $this->file = ($file instanceof \Hazaar\File) ? $file : new \Hazaar\File($file, $backend);
 
         if(!($this->file->exists() || $this->hasContent()))
-            throw new \Hazaar\Exception\FileNotFound($file);
+            return false;
 
         $this->setContentType($this->file->mime_content_type());
 
@@ -61,7 +61,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
         }
 
         if($content_type)
-            $this->file->set_mime_content_type($content_type);
+            $this->file->set_mime_content_type($this->content_type = $content_type);
 
         $this->file->set_contents($data);
 

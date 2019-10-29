@@ -19,10 +19,10 @@ if (!ini_get('date.timezone'))
  *
  * ### Example
  *
- * <code class="php">
+ * ```php
  * $date = new Hazaar\Date('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
- * </code>
+ * ```
  *
  * ## Timezones
  *
@@ -32,13 +32,13 @@ if (!ini_get('date.timezone'))
  *
  * pre. php.date.timezone = Australia/ACT
  *
- * See the PHP Manual for a "list of valid timezones":http://php.net/manual/en/timezones.php.
+ * See the PHP Manual for a [list of valid timezones](http://php.net/manual/en/timezones.php).
  *
  * If a timezone is not set in the application.ini file, nor is one set in the global PHP configuration then
  * as a last ditch effort the Date class will default to UTC. This is because not having an ini setting in
  * date.timzone will cause a PHP runtime error.
  */
-class Date extends \Datetime {
+class Date extends \DateTime {
 
     public static $calendar = CAL_JULIAN;
 
@@ -72,7 +72,7 @@ class Date extends \Datetime {
      *            [[http://au1.php.net/manual/en/function.strtotime.php|strtotime()]] for more information on valid
      *            formats. If the datetime value is not set, the current date and time will be used.
      *
-     * @param string $timezone
+     * @param string|\DateTimeZone $timezone
      *            The timezone for this datetime value. If no timezone is specified then the default
      *            timezone is used.
      */
@@ -90,7 +90,7 @@ class Date extends \Datetime {
             $datetime = '@' . $datetime . '.0';
 
         } elseif (is_array($datetime)){
-            
+
             if(array_key_exists('sec', $datetime)) { // Common array date object
 
                 $ndatetime = '@' . $datetime['sec'];
@@ -107,7 +107,7 @@ class Date extends \Datetime {
 
                 $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
             }else{
-                
+
                 $datetime = null;
 
             }
@@ -470,7 +470,7 @@ class Date extends \Datetime {
     /**
      * Add a date/time interval to the current date/time.
      *
-     * See the PHP documentation on how to use the "DateInterval":http://au2.php.net/manual/en/class.dateinterval.php object.
+     * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
      * @param mixed $interval
      *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
@@ -502,13 +502,11 @@ class Date extends \Datetime {
     /**
      * Subtract a date/time interval from the current date/time.
      *
-     * See the PHP documentation on how to use the "DateInterval":http://au2.php.net/manual/en/class.dateinterval.php object.
+     * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
-     * @param mixed $interval
-     *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
+     * @param mixed $interval Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
      *
-     * @param bool $return_new
-     *            Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
+     * @param bool $return_new Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
      *
      * @return Date
      */
@@ -653,37 +651,46 @@ class Date extends \Datetime {
     /**
      * Return a fuzzy diff between the current time and the Date value.
      *
-     * @param bool $precise
+     * @param bool $precise             Boolean indicating if precise mode should be used.  This generally adds the time
+     *                                  to day-based results.
      *
-     * @return string
+     * @param int  $date_threshold_days A threshold in days after which the full date will be returned.  Avoids
+     *                                  situations like "3213 days ago" which is silly.
+     *
+     * @return string  Returns a nice fuzzy interval like "yesterday at xx:xx" or "4 days ago".
      */
-    public function fuzzy($precise = FALSE) {
+    public function fuzzy($precise = FALSE, $date_threshold_days = 30) {
 
-        $diff = $this->diff(new Date());
+        $diff = $this->diff(new Date(null, $this->getTimezone()));
 
-        if ($diff->days == 0) {
+        if($diff->days > $date_threshold_days)
+            return $this->format('F jS' . ($precise ? ' \a\t g:ia' : ''));
 
-            if ($diff->h > 0) {
+        if ($diff->days === 0) {
 
+            if ($diff->h > 0)
                 $msg = $diff->h . ' hour' . (($diff->h > 1) ? 's' : NULL);
-            } elseif ($diff->i > 0) {
-
+            elseif ($diff->i > 0)
                 $msg = $diff->i . ' minute' . (($diff->i > 1) ? 's' : NULL);
-            } elseif ($precise == FALSE && $diff->s < 30) {
-
+            elseif ($precise == FALSE && $diff->s < 30)
                 $msg = 'A few seconds';
-            } else {
-
+            else
                 $msg = $diff->s . ' seconds';
-            }
 
             $msg .= ' ago';
-        } elseif ($diff->days == 1) {
 
-            $msg = 'Yesterday at ' . $this->format('g:ia');
-        } else {
+        } elseif ($diff->days === 1) {
 
-            $msg = $this->format('j F \a\t g:ia');
+            $msg = 'Yesterday' . ($precise ? ' at ' . $this->format('g:ia') : '');
+
+        } elseif ($diff->days > 1 && $diff->days < 7){
+
+            $msg = 'Last ' . $this->format('l' . ($precise ? ' \a\t g:ia' : ''));
+
+        }else{
+
+            $msg = $diff->days . ' days ago';
+
         }
 
         return $msg;

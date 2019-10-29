@@ -14,6 +14,12 @@ class Hazaar implements _Interface {
 
     private $meta      = array();
 
+    static public function label(){
+
+        return "Hazaar VFS";
+
+    }
+
     public function __construct($options = array()) {
 
         $this->options = new \Hazaar\Map(array(

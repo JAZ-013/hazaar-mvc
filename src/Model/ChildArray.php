@@ -34,7 +34,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     function __construct($type, $values = array()){
 
         if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || $type === 'any' || class_exists($type)))
-            throw new \Exception('Unknown/Unsupported data type: ' . $type);
+            throw new \Hazaar\Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
 
@@ -322,7 +322,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function append($value){
+    public function push($value = array()){
+        
+        return $this->append($value);
+
+    }
+
+    public function append($value = array()){
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
@@ -359,6 +365,17 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     public function empty(){
 
         $this->values = array();
+
+    }
+
+    public function collate($key_field, $value_field = null){
+
+        $items = array();
+
+        foreach($this->values as $value)
+            $items[$value[$key_field]] = ($value_field === null) ? $value : $value[$value_field];
+
+        return $items;
 
     }
 

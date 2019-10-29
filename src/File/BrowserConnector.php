@@ -113,7 +113,7 @@ class BrowserConnector {
     public function info(\Hazaar\File\Manager $source, $file) {
 
         if(!($file instanceof \Hazaar\File || $file instanceof \Hazaar\File\Dir))
-            throw new \Exception('$file must be either Hazaar\File or Hazaar\File\Dir when calling info()');
+            throw new \Hazaar\Exception('$file must be either Hazaar\File or Hazaar\File\Dir when calling info()');
 
         $is_dir = $file instanceof \Hazaar\File\Dir || $file->is_dir();
 
@@ -517,7 +517,7 @@ class BrowserConnector {
                 if(! $source->exists($newPath)) {
 
                     if(! $source->mkdir($newPath))
-                        throw new \Exception('Could not create parent directories');
+                        throw new \Hazaar\Exception('Could not create parent directories');
 
                     if($newDir = $source->get($newPath))
                         $info['tree'][] = $this->info($source, $newDir);
@@ -625,7 +625,7 @@ class BrowserConnector {
         $list = $source->find($query, $path, true);
 
         if(!is_array($list))
-            throw new \Exception('Search failed!');
+            throw new \Hazaar\Exception('Search failed!');
 
         foreach($list as &$item)
             $item = $this->info($source, $source->get($item));

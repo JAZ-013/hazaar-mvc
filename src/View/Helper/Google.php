@@ -46,7 +46,7 @@ class Google extends \Hazaar\View\Helper {
         }
 
         if($settings->api_key == null)
-            throw new \Exception('You MUST supply your Google Services API key to use Google Maps.  For more information see: ' . $this->html->link('https://developers.google.com/maps/documentation/javascript/tutorial#api_key'));
+            throw new \Hazaar\Exception('You MUST supply your Google Services API key to use Google Maps.  For more information see: ' . $this->html->link('https://developers.google.com/maps/documentation/javascript/tutorial#api_key'));
 
         $canvas = $this->html->block('div', null, $args->toArray(true));
 

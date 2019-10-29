@@ -38,6 +38,9 @@ class GeoData {
         ),
         'code' => array(
             'url' => 'https://countrycode.org/customer/countryCode/downloadCountryCodes'
+        ),
+        'currency' => array(
+            'url' => 'https://restcountries.eu/rest/v2/all'
         )
     );
 
@@ -99,12 +102,12 @@ class GeoData {
         $city_zipfile->put_contents(file_get_contents(GeoData::$sources['city']['url']));
 
         if(!$city_zipfile->size() > 0)
-            throw new \Exception('Unable to download city info source file!');
+            throw new \Hazaar\Exception('Unable to download city info source file!');
 
         $md5 = file_get_contents(GeoData::$sources['city']['md5']);
 
         if($city_zipfile->md5() !== $md5)
-            throw new \Exception('City info source file MD5 signature does not match!');
+            throw new \Hazaar\Exception('City info source file MD5 signature does not match!');
 
         $files = $city_zipfile->unzip(GeoData::$sources['city']['csv'], $tmpdir);
 
@@ -114,6 +117,8 @@ class GeoData {
          * Download extra country code data
          */
         $codes = $this->parseCSV(GeoData::$sources['code']['url'], 'ISO2');
+
+        $currency = $this->parseJSON(GeoData::$sources['currency']['url'], 'alpha2Code');
 
         /*
          * Process the contents of the CSV and store in our Btree database
@@ -186,6 +191,20 @@ class GeoData {
 
                     }
 
+                    if($c = ake(ake($currency, $country_code), 'currencies')){
+
+                        if(is_array($c)) $c = ake($c, 0);
+
+                        $data[$country_code]['currency'] = array(
+                            'code' => $c->code,
+                            'name' => $c->name,
+                            //'precision' => intval($currency[$country_code]['ISO4217-currency_minor_unit']),
+                            'symbol' => $c->symbol,
+                            'symbol_entity' => '&#' . dechex(ord($c->symbol)) . ';'
+                        );
+
+                    }
+
                 }
 
                 if(!($state_code = $entry['subdivision_1_iso_code']))
@@ -253,6 +272,25 @@ class GeoData {
 
             foreach($line as $col => $value)
                 $item[$headers[$col]] = $value;
+
+            if($key = ake($item, $key_name, null, true))
+                $items[$key] = $item;
+
+        }
+
+        ksort($items);
+
+        return $items;
+
+    }
+
+    private function parseJSON($file, $key_name){
+
+        $items = array();
+
+        $data = json_decode(file_get_contents($file));
+
+        foreach($data as $item){
 
             if($key = ake($item, $key_name, null, true))
                 $items[$key] = $item;

@@ -73,7 +73,7 @@ class Style {
             $value = func_get_arg(0);
 
             if(! is_array($value))
-                throw new \Exception('Argument should be an array when only passing one argument to Style::set()');
+                throw new \Hazaar\Exception('Argument should be an array when only passing one argument to Style::set()');
 
             if(! array_key_exists($this->current, $this->selectors) || ! is_array($this->selectors[$this->current]))
                 $this->selectors[$this->current] = array();
@@ -101,7 +101,7 @@ class Style {
 
         } else {
 
-            throw new \Exception("Style method 'set' does not know how to handle $argc arguments");
+            throw new \Hazaar\Exception("Style method 'set' does not know how to handle $argc arguments");
 
         }
 

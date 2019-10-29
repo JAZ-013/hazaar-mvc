@@ -4,6 +4,13 @@ namespace Hazaar\File;
 
 class Manager {
 
+    static private $backend_aliases = array(
+        'googledrive' => 'GoogleDrive',
+        'mongodb'     => 'MongoDB',
+        'sharepoint'  => 'SharePoint',
+        'webdav'      => 'WebDAV'
+    );
+
     static public  $default_config = array(
         'enabled' => true,
         'auth' => false,
@@ -45,12 +52,9 @@ class Manager {
 
         }
 
-        if(class_exists($backend))
-            $class = $backend;
-        else
-            $class = 'Hazaar\File\Backend\\' . ucfirst($backend);
+        $class = 'Hazaar\File\Backend\\' . ake(self::$backend_aliases, $backend, ucfirst($backend));
 
-        if(! class_exists($class))
+        if(!class_exists($class))
             throw new Exception\BackendNotFound($backend);
 
         $this->backend_name = $backend;
@@ -64,6 +68,62 @@ class Manager {
             $name = strtolower($backend);
 
         $this->name = $name;
+
+    }
+
+    static public function getAvailableBackends(){
+
+        $composer = \Hazaar\Application::getInstance()->composer();
+
+        if(!property_exists($composer, 'require'))
+            return false;
+
+        foreach($composer->require as $lib => $ver){
+
+            $lib_path = realpath(APPLICATION_PATH
+                . DIRECTORY_SEPARATOR . '..'
+                . DIRECTORY_SEPARATOR . 'vendor'
+                . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $lib));
+
+            if(substr(dirname($lib_path), -10) !== 'hazaarlabs')
+                continue;
+
+            $backend_path = $lib_path
+                . DIRECTORY_SEPARATOR . 'src'
+                . DIRECTORY_SEPARATOR . 'File'
+                . DIRECTORY_SEPARATOR . 'Backend';
+
+            if(!file_exists($backend_path))
+                continue;
+
+            $dir = dir($backend_path);
+
+            while(($file = $dir->read()) !== false){
+
+                if(substr($file, -4) !== '.php' || substr($file, 0, 1) === '.' || substr($file, 0, 1) === '_')
+                    continue;
+
+
+                $source = ake(pathinfo($file), 'filename');
+
+                $class = 'Hazaar\\File\\Backend\\' . $source;
+
+                if(!class_exists($class))
+                    continue;
+
+                $backend = array(
+                    'name'  => strtolower($source),
+                    'label' => $class::label(),
+                    'class' => $class
+                );
+
+                $backends[] = $backend;
+
+            }
+
+        }
+
+        return $backends;
 
     }
 
@@ -146,7 +206,8 @@ class Manager {
      */
     public function authorise($redirect_uri = NULL) {
 
-        if(! method_exists($this->backend, 'authorise'))
+        if(! method_exists($this->backend, 'authorise')
+            || $this->backend->authorised())
             return TRUE;
 
         $result = $this->backend->authorise($redirect_uri);
@@ -376,7 +437,7 @@ class Manager {
 
             }
 
-            throw new \Exception("Copy of source type '" . $file->type() . "' between different sources is currently not supported");
+            throw new \Hazaar\Exception("Copy of source type '" . $file->type() . "' between different sources is currently not supported");
 
         }
 
@@ -415,7 +476,7 @@ class Manager {
 
             }
 
-            throw new \Exception("Move of source type '" . $file->type() . "' between different sources is currently not supported.");
+            throw new \Hazaar\Exception("Move of source type '" . $file->type() . "' between different sources is currently not supported.");
 
         }
 

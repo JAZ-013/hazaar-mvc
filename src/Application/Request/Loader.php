@@ -26,25 +26,25 @@ class Loader {
      *
      * @since 1.0.0
      *
-     * @param \Hazaar\Application\Config $config The configuration object of the current application.
-     *
      * @return \Hazaar\Application\Request Either a [[Hazaar\Application\Request\Http]] or
      * [[Hazaar\Application\Request\Cli]]
      * object.
      */
-    static public function load($config) {
+    static public function load() {
 
         switch(strtolower(php_sapi_name())) {
 
             case 'cli' :
+
                 global $argv;
 
-                $request = new Cli($config, $argv);
+                $request = new Cli($argv);
 
                 break;
 
             default :
-                $request = new Http($config);
+
+                $request = new Http($_REQUEST, true);
 
                 break;
         }

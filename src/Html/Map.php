@@ -43,7 +43,7 @@ class Map extends Block {
 
             } elseif(!$item instanceof Area) {
 
-                throw new \Exception('You can only add objects of type \Hazaar\Area to \Hazaar\Map');
+                throw new \Hazaar\Exception('You can only add objects of type \Hazaar\Area to \Hazaar\Map');
 
             } else {
 

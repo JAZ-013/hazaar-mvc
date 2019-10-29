@@ -45,7 +45,7 @@ class Handler {
         list($method, $code) = explode(' ', $authorization);
 
         if(strtolower($method) != 'basic')
-            throw new \Exception('Unsupported authorization method: ' . $method);
+            throw new \Hazaar\Exception('Unsupported authorization method: ' . $method);
 
         list($identity, $credential) = explode(':', base64_decode($code));
 
@@ -146,7 +146,7 @@ class Handler {
 
             }else{
 
-                throw new \Exception('Unsupported password encryption algorithm.');
+                throw new \Hazaar\Exception('Unsupported password encryption algorithm.');
 
             }
 
@@ -272,32 +272,34 @@ class Handler {
 
     public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
 
-        $module_name = $request->getActionName();
+        $parts = array();
 
-        if($module_name == 'index')
+        if($path = $request->getBasePath())
+            $parts = array_slice(explode('/', $path), 2);
+
+        if(!($module_name = array_shift($parts)))
             $module_name = 'app';
 
         if(!$this->moduleExists($module_name))
-            throw new \Exception("Console module '$module_name' does not exist!", 404);
+            throw new \Hazaar\Exception("Console module '$module_name' does not exist!", 404);
 
-        $request->evaluate($request->getRawPath());
-
-        $action = $request->getActionName();
+        if(!($action = array_shift($parts)))
+            $action = 'index';
 
         $module = $this->modules[$module_name];
 
         if(!method_exists($module, $action))
-            throw new \Exception("Method '$action' not found on module '$module_name'", 404);
+            throw new \Hazaar\Exception("Method '$action' not found on module '$module_name'", 404);
 
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
+
+        $request->setPath(implode('/', $parts));
 
         $module->base_path = 'hazaar/console';
 
         if($action !== 'file')
             $module->__initialize($request);
-
-        $module->setRequest($request);
 
         $response = call_user_func(array($module, $action), $request);
 

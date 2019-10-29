@@ -19,7 +19,7 @@ namespace Hazaar\Controller;
  *              ## Overview
  *              Unlike other controllers, the rest controller works using annotations.  Such as:
  *
- *              <code>
+ *              ```php
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
@@ -32,7 +32,7 @@ namespace Hazaar\Controller;
  *                  }
  *
  *              }
- *              </code>
+ *              ```
  *
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/1234
  *
@@ -44,7 +44,7 @@ namespace Hazaar\Controller;
  *
  *              Do define another version of the above example using versions you could:
  *
- *              <code>
+ *              ```php
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
@@ -69,7 +69,7 @@ namespace Hazaar\Controller;
  *                  }
  *
  *              }
- *              </code>
+ *              ```
  *
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/2040-01-01/1234
  *
@@ -78,17 +78,20 @@ namespace Hazaar\Controller;
  *
  *              Such as:
  *
- *              <code>
+ *              ```php
  *              /**
  *                * @route('/v1/dothething/<date:when>/<int:thingstodo>', methodsGET'])
  *                * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
  *               **\/
+ *              ```
  *
  *              ## Endpoint Directories
  *              Endpoint directories are simply a list of the available endpoints with some basic information
  *              about how they operate such as the HTTP methods allowed, parameter description and a brief description.
  */
 abstract class REST extends \Hazaar\Controller {
+
+    protected $request;
 
     protected $describe_full = true;
 
@@ -110,7 +113,7 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    public function __construct($name, $application) {
+    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
         $application->setResponseType('json');
 
@@ -121,6 +124,8 @@ abstract class REST extends \Hazaar\Controller {
     }
 
     public function __initialize(\Hazaar\Application\Request $request) {
+
+        $this->request = $request;
 
         $class = new \ReflectionClass($this);
 
@@ -140,6 +145,7 @@ abstract class REST extends \Hazaar\Controller {
             $endpoint = array(
                 'cache' => false,
                 'cache_timeout' => null,
+                'cache_ignore_params' => false,
                 'comment' => $comment,
                 'routes' => array()
             );
@@ -161,6 +167,11 @@ abstract class REST extends \Hazaar\Controller {
                         $endpoint['cache'] = boolify($cache);
 
                     }
+
+                    if($endpoint['cache'] === true
+                        && (($pos = array_search('cache_ignore_params', $method_matches[2])) !== false)
+                        && preg_match('/cache_ignore_params\s+(.*)/', $method_matches[1][$pos], $cache_matches))
+                        $endpoint['cache_ignore_params'] = boolify($cache_matches[1]);
 
                 }
 
@@ -217,12 +228,20 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $full_path = '/' . $this->request->getRawPath();
+        return null;
+
+    }
+
+    public function __run() {
+
+        $full_path = '/' . $this->request->getPath();
+
+        $request_method = $this->request->method();
 
         if($full_path == '/'){
 
             if(!$this->allow_directory)
-                throw new \Exception('Directory listing is not allowed', 403);
+                throw new \Hazaar\Exception('Directory listing is not allowed', 403);
 
             return new \Hazaar\Controller\Response\Json($this->__describe_api());
 
@@ -232,7 +251,7 @@ abstract class REST extends \Hazaar\Controller {
 
             foreach($endpoint['routes'] as $target => $route){
 
-                if($this->__match_route($full_path, $target, $route, $args)){
+                if($this->__match_route($request_method, $full_path, $target, $route, $args)){
 
                     if($this->request->method() == 'OPTIONS'){
 
@@ -249,7 +268,7 @@ abstract class REST extends \Hazaar\Controller {
 
                         $this->__endpoint = array($endpoint, $route, $args);
 
-                        break;
+                        break 2;
 
                     }
 
@@ -260,18 +279,12 @@ abstract class REST extends \Hazaar\Controller {
         }
 
         if(!$this->__endpoint)
-            throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
+            throw new \Hazaar\Exception('REST API Endpoint not found: ' . $full_path, 404);
 
         if(method_exists($this, 'init'))
-            $this->init($request);
+            $this->init($this->request);
 
-        return null;
-
-    }
-
-    public function __run() {
-
-        return $this->__exec_endpoint($this->__endpoint);
+        return $this->__exec_endpoint($this->__endpoint, $this->request->getParams());
 
     }
 
@@ -331,7 +344,7 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __match_route($path, $route, $endpoint, &$args = null){
+    private function __match_route($request_method, $path, $route, $endpoint, &$args = null){
 
         $args = array();
 
@@ -381,19 +394,19 @@ abstract class REST extends \Hazaar\Controller {
 
         $http_methods = ake(ake($endpoint, 'args'), 'methods', array('GET'));
 
-        if(!in_array($this->request->method(), $http_methods))
+        if(!in_array($request_method, $http_methods))
             return false;
 
         return true;
 
     }
 
-    private function __exec_endpoint($endpoint){
+    private function __exec_endpoint($endpoint, $args = array()){
 
         list($endpoint, $route, $args) = $endpoint;
 
         if(!($method = $route['func']) instanceof \ReflectionMethod)
-            throw new \Exception('Method is no longer a method!?', 500);
+            throw new \Hazaar\Exception('Method is no longer a method!?', 500);
 
         $params = array();
 
@@ -410,7 +423,7 @@ abstract class REST extends \Hazaar\Controller {
             elseif($p->isDefaultValueAvailable())
                 $value = $p->getDefaultValue();
             else
-                throw new \Exception("Missing value for parameter '$key'.", 400);
+                throw new \Hazaar\Exception("Missing value for parameter '$key'.", 400);
 
             $params[$p->getPosition()] = $value;
 
@@ -427,7 +440,7 @@ abstract class REST extends \Hazaar\Controller {
         $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
             && ($endpoint['cache'] === true
             || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
+            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $args, (($endpoint['cache_ignore_params'] !== true) ? $this->request->getParams() : null)))) : null);
 
         //Try extracting from cache first if caching is enabled
         if($cache_key !== null)
@@ -447,11 +460,7 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $response = new \Hazaar\Controller\Response\Json();
-
-        $response->populate($result);
-
-        return $response;
+        return new \Hazaar\Controller\Response\Json($result);
 
     }
 

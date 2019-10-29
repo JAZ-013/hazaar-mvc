@@ -1,7 +1,7 @@
 <?php
-namespace Hazaar\Controller\Response\Exception;
+namespace Hazaar\File\Exception\WKPDF;
 
-class WKPDFExecError extends \Hazaar\Exception {
+class ExecError extends \Hazaar\Exception {
 
     function __construct($code) {
 
