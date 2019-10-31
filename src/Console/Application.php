@@ -38,7 +38,7 @@ class Application extends Module {
 
     public function index($request){
 
-        $this->view->requires('js/application.js');
+        //$this->view->requires('js/application.js');
 
         $this->view->config = $this->config;
 

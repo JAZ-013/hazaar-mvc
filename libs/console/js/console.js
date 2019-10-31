@@ -19,3 +19,9 @@
         });
     }
 };
+
+$(document).ready(function () {
+    $('#mainMenu li').click(function(e){
+        $('#ide').attr('data-view', $(e.currentTarget).attr('data-toggle'));
+    });
+});

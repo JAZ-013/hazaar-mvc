@@ -9,60 +9,47 @@
 </head>
 <body>
 
-    <div class="ide">
-        <div class="ide-toolbar">
+    <div class="ide" id="ide" data-view="home">
+        <div class="ide-nav-panel">
             <img src="file/console/images/hazaar-icon-white.png" class="ide-icon" />
-            <div class="ide-brand">Hazaar MVC Console</div>
-            <div class="ide-menu">
-                <div class="ide-menu-item">File</div>
-                <div class="ide-menu-item">Edit</div>
-                <div class="ide-menu-item">View</div>
-                <div class="ide-menu-item">Help</div>
+            <hr/>
+            <ul class="ide-nav" id="mainMenu">
+                <li class="clickable" data-toggle="home" title="Home"><i class="fas fa-home"></i>
+                <li class="clickable" data-toggle="code" title="Code"><i class="fas fa-code"></i>
+                <li class="clickable" data-toggle="plugins" title="Plug-ins"><i class="fas fa-plug"></i>
+            </ul>
+            <hr/>
+            <ul class="ide-nav">
+                <li class="clickable" title="Support chat"><i class="fas fa-comment-dots"></i>
+            </ul>
+            <ul class="ide-nav ide-settings" title="Settings">
+                <li class="clickable" title="Settings"><i class="fas fa-cog"></i>
+                <li class="clickable" title="Help"><i class="fas fa-question-circle"></i>
+            </ul>
+        </div>
+        <div class="ide-toolbar">
+            <div class="ide-menu" data-view="home">
+                <div class="ide-menu-item"><i class="fas fa-sliders-h"></i>Settings</div>
+                <div class="ide-menu-item"><i class="fas fa-layer-group"></i>Workspaces</div>
             </div>
-            <div class="ide-settings">
-                <i class="fa fa-cog"></i>
+            <div class="ide-menu" data-view="code">
+                <div class="ide-menu-item"><i class="fas fa-file"></i>File</div>
+                <div class="ide-menu-item"><i class="fas fa-edit"></i>Edit</div>
+                <div class="ide-menu-item"><i class="fas fa-search"></i>Find</div>
+                <div class="ide-menu-item"><i class="fas fa-layer-group"></i>View</div>
+                <div class="ide-menu-item"><i class="fas fa-chevron-circle-right"></i>Goto</div>
+                <div class="ide-menu-item"><i class="fas fa-tools"></i>Tools</div>
+                <div class="ide-menu-item"><i class="fas fa-play-circle"></i>Run</div>
             </div>
         </div>
-        <div class="ide-main">
-            <div class="ide-drawer left">
-                <div class="bar">
-                    <div class="bar-item">File Manager</div>
-                    <div class="bar-item">Project</div>
-                </div>
-                <div class="panel">
-                    <div class="ide-tree">
-                        <div class="tree-node" id="testNode">
-                            <div class="tree-node-icon fa fa-line-chart"></div>
-                            <div class="tree-node-label">Metrics</div>
-                        </div>
-                        <div class="tree-node" id="testNode">
-                            <div class="tree-node-icon fa fa-wrench"></div>
-                            <div class="tree-node-label">Configuration</div>
-                        </div>
-                        <div class="tree-node" id="testNode">
-                            <div class="tree-node-icon fa fa-cog"></div>
-                            <div class="tree-node-label">System</div>
-                        </div>
-                        <div class="tree-node" id="testNode">
-                            <div class="tree-node-icon fa fa-plus"></div>
-                            <div class="tree-node-label">Warlock</div>
-                            <div class="tree-node-items">
-                                <div class="tree-node" id="testNode">
-                                    <div class="tree-node-icon fa fa-magic"></div>
-                                    <div class="tree-node-label">Status</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="ide-content">
+            <div data-view="home">
+                <div class="content-menu"></div>
+                <div class="content-main"><div class="content-float">What would you like to do today?</div></div> 
             </div>
-            <div class="ide-main-panel">
-                <div class="ide-tab-bar">
-                    <div class="tab-bar-item">hazaar.js</div>
-                    <div class="tab-bar-item active">content.phtml</div>
-                    <div class="tab-bar-item">index.php</div>
-                </div>
-                <div class="ide-tab-content">Content here...</div>
+            <div data-view="code">
+                <div class="content-menu"></div>
+                <div class="content-main"><div class="content-float">What would you like to do today?</div></div>
             </div>
         </div>
     </div>

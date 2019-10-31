@@ -39,8 +39,6 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
 
-        $this->view->link($this->application->url('hazaar/file/console/css/theme/flat-dark.css'));
-
         $this->view->addHelper('hazaar', array('base_url' => $this->application->url('hazaar/console')));
 
         $this->view->addHelper('fontawesome');

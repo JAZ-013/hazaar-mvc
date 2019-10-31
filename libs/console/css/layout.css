@@ -1,8 +1,8 @@
-﻿.b {
-  border: 1px solid red;
-}
 * {
   box-sizing: border-box;
+}
+.b {
+  border: 1px solid red;
 }
 body,
 html {
@@ -13,6 +13,7 @@ html {
   left: 0;
   margin: 0;
   padding: 0;
+  font-family: "Proxima", Arial, Helvetica;
 }
 .ide {
   position: absolute;
@@ -22,172 +23,144 @@ html {
   left: 0;
   margin: 0;
   padding: 0;
+  background: #21252b;
+  color: #fafafa;
 }
-.ide-toolbar {
+.ide-nav-panel {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: auto;
+  bottom: 0;
+  left: auto;
+  margin: 0;
+  padding: 0;
+  width: 60px;
+  background-color: #121417;
+}
+.ide-nav-panel hr {
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  width: 70%;
+}
+.ide-nav-panel .ide-icon {
+  margin: auto;
+  width: 100%;
+  padding: 10px;
+}
+.ide-nav-panel ul.ide-nav {
+  list-style: none;
+  padding: 0;
+  text-align: center;
+}
+.ide-nav-panel ul.ide-nav li {
+  font-size: 32px;
+  padding: 10px;
+}
+.ide-nav-panel .ide-settings {
+  position: absolute;
+  top: auto;
+  right: 0;
+  bottom: 0;
   left: 0;
   margin: 0;
   padding: 0;
+  text-align: center;
+  padding: 10px;
 }
-.ide-toolbar {
-  line-height: normal;
-  height: 40px;
-  user-select: none;
-}
-.ide-toolbar .ide-icon {
-  float: left;
-  width: 41px;
-  height: 40px;
-  padding: 5px;
-}
-.ide-toolbar .ide-brand {
-  position: relative;
-  display: inline-block;
-  height: 100%;
-  padding: 13px 9px 0 9px;
-}
-.ide-toolbar .ide-settings {
-  float: right;
-}
-.ide-toolbar .ide-settings .fa {
+.ide-nav-panel .ide-settings .fa {
   padding: 6px;
   font-size: 28px;
 }
-.ide-menu {
-  position: relative;
-  display: inline-block;
-  height: 100%;
+.ide-nav-panel .clickable {
+  color: rgba(255, 255, 255, 0.1);
 }
-.ide-menu .ide-menu-item {
-  position: relative;
-  display: inline-block;
-  height: 100%;
-  padding: 13px 9px 0 9px;
-  cursor: default;
-}
-.ide-main {
-  position: absolute;
-  top: 40px;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
-}
-.ide-drawer {
-  width: 35px;
-  user-select: none;
-  border-width: 0;
-  border-style: solid;
-}
-.ide-drawer .bar {
+.ide-toolbar {
   position: absolute;
   top: 0;
-  right: 0;
+  right: 60px;
   bottom: auto;
-  left: auto;
+  left: 0;
   margin: 0;
   padding: 0;
-  white-space: nowrap;
+  height: 45px;
+  background: #121417;
 }
-.ide-drawer.left {
+.ide-toolbar .ide-menu {
+  list-style: none;
+  font-weight: 100;
+  line-height: 45px;
+}
+.ide-toolbar .ide-menu .ide-menu-item {
+  display: inline-block;
+  padding: 0 15px;
+  font-size: 14px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+}
+.ide-toolbar .ide-menu .ide-menu-item .fas,
+.ide-toolbar .ide-menu .ide-menu-item .far {
+  margin-right: 10px;
+  font-size: 18px;
+}
+.ide-toolbar .ide-menu .ide-menu-item:hover {
+  color: #fff;
+}
+.ide-content {
+  position: absolute;
+  top: 45px;
+  right: 60px;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+}
+.ide-content .content-menu {
   position: absolute;
   top: 0;
   right: auto;
   bottom: 0;
   left: 0;
-  margin: 0;
-  padding: 0;
-  border-right-width: 1px;
-}
-.ide-drawer.left .bar {
-  transform: rotate(-90deg);
-  transform-origin: bottom right;
-  margin-top: -35px;
-  height: 35px;
-}
-.ide-drawer.right {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: auto;
-  margin: 0;
-  padding: 0;
-  border-left-width: 1px;
-}
-.ide-drawer.right .bar {
-  transform: rotate(90deg);
-}
-.ide-drawer .bar-item {
-  padding: 0 15px;
-  line-height: 35px;
-  vertical-align: middle;
-  display: inline-block;
-  cursor: default;
-}
-.ide-drawer .bar-item:hover {
-  background-color: #999;
-}
-.ide-drawer .panel {
-  position: absolute;
-  top: 0;
-  right: auto;
-  bottom: 0;
-  left: 35px;
   margin: 0;
   padding: 0;
   width: 200px;
+  background: #282c34;
 }
-.ide-main-panel {
+.ide-content .content-main {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  left: 235px;
+  left: 200px;
   margin: 0;
   padding: 0;
-  border: 1px solid black;
 }
-.ide-main-panel .ide-tab-bar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: auto;
-  left: 0;
-  margin: 0;
-  padding: 0;
-  height: 30px;
-  border-bottom: 1px solid black;
-}
-.ide-main-panel .ide-tab-bar .tab-bar-item {
-  display: inline-block;
-  line-height: 30px;
-  padding: 0 15px;
-  vertical-align: middle;
-  cursor: default;
-}
-.ide-main-panel .ide-tab-content {
-  position: absolute;
-  top: 30px;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
-  padding: 15px;
-}
-.ide-tree .tree-node {
-  padding: 5px;
-  cursor: pointer;
-}
-.ide-tree .tree-node .tree-node-icon {
-  width: 16px;
-  height: 16px;
-  float: left;
-  margin-right: 5px;
+.ide-content .content-float {
   text-align: center;
+  top: 50%;
+  position: relative;
+  transform: translateY(-50%);
+  font-size: 2em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.ide div[data-view] {
+  display: none;
+}
+.ide[data-view="home"] li[data-toggle="home"] {
+  color: #fff;
+}
+.ide[data-view="home"] div[data-view="home"] {
+  display: block;
+}
+.ide[data-view="code"] li[data-toggle="code"] {
+  color: #fff;
+}
+.ide[data-view="code"] div[data-view="code"] {
+  display: block;
+}
+.clickable {
+  cursor: pointer;
+  transition: 300ms color;
+}
+.clickable:hover {
+  color: #554d7c;
 }
