@@ -25,6 +25,8 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
+    public $url_default_action_name = 'index';
+
     protected $request;
 
     protected $__action        = 'index';
@@ -199,63 +201,6 @@ abstract class Basic extends \Hazaar\Controller {
             return false;
 
         return Basic::$__cache->set($this->__cache_key, $response, $this->__cachedActions[$cache_name]['timeout']);
-
-    }
-
-    /**
-     * Test if a controller and action is active.
-     *
-     * @param mixed $controller
-     * @param mixed $action
-     * @return boolean
-     */
-    public function active($controller = NULL, $action = NULL) {
-
-        if($controller instanceof \Hazaar\Application\Url){
-
-            $action = $controller->method;
-
-            $controller = $controller->controller;
-
-        }
-
-        if(is_array($controller)) {
-
-            $parts = $controller;
-
-            if(count($parts) > 0)
-                $controller = array_shift($parts);
-
-            if(count($parts) > 0)
-                $action = array_shift($parts);
-
-        }
-
-        if(! $controller)
-            $controller = '/' . $this->getName();
-
-        $controller = '/' . trim($controller, '/');
-
-        $is_controller = strcasecmp('/' . trim(substr($this->getName(), 0, strlen($controller)), '/'), $controller) === 0;
-
-        if(! $action)
-            return $is_controller;
-
-        $params_match = true;
-
-        if(strpos($action, '/') > 0){
-
-            $args = explode('/', $action);
-
-            $action = array_shift($args);
-
-            $params_match = (count(array_intersect_assoc($args, $this->__actionArgs)) > 0);
-
-        }
-
-        $is_action = (strcasecmp($this->getAction(), $action) == 0);
-
-        return ($is_controller && $is_action && $params_match);
 
     }
 

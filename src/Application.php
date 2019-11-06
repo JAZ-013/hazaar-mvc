@@ -502,7 +502,7 @@ class Application {
         if(!$this->router->evaluate($this->request))
             throw new Application\Exception\RouteNotFound($this->request->getPath());
 
-        if(($controller = $this->router->getController()) !== 'hazaar') {
+        if($this->router->getController() !== 'hazaar') {
 
             /*
              * Check that all required modules are loaded
@@ -578,6 +578,8 @@ class Application {
                     throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
             }
+
+            $this->url_default_part = $controller->url_default_action_name;
 
             /*
              * Initialise the controller with the current request
@@ -824,9 +826,6 @@ class Application {
      * Parameters are dynamic and depend on what you are trying to generate.
      *
      * For examples see: [Generating URLs](/basics/urls.md)
-     *
-     * @since 1.0.0
-     *
      */
     public function url() {
 
@@ -839,7 +838,60 @@ class Application {
     }
 
     /**
-     * @brief Send an immediate redirect response to redirect the browser
+     * Test if a URL is active, relative to the application base URL.
+     *
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
+     * 
+     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
+     * want to test if a particular controller is active, then it has to be the first argument.
+     * 
+     * * Example
+     * ```php
+     * $application->active('mycontroller');
+     * ```
+     * 
+     * @return boolean True if the supplied URL is active as the current URL.
+     */
+    public function active() {
+
+        $parts = array();
+
+        foreach(func_get_args() as $part){
+
+            $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : array($part);
+
+            foreach($part_parts as $part_part)
+                $parts[] = strtolower(trim($part_part));
+
+        }
+
+        if(!($base_path = $this->request->getBasePath())){
+
+            $app = \Hazaar\Application::getInstance();
+
+            $base_path = strtolower($app->config->app['defaultController']);
+
+        }
+
+        $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : array();
+
+        for($i = 0; $i < count($parts); $i++){
+
+            if(!array_key_exists($i, $request_parts) && $this->url_default_part !== null)
+                $request_parts[$i] = $this->url_default_part;
+
+            if($parts[$i] !== $request_parts[$i])
+                return false;
+
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Send an immediate redirect response to redirect the browser
      *
      * It's quite common to redirect the user to an alternative URL. This may be to forward the request
      * to another website, forward them to an authentication page or even just remove processed request

@@ -18,6 +18,8 @@ namespace Hazaar;
  */
 abstract class Controller {
 
+    public $url_default_action_name = null;
+
     protected $application;
 
     protected $name;
@@ -148,6 +150,32 @@ abstract class Controller {
         call_user_func_array(array($url, '__construct'), array_merge(array($this->name), $parts));
 
         return $url;
+
+    }
+
+    /**
+     * Test if a URL is active, relative to this controller.
+     *
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Controller::url()` except that parameter arrays are not supported.
+     * 
+     * * Example
+     * ```php
+     * if($controller->active('index')){
+     * ```
+     *
+     * If the current URL has more parts than the function argument list, this will mean that only a portion of the URL is tested
+     * against.  This allows an action to be tested without looking at it's argument list URL parts.  This also means that it is
+     * possible to call the `active()` method without any arguments to test if the controller itself is active, which if you are
+     * calling it from within the controller, should always return `TRUE`.
+     * 
+     * @return boolean True if the supplied URL is active as the current URL.
+     */
+    public function active() {
+
+        $parts = func_get_args();
+
+        return call_user_func_array(array($this->application, 'active'), array_merge(array($this->name), $parts));
 
     }
 
