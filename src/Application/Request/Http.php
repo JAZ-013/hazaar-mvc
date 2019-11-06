@@ -132,7 +132,7 @@ class Http extends \Hazaar\Application\Request {
 
         }
 
-        if(\Hazaar\Application\Url::$rewrite === false && array_key_exists(Http::$pathParam, $this->params))
+        if(array_key_exists(Http::$pathParam, $this->params))
             return trim($this->params[Http::$pathParam], '/');
 
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
