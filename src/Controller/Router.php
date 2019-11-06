@@ -12,6 +12,8 @@ class Router extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
+        parent::__initialize($request);
+        
         if(!($path = trim($request->getPath(), '/')))
             $this->redirect($this->url('console'));
 

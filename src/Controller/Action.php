@@ -24,7 +24,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
-        parent::__construct($name, $application, $use_app_config);
+        parent::__construct($name, $application);
 
         $this->_helper = new Action\HelperBroker($this);
 
