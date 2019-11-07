@@ -182,7 +182,7 @@ abstract class REST extends \Hazaar\Controller {
                 if($tag !== 'route')
                     continue;
 
-                if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
+                if(!preg_match('/\([\'\"]([\w\.\-\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
                     continue;
 
                 $target = '/' . ltrim($route_matches[1], '/');
