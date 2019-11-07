@@ -125,7 +125,7 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         $class = new \ReflectionClass($this);
 
