@@ -75,7 +75,10 @@ class Url {
 
                 }
 
-                $parts[] = strtolower(trim($part_part));
+                if(!($part_part = strtolower(trim($part_part))))
+                    continue;
+
+                $parts[] = $part_part;
 
             }
 
