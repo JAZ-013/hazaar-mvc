@@ -344,10 +344,17 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function getRedirectUri(){
 
-        return (array_key_exists('HTTPS', $_SERVER) && boolify($_SERVER['HTTPS']) ? 'https' : 'http' )
-            . '://' . $_SERVER['SERVER_NAME']
-            . ':' . ake($_SERVER, 'SERVER_PORT', 80)
-            . $_SERVER['REQUEST_URI'];
+        $url = new \Hazaar\Http\Uri();
+
+        $url->host($_SERVER['SERVER_NAME']);
+
+        $url->scheme((array_key_exists('HTTPS', $_SERVER) && boolify($_SERVER['HTTPS']) ? 'https' : 'http' ));
+
+        $url->port($_SERVER['SERVER_PORT']);
+
+        $url->path($_SERVER['REQUEST_URI']);
+
+        return (string)$url;
 
     }
 
