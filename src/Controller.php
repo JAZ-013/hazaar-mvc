@@ -117,6 +117,12 @@ abstract class Controller {
         
     }
 
+    public function getBasePath(){
+        
+        return $this->base_path;
+
+    }
+
     /**
      * Initiate a redirect response to the client
      */
