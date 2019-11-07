@@ -16,7 +16,7 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
         parent::__construct($client_id, $client_secret, $grant_type, $cache_config, $cache_backend);
 
-        $this->addScope('openid', 'profile', 'email');
+        $this->addScope('openid');
 
     }
 
