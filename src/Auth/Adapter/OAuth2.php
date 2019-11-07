@@ -213,7 +213,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function authenticateCode(){
 
-        if(($code = ake($_REQUEST, 'code')) && ake($_REQUEST, 'state') == $this->session->state){
+        if(($code = ake($_REQUEST, 'code'))){
+
+            if(ake($_REQUEST, 'state') !== $this->session->state)
+                throw new \Exception('Invalid state code', 400);
 
             $request = new \Hazaar\Http\Request($this->token_uri, 'POST');
 
