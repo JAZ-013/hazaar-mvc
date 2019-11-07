@@ -66,6 +66,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     protected $current;
 
     /**
+     * Scopes can be defined so that some fields are not available if the scope is not set.
+     * @var array
+     */
+    protected $scopes = array();
+
+    /**
      * Strict model constructor
      *
      * The constructor has optional parameters that can vary depending on the implementation.  The first parameter is
@@ -366,18 +372,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         }
 
-        if (!array_key_exists($key, $this->values)) {
+        $null = null;
 
-            $null = null;
-
+        if (!array_key_exists($key, $this->values))
             return $null;
-
-        }
 
         $def = ake($this->fields, $key, ake($this->fields, '*'));
 
         if (!is_array($def))
             $def = array('type' => $def);
+
+        if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+            return $null;
 
         if(array_key_exists('value', $def)){
 
@@ -481,6 +487,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * If it is a string, it is a simple type, so convert to an array automatically with just a type def
          */
         $def = ake($this->fields, $key, ake($this->fields, '*'));
+        
+        if($this->loaded && array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+            return false;
 
         if (!is_array($def))
             $def = array('type' => $def);
@@ -906,6 +915,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             if (!is_array($def))
                 $def = array('type' => $def);
+
+            /**
+             * If the field has a scope and the scope is not set, skip it immediately.
+             */
+            if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+                continue;
 
             if(array_key_exists('value', $def))
                 $value = $def['value'];
@@ -1341,6 +1356,55 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->allow_undefined = $toggle;
 
         $this->ignore_undefined = !$toggle;
+
+    }
+
+    /**
+     * Add one or more scopes to the model
+     */
+    public function addScope(){
+
+        $args = func_get_args();
+
+        foreach($args as $arg){
+
+            $scopes = is_array($arg) ? $arg : preg_split('/\s+/', $arg);
+
+            foreach($scopes as $scope)
+                $this->scopes[] = strtolower(trim($scope));
+
+        }
+
+    }
+
+    /**
+     * Remove one or more scopes from the model
+     */
+    public function removeScope(){
+
+        $args = func_get_args();
+
+        foreach($args as $arg){
+
+            $scopes = preg_split('/s+/', $arg);
+
+            foreach($scopes as $scope){
+
+                if(($index = array_search($scope, $this->scopes)) !== false)
+                    unset($this->scopes[$index]);
+
+            }
+
+        }
+        
+    }
+
+    /**
+     * Return the list of currently defined scopes
+     */
+    public function getScopes(){
+
+        return $this->scopes;
 
     }
 
