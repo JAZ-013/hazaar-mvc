@@ -26,6 +26,9 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
         if(!$this->session->has('oauth2_data'))
             return null;
 
+        if(!($this->session->oauth2_data instanceof \stdClass && property_exists($this->session->oauth2_data, 'id_token')))
+            return null;
+
         $parts = explode('.', $this->session->oauth2_data->id_token);
 
         foreach($parts as &$part)
