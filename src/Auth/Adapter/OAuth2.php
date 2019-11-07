@@ -20,9 +20,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     protected $http_client;
 
-    protected $auth_uri;
-
-    protected $token_uri;
+    protected $metadata = array();
 
     protected $scopes = array();
 
@@ -42,13 +40,13 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function setAuthURI($uri){
 
-        $this->auth_uri = $uri;
+        $this->metadata['authorization_endpoint'] = $uri;
 
     }
 
     public function setTokenURI($uri){
 
-        $this->token_uri = $uri;
+        $this->metadata['token_endpoint'] = $uri;
 
     }
 
@@ -63,15 +61,13 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             
         if(!array_key_exists($key, $metadata)){
 
-            $metadata[$key] = json_decode(file_get_contents($uri));
+            $metadata[$key] = json_decode(file_get_contents($uri), true);
 
             $this->session->oauth2_metadata = $metadata;
 
         }
 
-        $this->auth_uri = ake($metadata[$key], 'authorization_endpoint');
-
-        $this->token_uri = ake($metadata[$key], 'token_endpoint');
+        $this->metadata = $metadata[$key];
 
         return true;
 
@@ -218,7 +214,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             if(ake($_REQUEST, 'state') !== $this->session->state)
                 throw new \Exception('Invalid state code', 400);
 
-            $request = new \Hazaar\Http\Request($this->token_uri, 'POST');
+            $request = new \Hazaar\Http\Request(ake($this->metadata, 'token_endpoint'), 'POST');
 
             $request->client_id = $this->client_id;
 
@@ -288,7 +284,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             if(count($this->scopes) > 0)
                 $params['scope'] = implode(' ' , $this->scopes);
 
-            $url = $this->auth_uri . '?' . array_flatten($params, '=', '&');
+            $url = ake($this->metadata, 'authorization_endpoint') . '?' . array_flatten($params, '=', '&');
 
             header('Location: ' . $url);
 
