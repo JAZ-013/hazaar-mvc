@@ -18,7 +18,7 @@ namespace Hazaar;
  */
 abstract class Controller {
 
-    public $url_default_action_name = null;
+    public $url_default_action_name = 'index';
 
     protected $application;
 
@@ -150,10 +150,15 @@ abstract class Controller {
 
         $parts = func_get_args();
 
-        if(count($parts) === 1 && strtolower(trim($parts[0])) === 'index')
+        if(count($parts) === 1 && strtolower(trim($parts[0])) === $this->url_default_action_name)
             $parts = array();
 
-        call_user_func_array(array($url, '__construct'), array_merge(array($this->name), $parts));
+        $this_parts = explode('/', $this->name);
+
+        if($this_parts[count($this_parts)-1] === $this->url_default_action_name)
+            array_pop($this_parts);
+
+        call_user_func_array(array($url, '__construct'), array_merge($this_parts, $parts));
 
         return $url;
 
