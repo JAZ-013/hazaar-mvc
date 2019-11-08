@@ -30,6 +30,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $this->http_client = new \Hazaar\Http\Client();
 
+        $this->http_client->authorisation($this);
+
         $this->grant_type = $grant_type;
 
         $this->client_id = $client_id;
