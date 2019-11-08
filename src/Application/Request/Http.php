@@ -68,7 +68,7 @@ class Http extends \Hazaar\Application\Request {
 
         $this->method = is_string($method) ? $method : $_SERVER['REQUEST_METHOD'];
 
-        $this->headers = hazaar_request_headers();
+        $this->headers = getallheaders();
 
         if($process_request_body === true)
             $this->body = @file_get_contents('php://input');
