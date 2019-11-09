@@ -75,7 +75,7 @@ class Url {
 
                 }
 
-                if(!($part_part = strtolower(trim($part_part))))
+                if(!($part_part = trim($part_part)))
                     continue;
 
                 $parts[] = $part_part;
@@ -89,7 +89,7 @@ class Url {
             */
         $app = \Hazaar\Application::getInstance();
 
-        $default = strtolower($app->config->app['defaultController']);
+        $default = trim($app->config->app['defaultController']);
 
         if(count($parts) === 1 && $parts[0] === $default)
             $parts = array();
