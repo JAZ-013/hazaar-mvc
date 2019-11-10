@@ -392,4 +392,49 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
+    public function introspect(){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'introspection_endpoint'), 'POST');
+
+        $request->client_id = $this->client_id;
+
+        $request->token_type_hint = 'access_token';
+
+        $request->token = ake($this->session->oauth2_data, 'access_token');
+
+        $response = $this->http_client->send($request);
+
+        return ake($response->body(), 'result', false);
+
+    }
+
+    public function revoke(){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'revocation_endpoint'), 'POST');
+
+        $request->client_id = $this->client_id;
+
+        $request->token_type_hint = 'access_token';
+
+        $request->token = ake($this->session->oauth2_data, 'access_token');
+
+        $response = $this->http_client->send($request);
+
+        return ake($response->body(), 'result', false);
+
+    }
+
+    public function userinfo(){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'user_info_endpoint'), 'GET');
+
+        $response = $this->http_client->send($request);
+
+        if($response->status !== 200)
+            return false;
+        
+        return $response->body();
+
+    }
+
 }
