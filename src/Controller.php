@@ -123,6 +123,12 @@ abstract class Controller {
 
     }
 
+    public function setBasePath($path){
+
+        $this->base_path = $path;
+        
+    }
+
     /**
      * Initiate a redirect response to the client
      */

@@ -296,7 +296,7 @@ class Handler {
 
         $request->setPath(implode('/', $parts));
 
-        $module->base_path = 'hazaar/console';
+        $module->setBasePath('hazaar/console');
 
         if($action !== 'file')
             $module->__initialize($request);
