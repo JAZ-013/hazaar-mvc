@@ -45,7 +45,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler->deauth();
 
-        $this->redirect($this->url());
+        $this->redirect($this->application->url('hazaar', 'console'));
 
     }
 
@@ -64,6 +64,12 @@ class Controller extends \Hazaar\Controller\Action {
         $this->handler->loadComposerModules($this->application);
 
         return $this->handler->exec($this, $this->request);
+
+    }
+
+    public function doc(){
+
+        dump('yay!');
 
     }
 
