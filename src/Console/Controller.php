@@ -59,7 +59,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler->loadModules($this->application);
 
-        return $this->handler->exec($this, $this->request);
+        return $this->handler->exec($this, $action, $this->request);
 
     }
 

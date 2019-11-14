@@ -4,9 +4,9 @@ namespace Hazaar\Console;
 
 class Application extends Module {
 
-    public function init(){
+    public function load(){
 
-        $this->addMenuGroup('Application', 'bars');
+            $this->addMenuGroup('Application', 'bars');
 
         $this->addMenuItem('Models', 'models', 'sitemap', 3);
 
@@ -18,7 +18,7 @@ class Application extends Module {
 
     }
 
-    public function index($request){
+    public function index(){
 
         $this->view('index');
 
@@ -26,31 +26,31 @@ class Application extends Module {
 
     }
 
-    public function models($request){
+    public function models(){
 
         $this->view('models');
 
     }
 
-    public function views($request){
+    public function views(){
 
         $this->view('views');
 
     }
 
-    public function controllers($request){
+    public function controllers(){
 
         $this->view('controllers');
 
     }
 
-    public function configs($request){
+    public function configs(){
 
-        if($request->isXMLHttpRequest()){
+        if($this->request->isXMLHttpRequest()){
 
-            if($request->has('encrypt')){
+            if($this->request->has('encrypt')){
 
-                if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $request->encrypt)))
+                if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $this->request->encrypt)))
                     throw new \Hazaar\Exception('Config file not found!', 404);
 
                 $file = new \Hazaar\File($filename);
@@ -103,14 +103,14 @@ class Application extends Module {
 
     }
 
-    public function system($request){
+    public function system(){
 
         $this->view('system');
 
 
     }
 
-    public function phpinfo($request){
+    public function phpinfo(){
 
         $this->view('phpinfo');
 

@@ -4,7 +4,7 @@ namespace Hazaar\Console;
 
 class System extends Module {
 
-    public function init(){
+    public function load(){
 
         $this->addMenuGroup('System', 'wrench');
 
