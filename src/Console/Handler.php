@@ -271,6 +271,9 @@ class Handler {
 
     public function exec(\Hazaar\Controller $controller, $module_name, \Hazaar\Application\Request $request){
 
+        if(!$module_name || $module_name === 'index')
+            $module_name = 'app';
+
         if(!$this->moduleExists($module_name))
             throw new \Hazaar\Exception("Console module '$module_name' does not exist!", 404);
 
