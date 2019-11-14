@@ -47,7 +47,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler->deauth();
 
-        $this->redirect($this->url());
+        $this->redirect($this->application->url('hazaar'));
 
     }
 

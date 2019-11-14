@@ -102,7 +102,7 @@ h1, h2, h3, h4, h5, h6 {
     .form-group input {
         outline: none;
         border: none;
-        font: normal normal normal 14px/1 FontAwesome, "Raleway", sans-serif;
+        font-family: "Raleway", sans-serif;
         font-size: 16px;
     }
 
