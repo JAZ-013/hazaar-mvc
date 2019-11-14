@@ -74,7 +74,7 @@ The next step is simple. All you need to do now that you have built your custom 
 Where 'Error' is the name of our controller.
 
 !!! remember
-The actual name of the controller is not the same as the name of the class. The name is the part of the class name before Controller.
+    The actual name of the controller is not the same as the name of the class. The name is the part of the class name before Controller.
 
 Using the above code in our example application that is provided with Hazaar, if you were to navigate to a page that doesn't exist you should now get something like this:
 

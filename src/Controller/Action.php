@@ -22,11 +22,9 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     protected $methods       = array();
 
-    private   $stream        = FALSE;
-
     public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 
-        parent::__construct($name, $application, $use_app_config);
+        parent::__construct($name, $application);
 
         $this->_helper = new Action\HelperBroker($this);
 
@@ -66,7 +64,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __get($plugin) {
 
-        throw new \Exception('Controller plugins not supported yet.  Called: ' . $plugin);
+        throw new \Hazaar\Exception('Controller plugins not supported yet.  Called: ' . $plugin);
 
         if(array_key_exists($plugin, $this->plugins))
             return $this->plugins[$plugin];
@@ -78,9 +76,6 @@ abstract class Action extends \Hazaar\Controller\Basic {
     public function __run() {
 
         $response = parent::__runAction();
-
-        if($this->stream)
-            return new Response\Stream($response);
 
         if(!$response instanceof Response) {
 
@@ -124,49 +119,6 @@ abstract class Action extends \Hazaar\Controller\Basic {
         $response->setController($this);
 
         return $response;
-
-    }
-
-    public function stream($value) {
-
-        if(! headers_sent()) {
-
-            if(count(ob_get_status()) > 0)
-                ob_end_clean();
-
-            header('Content-Type: application/octet-stream;charset=ISO-8859-1');
-
-            header('Content-Encoding: none');
-
-            header("Cache-Control: no-cache, must-revalidate");
-
-            header("Pragma: no-cache");
-
-            header('X-Accel-Buffering: no');
-
-            header('X-Response-Type: stream');
-
-            flush();
-
-            $this->stream = TRUE;
-
-            ob_implicit_flush();
-
-        }
-
-        $type = 's';
-
-        if(is_array($value)){
-
-            $value = json_encode($value);
-
-            $type = 'a';
-
-        }
-
-        echo dechex(strlen($value)) . "\0" . $type . $value;
-
-        return TRUE;
 
     }
 

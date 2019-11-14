@@ -38,7 +38,7 @@ class Handler {
         list($method, $code) = explode(' ', $authorization);
 
         if(strtolower($method) != 'basic')
-            throw new \Exception('Unsupported authorization method: ' . $method);
+            throw new \Hazaar\Exception('Unsupported authorization method: ' . $method);
 
         list($identity, $credential) = explode(':', base64_decode($code));
 
@@ -137,7 +137,7 @@ class Handler {
 
             }else{
 
-                throw new \Exception('Unsupported password encryption algorithm.');
+                throw new \Hazaar\Exception('Unsupported password encryption algorithm.');
 
             }
 
@@ -204,7 +204,8 @@ class Handler {
         }
 
         foreach($this->modules as $module)
-            $module->init();
+            if(\method_exists($module, 'load'))
+                $module->load();
 
         $this->application = $application;
 
@@ -239,37 +240,24 @@ class Handler {
 
     }
 
-    public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
+    public function exec(\Hazaar\Controller $controller, $module_name, \Hazaar\Application\Request $request){
 
-        $parts = array();
-
-        if($path = $request->getBasePath())
-            $parts = array_slice(explode('/', $path), 2);
-
-        if(!($module_name = array_shift($parts)))
+        if(!$module_name || $module_name === 'index')
             $module_name = 'app';
 
         if(!$this->moduleExists($module_name))
-            throw new \Exception("Console module '$module_name' does not exist!", 404);
-
-        if(!($action = array_shift($parts)))
-            $action = 'index';
+            throw new \Hazaar\Exception("Console module '$module_name' does not exist!", 404);
 
         $module = $this->modules[$module_name];
-
-        if(!method_exists($module, $action))
-            throw new \Exception("Method '$action' not found on module '$module_name'", 404);
 
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
 
-        $request->setPath(implode('/', $parts));
-
-        $module->base_path = 'hazaar/console';
+        $module->setBasePath('hazaar/console');
 
         $module->__initialize($request);
 
-        $response = call_user_func(array($module, $action), $request);
+        $response = $module->__run();
 
         if(!$response instanceof \Hazaar\Controller\Response){
 

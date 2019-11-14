@@ -9,31 +9,31 @@
  */
 
 /**
- * @brief Base Hazaar namespace
+ * Base Hazaar namespace
  */
 namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.4');
+define('HAZAAR_VERSION', '2.5');
 
 /**
- * @brief Constant containing the application environment current being used.
+ * Constant containing the application environment current being used.
  */
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development'));
 
 /**
- * @brief Constant containing the path in which the current application resides.
+ * Constant containing the path in which the current application resides.
  */
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
 
 /**
- * @brief Constant containing the application base path relative to the document root.
+ * Constant containing the application base path relative to the document root.
  */
 define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
 
 /**
- * @brief Constant containing the detected 'name' of the application.
+ * Constant containing the detected 'name' of the application.
  *
  * Essentially this is the name of the directory the application is stored in.
  */
@@ -51,9 +51,9 @@ putenv('HOME=' . APPLICATION_PATH);
 chdir(APPLICATION_PATH);
 
 /**
- * @brief The Application
+ * The Application
  *
- * @detail The main application class is the core of the whole application and is responsible for routing actions
+ * The main application class is the core of the whole application and is responsible for routing actions
  * to controllers based on request objects extended extended from Hazaar\Application\Request.
  *
  * Supported request objects are:
@@ -67,12 +67,12 @@ chdir(APPLICATION_PATH);
  *
  * ### Example usage:
  *
- * <code>
+ * ```php
  * define('APPLICATION_ENV', 'development');
  * $config = 'application.ini';
  * $application = new Hazaar\Application(APPLICATION_ENV, $config);
  * $application->bootstrap()->run();
- * </code>
+ * ```
  */
 class Application {
 
@@ -109,9 +109,9 @@ class Application {
     protected $response_type = null;
 
     /**
-     * @brief The main application constructor
+     * The main application constructor
      *
-     * @detail The application is basically the center of the Hazaar MVC universe. Everything hangs off of it
+     * The application is basically the center of the Hazaar MVC universe. Everything hangs off of it
      * and controllers are executed within the context of the application. The main constructor prepares
      * the application to begin processing and is the first piece of code executed within the HazaarMVC
      * environment.
@@ -273,9 +273,9 @@ class Application {
     }
 
     /**
-     * @brief The main application destructor
+     * The main application destructor
      *
-     * @detail The destructor cleans up any application redirections. ifthe controller hasn't used it in this
+     * The destructor cleans up any application redirections. ifthe controller hasn't used it in this
      * run then it loses it. This prevents stale redirect URLs from accidentally being used.
      *
      * @since 1.0.0
@@ -295,9 +295,9 @@ class Application {
     }
 
     /**
-     * @brief Get the current application instance
+     * Get the current application instance
      *
-     * @detail This static function can be used to get a reference to the current application instance from
+     * This static function can be used to get a reference to the current application instance from
      * anywhere.
      *
      * @since 1.0.0
@@ -323,9 +323,9 @@ class Application {
     }
 
     /**
-     * @brief Returns the application runtime directory
+     * Returns the application runtime directory
      *
-     * @detail The runtime directory is a place where HazaarMVC will keep files that it needs to create during
+     * The runtime directory is a place where HazaarMVC will keep files that it needs to create during
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
@@ -381,9 +381,9 @@ class Application {
     }
 
     /**
-     * @brief Return the requested path in the current application
+     * Return the requested path in the current application
      *
-     * @detail This method allows access to the raw URL path part, relative to the current application request.
+     * This method allows access to the raw URL path part, relative to the current application request.
      *
      * @since 1.0.0
      */
@@ -407,7 +407,7 @@ class Application {
     }
 
     /**
-     * @brief Get the currently requested controller name
+     * Get the currently requested controller name
      *
      * @return string The current controller name
      */
@@ -418,7 +418,7 @@ class Application {
     }
 
     /**
-     * @brief Get the real path to the application on the local filesystem resolving links
+     * Get the real path to the application on the local filesystem resolving links
      *
      * @since 1.0.0
      *
@@ -431,9 +431,9 @@ class Application {
     }
 
     /**
-     * @brief Get the base path
+     * Get the base path
      *
-     * @detail The base path is the root your application which contains the application, library and public
+     * The base path is the root your application which contains the application, library and public
      * directories
      *
      * @since 1.0.0
@@ -447,9 +447,9 @@ class Application {
     }
 
     /**
-     * @brief Initialise the application ready for execution
+     * Initialise the application ready for execution
      *
-     * @detail Bootstrap is the first step in running an application. It will run some checks to make sure
+     * Bootstrap is the first step in running an application. It will run some checks to make sure
      * sure the server has any required modules loaded as requested by the application (via the config). It
      * will then execute the application bootstrap.php script within the context of the application. Once
      * that step succeeds the requested (or the default) controller will be loaded and initialised so that
@@ -490,7 +490,7 @@ class Application {
         }
 
         if(setlocale(LC_ALL, $locale) === FALSE)
-            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
+            throw new \Hazaar\Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
 
         $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
 
@@ -502,7 +502,7 @@ class Application {
         if(!$this->router->evaluate($this->request))
             throw new Application\Exception\RouteNotFound($this->request->getPath());
 
-        if(($controller = $this->router->getController()) !== 'hazaar') {
+        if($this->router->getController() !== 'hazaar') {
 
             /*
              * Check that all required modules are loaded
@@ -521,7 +521,7 @@ class Application {
                 $this->bootstrap = include($bootstrap);
 
                 if($this->bootstrap === FALSE)
-                    throw new \Exception('The application failed to start!');
+                    throw new \Hazaar\Exception('The application failed to start!');
 
             }
 
@@ -535,9 +535,9 @@ class Application {
     }
 
     /**
-     * @brief Executes the application
+     * Executes the application
      *
-     * @detail Once the application has been initialised and a controller loaded, it can be executed via
+     * Once the application has been initialised and a controller loaded, it can be executed via
      * the run() method. This will execute the loaded controller and check that it returns a
      * valid [[Hazaar\Controller\Response]] object. ifa valid response is not returned an exception
      * will be raised.
@@ -579,6 +579,8 @@ class Application {
 
             }
 
+            $this->url_default_part = $controller->url_default_action_name;
+
             /*
              * Initialise the controller with the current request
              */
@@ -609,8 +611,8 @@ class Application {
             /*
              * If the controller has specifically requested a return status code, set it now.
              */
-            if($controller->statusCode)
-                $this->response->setStatusCode($controller->statusCode);
+            if($status = $controller->getStatus())
+                $this->response->setStatusCode($status);
 
             $this->response->setCompression($this->config->app->get('compress', false));
 
@@ -660,9 +662,9 @@ class Application {
     }
 
     /**
-     * @brief Execute code from standard input in the application context
+     * Execute code from standard input in the application context
      *
-     * @detail This method is will accept Hazaar Protocol commands from STDIN and execute them.
+     * This method is will accept Hazaar Protocol commands from STDIN and execute them.
      *
      * Exit codes:
      *
@@ -676,7 +678,7 @@ class Application {
     public function runStdin() {
 
         if(!class_exists('\Hazaar\Warlock\Config'))
-            throw new \Exception('Could not find default warlock config.  How is this even working!!?');
+            throw new \Hazaar\Exception('Could not find default warlock config.  How is this even working!!?');
 
         $defaults = \Hazaar\Warlock\Config::$default_config;
 
@@ -696,7 +698,7 @@ class Application {
         if($type = $protocol->decode($line, $payload)){
 
             if(!$payload instanceof \stdClass)
-                throw new \Exception('Got Hazaar protocol packet without payload!');
+                throw new \Hazaar\Exception('Got Hazaar protocol packet without payload!');
 
             //Synchronise the timezone with the server
             if($tz = ake($payload, 'timezone'))
@@ -802,9 +804,9 @@ class Application {
     }
 
     /**
-     * @brief Return the requested path in the current application
+     * Return the requested path in the current application
      *
-     * @detail This method allows access to the raw URL path part, relative to the current application request.
+     * This method allows access to the raw URL path part, relative to the current application request.
      *
      * @since 1.0.0
      */
@@ -815,18 +817,15 @@ class Application {
     }
 
     /**
-     * @brief Generate a URL relative to the application
+     * Generate a URL relative to the application
      *
-     * @detail This is the base method for generating URLs in your application. URLs generated directly from here
+     * This is the base method for generating URLs in your application. URLs generated directly from here
      * are relative to the application base path. For URLs that are relative to the current controller see
      * Controller::url()
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
      * For examples see: [Generating URLs](/basics/urls.md)
-     *
-     * @since 1.0.0
-     *
      */
     public function url() {
 
@@ -839,9 +838,62 @@ class Application {
     }
 
     /**
-     * @brief Send an immediate redirect response to redirect the browser
+     * Test if a URL is active, relative to the application base URL.
      *
-     * @detail It's quite common to redirect the user to an alternative URL. This may be to forward the request
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
+     * 
+     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
+     * want to test if a particular controller is active, then it has to be the first argument.
+     * 
+     * * Example
+     * ```php
+     * $application->active('mycontroller');
+     * ```
+     * 
+     * @return boolean True if the supplied URL is active as the current URL.
+     */
+    public function active() {
+
+        $parts = array();
+
+        foreach(func_get_args() as $part){
+
+            $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : array($part);
+
+            foreach($part_parts as $part_part)
+                $parts[] = strtolower(trim($part_part));
+
+        }
+
+        if(!($base_path = $this->request->getBasePath())){
+
+            $app = \Hazaar\Application::getInstance();
+
+            $base_path = strtolower($app->config->app['defaultController']);
+
+        }
+
+        $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : array();
+
+        for($i = 0; $i < count($parts); $i++){
+
+            if(!array_key_exists($i, $request_parts) && $this->url_default_part !== null)
+                $request_parts[$i] = $this->url_default_part;
+
+            if($parts[$i] !== $request_parts[$i])
+                return false;
+
+        }
+
+        return true;
+
+    }
+
+    /**
+     * Send an immediate redirect response to redirect the browser
+     *
+     * It's quite common to redirect the user to an alternative URL. This may be to forward the request
      * to another website, forward them to an authentication page or even just remove processed request
      * parameters from the URL to neaten the URL up.
      *
@@ -897,9 +949,9 @@ class Application {
     }
 
     /**
-     * @brief Redirect back to a URL saved during redirection
+     * Redirect back to a URL saved during redirection
      *
-     * @detail This mechanism is used with the $save_url parameter of Application::redirect() so save the current
+     * This mechanism is used with the $save_url parameter of Application::redirect() so save the current
      * URL into the session so that once we're done processing the request somewhere else we can come back
      * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
      * redirect them to a login page and then that page can call this redirectBack() method to redirect the
@@ -971,6 +1023,22 @@ class Application {
     public function setResponseType($type){
 
         $this->response_type = $type;
+
+    }
+
+    /**
+     * Get the contents for the applications composer.json file
+     * 
+     * This is shorthand method to quickly get the application composer file.
+     * 
+     * @return boolean|\stdClass
+     */
+    public function composer(){
+
+        if(!($path = realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'composer.json')))
+            return false;
+
+        return json_decode(file_get_contents($path));
 
     }
 

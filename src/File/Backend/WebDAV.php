@@ -2,27 +2,31 @@
 
 namespace Hazaar\File\Backend;
 
-class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
+class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public  $separator  = '/';
-    
+
     private $options;
 
     private $cache;
 
     private $meta = array();
 
+    static public function label(){
+
+        return "WebDAV";
+
+    }
+
     public function __construct($options) {
 
         $this->options = new \Hazaar\Map(array(
-                                             'cache_backend' => 'file',
-                                             'cache_meta'    => TRUE
-                                         ), $options);
+            'cache_backend' => 'file',
+            'cache_meta'    => TRUE
+        ), $options);
 
         if(! $this->options->has('baseuri'))
-            throw new \Exception('WebDAV file browser backend requires a URL!');
-
-        parent::__construct($this->options->toArray());
+            throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
 
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username));
 
@@ -32,6 +36,8 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
                 $this->meta = $meta;
 
         }
+
+        parent::__construct($this->options->toArray());
 
     }
 
@@ -50,7 +56,10 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     private function updateMeta($path) {
 
-        $meta = array_merge($this->meta, $this->propfind($path));
+        if(!($meta = $this->propfind($path)))
+            return false;
+
+        $meta = array_merge($this->meta, $meta);
 
         foreach($meta as $name => $info) {
 
@@ -61,6 +70,8 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
             $this->meta[$name] = $info;
 
         }
+
+        return true;
 
     }
 
@@ -77,7 +88,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($pathMeta = ake($this->meta, $path)))
             return FALSE;
 
-        if(! array_key_exists('collection', $pathMeta['resourcetype']))
+        if(!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype'])))
             return FALSE;
 
         $list = array();
@@ -102,7 +113,8 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if($meta = ake($this->meta, $path))
             return $meta;
 
-        $this->updateMeta($path);
+        if(!$this->updateMeta($path))
+            return null;
 
         return ake($this->meta, $path);
 
@@ -149,7 +161,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return NULL;
 
-        return in_array('R', str_split($info['permissions']));
+        return in_array('R', str_split(ake($info, 'permissions')));
 
     }
 
@@ -158,7 +170,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return NULL;
 
-        return in_array('W', str_split($info['permissions']));
+        return in_array('W', str_split(ake($info, 'permissions')));
 
     }
 
@@ -209,7 +221,7 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return false;
 
-        return strtotime($info['getcreated']);
+        return strtotime(ake($info, 'getcreated'));
 
     }
 
@@ -219,7 +231,13 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return false;
 
-        return strtotime($info['getlastmodified']);
+        return strtotime(ake($info, 'getlastmodified'));
+
+    }
+
+    public function touch($path){
+
+        return false;
 
     }
 
@@ -232,13 +250,13 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function filesize($path) {
 
-        if(! ($info = $this->info($path)))
+        if(!($info = $this->info($path)) || $info['scanned'] === false)
             return NULL;
 
         if($this->is_dir($path))
-            return intval($info['size']);
+            return intval(ake($info, 'size'));
 
-        return intval($info['getcontentlength']);
+        return intval(ake($info, 'getcontentlength'));
 
     }
 
@@ -319,27 +337,17 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return NULL;
 
-        return $info['getcontenttype'];
+        return ake($info, 'getcontenttype');
 
     }
 
     public function md5Checksum($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
 
         return md5($this->read($path));
 
     }
 
     public function thumbnail($path, $params = array()) {
-
-        return FALSE;
-
-        var_dump(__METHOD__);
-
-        exit;
 
         if(! ($info = $this->info($path)))
             return NULL;
@@ -386,10 +394,6 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
      */
     public function mkdir($path) {
 
-        var_dump(__METHOD__);
-
-        exit;
-
         $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/fileops/create_folder', 'POST');
 
         $request->root = 'auto';
@@ -411,21 +415,13 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
-    public function rmdir($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
+    public function rmdir($path, $recurse = false) {
 
         return $this->unlink($path);
 
     }
 
     public function copy($src, $dst, $recursive = FALSE) {
-
-        var_dump(__METHOD__);
-
-        exit;
 
         if($this->is_file($dst))
             return FALSE;
@@ -459,19 +455,11 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function link($src, $dst) {
 
-        var_dump(__METHOD__);
-
-        exit;
-
         return FALSE;
 
     }
 
     public function move($src, $dst) {
-
-        var_dump(__METHOD__);
-
-        exit;
 
         if($this->is_file($dst))
             return FALSE;
@@ -524,10 +512,6 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function write($path, $data, $content_type, $overwrite = FALSE) {
 
-        var_dump(__METHOD__);
-
-        exit;
-
         $request = new \Hazaar\Http\Request('https://api-content.dropbox.com/1/files_put/auto' . $path, 'POST');
 
         $request->setHeader('Content-Type', $content_type);
@@ -559,27 +543,23 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function get_meta($path, $key = NULL) {
 
-        var_dump(__METHOD__);
+        if(!($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
+            return null;
 
-        exit;
-
-        if($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path)))
+        if($key !== null)
             return ake($meta, $key);
 
-        return NULL;
+        return $meta;
 
     }
 
     public function set_meta($path, $values) {
 
-        var_dump(__METHOD__);
-
-        exit;
-
         if(! ($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
             $meta = array();
 
-        $meta[$key] = $value;
+        foreach($values as $key => $value)
+            $meta[$key] = $value;
 
         $this->cache->save($this->options['app_key'] . '::' . strtolower($path), $meta);
 
@@ -588,10 +568,6 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
     }
 
     private function clear_meta($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
 
         $this->cache->remove($this->options['app_key'] . '::' . strtolower($path));
 

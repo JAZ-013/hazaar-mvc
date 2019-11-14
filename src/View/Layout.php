@@ -241,8 +241,8 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
             }elseif(!$script instanceof \Hazaar\Application\Url){
 
-                if($this->_methodHandler instanceof \Hazaar\Controller && $this->_methodHandler->base_path)
-                    $script = $this->_methodHandler->base_path . '/' . $this->_methodHandler->getName() . '/file/' . $script;
+                if($this->_methodHandler instanceof \Hazaar\Controller && ($base_path = $this->_methodHandler->getBasePath()))
+                    $script = $base_path . '/' . $this->_methodHandler->getName() . '/file/' . $script;
                 elseif(is_string($script) && $script[0] !== '/')
                     $script = 'script/' . $script;
 
@@ -291,11 +291,8 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
             switch ($rel) {
                 case 'stylesheet':
 
-                    if($this->_methodHandler instanceof \Hazaar\Controller
-                    && $this->_methodHandler->base_path)
-                        $href = $this->_methodHandler->base_path . '/'
-                            . $this->_methodHandler->getName()
-                            . '/file/' . $href;
+                    if($this->_methodHandler instanceof \Hazaar\Controller && ($base_path = $this->_methodHandler->getBasePath()))
+                        $href = $base_path . '/' . $this->_methodHandler->getName() . '/file/' . $href;
                     else
                         $href = 'style/' . $href;
 
@@ -442,7 +439,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
         $app_url = (string)\Hazaar\Application::getInstance()->url();
 
         if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
-            throw new \Exception('You are not allowed to access this resource!', 403);
+            throw new \Hazaar\Exception('You are not allowed to access this resource!', 403);
 
         $this->application->config->app['compress'] = false;
 
@@ -469,7 +466,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
                 $url .= '?' . http_build_query($params);
 
             if(!($content = @file_get_contents($url)))
-                throw new \Exception('Unable to cache from source ' . $url, 502);
+                throw new \Hazaar\Exception('Unable to cache from source ' . $url, 502);
 
             $headers = array();
 

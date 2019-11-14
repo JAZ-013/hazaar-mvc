@@ -28,7 +28,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
 
@@ -77,6 +77,12 @@ abstract class Module extends \Hazaar\Controller\Action {
     public function url($action = null, $params = array()){
 
         return $this->application->url('hazaar/console', $action, $params);
+
+    }
+
+    public function active(){
+
+        return call_user_func_array(array($this->application, 'active'), array_merge(array('hazaar', 'console'), func_get_args()));
 
     }
 

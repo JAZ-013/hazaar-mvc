@@ -35,11 +35,11 @@ class Hmv extends \Hazaar\View\Helper {
 
             $container = $this->html->table();
 
-            $container->add($this->renderTABLEItems($model->exportHMV($ignore_empty, $export_all), $empty_val));
+            $container->add($this->renderTABLEItems($model->export($ignore_empty, $export_all), $empty_val));
 
         }else{
 
-            $container = $this->html->div($this->renderDIVItems($model->exportHMV($ignore_empty, $export_all), $empty_val));
+            $container = $this->html->div($this->renderDIVItems($model->export($ignore_empty, $export_all), $empty_val));
 
         }
 
@@ -367,7 +367,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }else{
 
-                    throw new \Exception('Unsupported array: ' . $name);
+                    throw new \Hazaar\Exception('Unsupported array: ' . $name);
 
                 }
 

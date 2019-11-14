@@ -51,7 +51,7 @@ class Optgroup extends Block {
 
             } else if(! $arg instanceof Option && ! $arg instanceof Optgroup) {
 
-                throw new \Exception('Only elements of type Option or Optgroup are allowed to be added to a Select object.');
+                throw new \Hazaar\Exception('Only elements of type Option or Optgroup are allowed to be added to a Select object.');
 
             } else {
 

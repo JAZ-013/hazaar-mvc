@@ -24,7 +24,8 @@ class Client {
 
     private $redirect_methods   = array(
         'GET',
-        'OPTIONS'
+        'OPTIONS',
+        'PROPFIND'
     );
 
     private $username;
@@ -156,6 +157,13 @@ class Client {
 
     }
 
+    /**
+     * Send a Hazaar\HTTP\Request to the desination host
+     * 
+     * @param Hazaar\Http\Request $request The request to send
+     * 
+     * @param mixed $redirect_limit The number of allowed redirects.  To disable automated redirects on this request, set to FALSE.
+     */
     public function send(Request $request, $redirect_limit = 10) {
 
         if(! $request instanceof Request)
@@ -202,11 +210,8 @@ class Client {
                  * If we have a content-length and the buffer len is greater or equal to it, dump out as we have all our
                  * content.
                  */
-                if($response->bytes_remaining > 0 && $response->bytes_remaining < $buffer_size) {
-
+                if($response->bytes_remaining > 0 && $response->bytes_remaining < $buffer_size)
                     $buffer_size = $response->bytes_remaining;
-
-                }
 
                 //If the socket is now EOF then break out
                 if(feof($sck_fd))
@@ -216,7 +221,10 @@ class Client {
 
             fclose($sck_fd);
 
-            if($this->auto_redirect && ($response->status == 301 || $response->status == 302)) {
+            if(!$response->status > 0)
+                throw new \Exception('Host returned no data', 503);
+
+            if($this->auto_redirect && $redirect_limit !== false && ($response->status == 301 || $response->status == 302)) {
 
                 if(in_array($request->method, $this->redirect_methods)) {
 
@@ -260,7 +268,10 @@ class Client {
 
         } else {
 
-            throw new \Exception('Error #' . $errno . ': ' . $errstr);
+            if($errno === 0 && !$errstr)
+                $errstr = 'Possible error initialising socket';
+
+            throw new \Hazaar\Exception('Error #' . $errno . ': ' . $errstr);
 
         }
 
@@ -305,10 +316,19 @@ class Client {
 
         }
 
-        if(count($list) > 1)
+        if(count($list) === 0)
+            return null;
+
+        elseif(count($list) > 1)
             return $list;
 
         return array_pop($list);
+
+    }
+
+    public function hasCookie($name){
+
+        return ($this->getCookie($name) !== null);
 
     }
 
@@ -338,7 +358,7 @@ class Client {
 
         $parts = explode(';', $cookie);
 
-        list($name, $value) = explode('=', array_shift($parts));
+        list($name, $value) = explode('=', array_shift($parts), 2);
 
         $data = array(
             'name' => $name,
@@ -448,8 +468,7 @@ class Client {
 
             foreach($this->cookies as $key => $cookie){
 
-                if($cookie['expires'] instanceof \Hazaar\Date
-                    && $cookie['expires']->getTimestamp() > time())
+                if(($cookie['expires'] instanceof \Hazaar\Date && $cookie['expires']->getTimestamp() > time()) || $cookie['expires'] === null)
                     $cachable[$key] = $cookie;
 
             }
@@ -473,6 +492,14 @@ class Client {
 
     }
 
+    public function deleteCookies(){
+        
+        $this->cookies = array();
+
+        return true;
+
+    }
+
     public function disableRedirect() {
 
         $this->auto_redirect = FALSE;
@@ -486,7 +513,7 @@ class Client {
             if(\Hazaar\Http\Client::$encryption_default_key === null){
 
                 if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
-                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+                    throw new \Hazaar\Exception('Unable to encrypt.  No key provided and no default keyfile!');
 
                 \Hazaar\Http\Client::$encryption_default_key = trim(file_get_contents($keyfile));
 

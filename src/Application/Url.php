@@ -18,7 +18,7 @@ namespace Hazaar\Application;
  *
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
- *              For examples see "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls in the
+ *              For examples see [Generating URLs](/basics/urls.md) in the
  *              Hazaar MVC support documentation.
  *
  * @since       1.0.0
@@ -26,13 +26,9 @@ namespace Hazaar\Application;
  */
 class Url {
 
-    public $controller;
-
-    public $method;
+    public $path;
 
     public $params;
-
-    public $path;
 
     public $hash;
 
@@ -48,150 +44,84 @@ class Url {
 
     function __construct() {
 
-        /*
-         * Figure out our controller/method combo
-         */
-        if(count($args = func_get_args()) > 0) {
+        if(!func_num_args() > 0)
+            return;
 
-            /*
-             * Pull out the controller/method from our arguments
-             */
-            if(is_array($args[0]) && count($args[0]) > 1) {
+        $parts = array();
 
-                list($this->controller, $this->method) = $args[0];
+        $params = array();
 
-            } elseif(count($args) == 2) {
+        foreach(\func_get_args() as $part){
 
-                list($this->controller, $this->method) = $args;
+            if(is_array($part) || $part instanceof \stdClass){
 
-                if(is_array($this->method)) {
+                $params = (array)$part;
 
-                    $this->params = $this->method;
+                break;
 
-                    $this->method = NULL;
+            }
+
+            $part_parts = (strpos($part, '/') === false) ? array($part) : explode('/', $part);
+
+            foreach($part_parts as $part_part){
+
+                if(strpos($part_part, '?') !== false){
+
+                    list($part_part, $part_params) = explode('?', $part_part, 2);
+
+                    parse_str($part_params, $part_params);
+
+                    $params = array_merge($params, $part_params);
 
                 }
 
-            } elseif(count($args) >= 3) {
+                if(!($part_part = trim($part_part)))
+                    continue;
 
-                list($this->controller, $this->method, $this->params) = $args;
-
-                if(count($args) == 4)
-                    $this->base_path = $args[3];
-
-            } else {
-
-                $this->controller = $args[0];
-
-            }
-
-            if(is_array($this->method))
-                $this->method = implode('/', $this->method);
-
-            /*
-             * Here we pull out and check any parameters
-             */
-            $m_params = NULL;
-
-            if(preg_match('/\?/', $this->controller)) {
-
-                if($this->method)
-                    throw new \Exception('Parameters are not allowed in the controller when a method has been set!');
-
-                list($this->controller, $m_params) = explode('?', $this->controller);
-
-            } elseif(count($mtest = explode('?', $this->method)) > 1) {
-
-                list($this->method, $m_params) = $mtest;
-
-            }
-
-            if($m_params)
-                parse_str($m_params, $this->params);
-
-            /*
-             * Sanitize the controller/method
-             *
-             * Here we trim any whitespace, set any default controllers if
-             * needed, or strip controllers if they are defaults and we
-             * don't have a method.
-             */
-            $this->controller = trim($this->controller);
-
-            $this->method = trim($this->method);
-
-            /*
-             * Grab the default controller ready for testing
-             */
-            $app = \Hazaar\Application::getInstance();
-
-            $default = strtolower($app->config->app['defaultController']);
-
-            if(($this->method && ! $this->controller) || (! $this->controller && $this->params)) {
-
-                $this->controller = $default;
-
-            } elseif(! $this->method && $this->controller == $default && ! $this->params) {
-
-                $this->controller = NULL;
+                $parts[] = $part_part;
 
             }
 
         }
 
-    }
+            /*
+            * Grab the default controller ready for testing
+            */
+        $app = \Hazaar\Application::getInstance();
 
-    private function renderPath(){
+        $default = trim($app->config->app['defaultController']);
 
-        $controller = $this->controller;
+        if(count($parts) === 1 && $parts[0] === $default)
+            $parts = array();
 
-        if(Url::$aliases instanceof \Hazaar\Map){
+        if(count($parts) > 0)
+            $this->path = implode('/', $parts);
 
-            foreach(Url::$aliases as $alias_controller => $alias){
-
-                $pos = strpos($alias, '/');
-
-                $target = ($pos > 0) ? substr($alias, 0, $pos) : $alias;
-
-                if(strcasecmp($target, $controller) === 0){
-
-                    $controller = $alias_controller;
-
-                    break;
-
-                }
-
-            }
-
-        }
-
-        return $controller . ($this->method ? '/' . $this->method : NULL);
+        $this->params = $params;
 
     }
 
     /**
      * Write the URL as a string
      *
-     * @param boolean $inc_path Include the URL path part.  Defaults to true.  Allows just the host part to be returned.
-     *
      * @param array $params Override the default params with parameters in this array.
      *
      * @param boolean $encode Encode the URL as a Hazaar MVC encoded query string URL.
      *
-     * @return      string The resulting URL based on the constructor arguments.
+     * @return string The resulting URL based on the constructor arguments.
      */
-    public function renderObject($inc_path = TRUE, $params = NULL, $encode = false) {
+    private function renderObject($params = null, $encode = false) {
 
         $path = ($this->base_path ? $this->base_path . '/' : null);
 
         if(!is_array($params))
             $params = array();
 
-        if(Url::$rewrite)
-            $path .= $this->renderPath();
+        if(Url::$rewrite && $encode !== true)
+            $path .= $this->path;
 
-        elseif($this->controller)
-            $params[Request\Http::$pathParam] = $this->renderPath();
+        elseif($this->path)
+            $params[Request\Http::$pathParam] = $this->path;
 
         if(is_array($this->params))
             $params = array_merge($this->params, $params);
@@ -221,29 +151,16 @@ class Url {
 
         }
 
-        if($inc_path) {
+        $url .= \Hazaar\Application::path($path);
 
-            $url .= \Hazaar\Application::path($path);
+        if(count($params) > 0){
 
-            if($this->path) {
+            $params = http_build_query($params);
 
-                if(substr($this->path, 0, 1) != '/')
-                    $this->path = '/' . $this->path;
+            if($encode)
+                $params = Request\Http::$queryParam . '=' . base64_encode($params);
 
-                $url .= $this->path;
-
-            }
-
-            if(count($params) > 0){
-
-                $params = http_build_query($params);
-
-                if($encode)
-                    $params = Request\Http::$queryParam . '=' . base64_encode($params);
-
-                $url .= '?' . $params;
-
-            }
+            $url .= '?' . $params;
 
         }
 
@@ -255,7 +172,7 @@ class Url {
     }
 
     /**
-     * @detail      Magic method to output a string URL.
+     * Magic method to output a string URL.
      */
     public function __tostring() {
 
@@ -273,12 +190,16 @@ class Url {
      *
      * ## Example:
      *
-     * <code>
+     * ```php
      * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));
      * echo $url->toString(array('id' => 1234));
-     * </code>
+     * ```
      *
-     * This will output something like: @http://localhost/controller/action?id=1234@
+     * This will output something like:
+     *
+     * ```
+     * http://localhost/controller/action?id=1234
+     * ```
      *
      * @param boolean $values
      *
@@ -286,9 +207,9 @@ class Url {
      */
     public function toString($values = NULL) {
 
-        if(is_array($values)) {
+        $params = array();
 
-            $params = array();
+        if(is_array($values)) {
 
             foreach($this->params as $key => $value) {
 
@@ -299,11 +220,9 @@ class Url {
 
             }
 
-            return $this->renderObject(TRUE, $params, $this->encoded);
-
         }
 
-        return $this->renderObject(true, null, $this->encoded);
+        return $this->renderObject($params, $this->encoded);
 
     }
 
@@ -323,6 +242,17 @@ class Url {
 
     }
 
+    /**
+     * Toggle encoding of the URL
+     * 
+     * This will enable a feature that will encode the URL with a serialised base64 parameter list so that the path and parameters are obscured.
+     * 
+     * This is NOT a security feature and merely obscures the exact destination of the URL using standard reversible encoding functions that
+     * "normal" people won't understand.  It can also make your URL look a bit 'tidier' or 'more professional' by making the parameters
+     * look weird. ;)
+     * 
+     * @param bool $encode Boolean to enable/disable encoding.  Defaults to TRUE.
+     */
     public function encode($encode = true){
 
         $this->encoded = $encode;

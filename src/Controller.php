@@ -10,54 +10,70 @@
 namespace Hazaar;
 
 /**
- * @brief       Abstract controller class
+ * Base Controller class
+ * 
+ * All controller classes extend this class.  Normally this class would only be extended by the controller classes
+ * provided by Hazaar MVC, as how a controller actually behaves and the functionality it provides is actually defined
+ * by the controller itself.  This controller does nothing, but will still initialise and run, but will output nothing.
  */
-abstract class Controller implements Controller\_Interface {
+abstract class Controller {
 
-    public    $application;
+    public $url_default_action_name = 'index';
+
+    protected $application;
 
     protected $name;
 
-    public    $statusCode;
+    protected $request;
 
-    public    $base_path;    //Optional base_path for controller relative url() calls.
+    protected $statusCode;
 
-    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
+    protected $base_path;    //Optional base_path for controller relative url() calls.
 
-        $this->name = $name;
+    /**
+     * Base controller constructor
+     * 
+     * @param string $name The name of the controller.  This is the name used when generating URLs.
+     * 
+     * @param \Hazaar\Application $application An application instance.
+     */
+    public function __construct($name, \Hazaar\Application $application) {
+
+        $this->name = strtolower($name);
 
         $this->application = $application;
 
     }
 
+    /**
+     * Controller shutdown method
+     * 
+     * This method is called when a controller is being shut down.  It will call the extending controllers
+     * shutdown method if it exists, otherwise it will silently carry on.
+     */
     public function __shutdown() {
 
-        if(method_exists($this, 'shutdown')) {
-
+        if(method_exists($this, 'shutdown'))
             $this->shutdown();
 
-        }
+    }
+
+    /**
+     * Controller initialisation method
+     * 
+     * This should be called by all extending controllers and is simply responsible for storing the calling request.
+     * 
+     * @param \Hazaar\Application\Request $request The application request object.
+     */
+    public function __initialize(\Hazaar\Application\Request $request){
+
+        $this->request = $request;
 
     }
 
-    public function getName() {
-
-        return $this->name;
-
-    }
-
-    public function setStatus($code) {
-
-        $this->statusCode = $code;
-
-    }
-
-    public function redirect($location, $args = array(), $save_url = TRUE) {
-
-        $this->application->redirect($location, $args, $save_url);
-
-    }
-
+    /**
+     * Convert the controller object into a string
+     */
     public function __tostring() {
 
         return get_class($this);
@@ -65,71 +81,118 @@ abstract class Controller implements Controller\_Interface {
     }
 
     /**
-     * @brief       Generate a URL relative to the controller
+     * Default run method.
+     * 
+     * The run method is where the controller does all it's work.  This default one does nothing.
+     */
+    public function __run(){
+
+        return false;
+
+    }
+
+    /**
+     * Get the name of the controller
+     */
+    public function getName() {
+
+        return $this->name;
+
+    }
+
+    /**
+     * Set the default return status code
+     * 
+     * @param integer $code The default status code that will used on responses.
+     */
+    public function setStatus($code = null) {
+
+        $this->statusCode = $code;
+
+    }
+
+    public function getStatus(){
+
+        return $this->statusCode;
+        
+    }
+
+    public function getBasePath(){
+        
+        return $this->base_path;
+
+    }
+
+    public function setBasePath($path){
+
+        $this->base_path = $path;
+        
+    }
+
+    /**
+     * Initiate a redirect response to the client
+     */
+    public function redirect($location, $args = array(), $save_url = TRUE) {
+
+        $this->application->redirect($location, $args, $save_url);
+
+    }
+
+    /**
+     * Generate a URL relative to the controller.
      *
-     * @detail      This is the controller relative method for generating URLs in your application.  URLs generated from
-     * here are
-     *              relative to the controller.  For URLs that are relative to the current application see
-     * Application::url()
+     * This is the controller relative method for generating URLs in your application.  URLs generated from
+     * here are relative to the controller.  For URLs that are relative to the current application see
+     * `Application::url()`.
      *
-     *              Parameters are dynamic and depend on what you are trying to generate.
+     * Parameters are dynamic and depend on what you are trying to generate.
      *
-     *              For examples see: \ref generating_urls
+     * For examples see: [Generating URLs](/basics/urls.md)
      *
      */
     public function url() {
 
-        $controller = NULL;
+        $url = new Application\Url();
 
-        $method = NULL;
+        $parts = func_get_args();
 
-        $params = NULL;
+        if(count($parts) === 1 && strtolower(trim($parts[0])) === $this->url_default_action_name)
+            $parts = array();
 
-        /*
-         * Figure out our controller/method combo
-         */
-        if(count($args = func_get_args()) > 0) {
+        $this_parts = explode('/', $this->name);
 
-            if(is_array($args[0]) && count($args[0]) > 1) {
+        if($this_parts[count($this_parts)-1] === $this->url_default_action_name)
+            array_pop($this_parts);
 
-                list($controller, $method) = $args[0];
+        call_user_func_array(array($url, '__construct'), array_merge($this_parts, $parts));
 
-            } elseif(count($args) === 2) {
+        return $url;
 
-                list($controller, $method) = $args;
+    }
 
-                if(is_array($method)) {
+    /**
+     * Test if a URL is active, relative to this controller.
+     *
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Controller::url()` except that parameter arrays are not supported.
+     * 
+     * * Example
+     * ```php
+     * if($controller->active('index')){
+     * ```
+     *
+     * If the current URL has more parts than the function argument list, this will mean that only a portion of the URL is tested
+     * against.  This allows an action to be tested without looking at it's argument list URL parts.  This also means that it is
+     * possible to call the `active()` method without any arguments to test if the controller itself is active, which if you are
+     * calling it from within the controller, should always return `TRUE`.
+     * 
+     * @return boolean True if the supplied URL is active as the current URL.
+     */
+    public function active() {
 
-                    $params = $method;
+        $parts = func_get_args();
 
-                    $method = NULL;
-
-                }
-
-                if(! $method) {
-
-                    $method = $controller;
-
-                    $controller = NULL;
-
-                }
-
-            } elseif(count($args) === 3) {
-
-                list($controller, $method, $params) = $args;
-
-            } else {
-
-                $method = ltrim($args[0], '/');
-
-            }
-
-        }
-
-        if(! $controller)
-            $controller = $this->getName();
-
-        return $this->application->url($controller, $method, $params, $this->base_path);
+        return call_user_func_array(array($this->application, 'active'), array_merge(array($this->name), $parts));
 
     }
 

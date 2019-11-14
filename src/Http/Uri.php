@@ -4,7 +4,12 @@ namespace Hazaar\Http;
 
 class Uri implements \ArrayAccess {
 
-    private $parts  = array();
+    private $parts  = array(
+        'scheme' => 'http',
+        'host' => 'localhost',
+        'path' => '/',
+        'query' => null
+    );
 
     private $params = array();
 
@@ -14,7 +19,10 @@ class Uri implements \ArrayAccess {
         'https' => 443
     );
 
-    function __construct($uri) {
+    function __construct($uri = null) {
+
+        if($uri === null)
+            return;
 
         if(strpos($uri, ':') == false)
             $uri = 'http://' . $uri;
@@ -29,40 +37,37 @@ class Uri implements \ArrayAccess {
 
     }
 
-    public function scheme() {
+    public function scheme($value = null) {
 
-        return ake($this->parts, 'scheme', 'http');
+        if($value === null)
+            return ake($this->parts, 'scheme', 'http');
+
+        return $this->parts['scheme'] = $value;
 
     }
 
     public function host($value = NULL) {
 
-        if(func_num_args() == 0)
+        if($value === null)
             return ake($this->parts, 'host');
 
-        return $this->parts['host'] = func_get_arg(0);
+        return $this->parts['host'] = $value;
 
     }
 
-    public function port() {
+    public function port($value = null) {
 
-        if(func_num_args() == 0) {
+        if($value === null) {
 
-            if(! array_key_exists('port', $this->parts)) {
+            if(!array_key_exists('port', $this->parts)) {
+
+                $scheme = $this->scheme();
 
                 /*
                  * Check the scheme is a common one and get the port that way if we can.
                  * Doing this first instead of using the services lookup will be faster for these common protocols.
                  */
-                if($port = ake($this->common_ports, $this->scheme())){
-
-                    $this->parts['port'] = $port;
-
-                }else{
-
-                    $this->parts['port'] = $this->lookupPort($this->scheme());
-
-                }
+                $this->parts['port'] = $this->lookupPort($scheme);
 
             }
 
@@ -70,11 +75,14 @@ class Uri implements \ArrayAccess {
 
         }
 
-        return $this->parts['port'] = func_get_arg(0);
+        return $this->parts['port'] = intval($value);
 
     }
 
     public function lookupPort($scheme){
+
+        if($port = ake($this->common_ports, $scheme))
+            return $port;
 
         $services_file = ((substr(PHP_OS, 0, 3) == 'WIN') ? $_SERVER['SystemRoot'] . '\System32\drivers' : null )
                         .  DIRECTORY_SEPARATOR . 'etc' . DIRECTORY_SEPARATOR . 'services';
@@ -112,7 +120,7 @@ class Uri implements \ArrayAccess {
     public function path() {
 
         if(func_num_args() == 0)
-            return ake($this->parts, 'path');
+            return ake($this->parts, 'path', '/');
 
         return $this->parts['path'] = func_get_arg(0);
     }
@@ -200,7 +208,15 @@ class Uri implements \ArrayAccess {
 
     public function toString() {
 
-        $uri = $this->scheme() . '://' . (ake($this->parts, 'user') ? $this->parts['user'] . (ake($this->parts, 'pass') ? ':' . $this->parts['pass'] : NULL) . '@' : NULL) . $this->host() . (ake($this->parts, 'port') ? ':' . $this->parts['port'] : NULL) . $this->path() . ((count($this->params) > 0) ? '?' . http_build_query($this->params) : NULL);
+        $scheme = $this->scheme();
+
+        $port = $this->port();
+
+        $uri = $scheme . '://' . (ake($this->parts, 'user') ? $this->parts['user'] . (ake($this->parts, 'pass') ? ':' . $this->parts['pass'] : NULL) . '@' : NULL) 
+            . $this->host() 
+            . (($port === $this->lookupPort($scheme)) ? null : ':' . $port) 
+            . $this->path() 
+            . ((count($this->params) > 0) ? '?' . http_build_query($this->params) : NULL);
 
         return $uri;
 

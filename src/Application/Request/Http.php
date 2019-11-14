@@ -68,7 +68,7 @@ class Http extends \Hazaar\Application\Request {
 
         $this->method = is_string($method) ? $method : $_SERVER['REQUEST_METHOD'];
 
-        $this->headers = hazaar_request_headers();
+        $this->headers = getallheaders();
 
         if($process_request_body === true)
             $this->body = @file_get_contents('php://input');
@@ -80,7 +80,7 @@ class Http extends \Hazaar\Application\Request {
             $iv = base64_decode($this->headers[$encryption_header]);
 
             if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
-                throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+                throw new \Hazaar\Exception('Unable to encrypt.  No key provided and no default keyfile!');
 
             \Hazaar\Controller\Response::$encryption_key = trim(file_get_contents($keyfile));
 
@@ -89,7 +89,7 @@ class Http extends \Hazaar\Application\Request {
                 \Hazaar\Controller\Response::$encryption_key, OPENSSL_RAW_DATA, $iv);
 
             if($this->body === false)
-                throw new \Exception('Received an encrypted request but was unable to decrypt the body!', 500);
+                throw new \Hazaar\Exception('Received an encrypted request but was unable to decrypt the body!', 500);
 
         }
 
@@ -132,7 +132,7 @@ class Http extends \Hazaar\Application\Request {
 
         }
 
-        if(\Hazaar\Application\Url::$rewrite === false && array_key_exists(Http::$pathParam, $this->params))
+        if(array_key_exists(Http::$pathParam, $this->params))
             return trim($this->params[Http::$pathParam], '/');
 
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));

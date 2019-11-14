@@ -14,6 +14,12 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     private $cursor;
 
+    static public function label(){
+
+        return 'Dropbox';
+
+    }
+    
     public function __construct($options) {
 
         parent::__construct();
@@ -59,7 +65,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         if(($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
 
             if($state != $this->cache->pull('oauth2_state'))
-                throw new \Exception('Bad state!');
+                throw new \Hazaar\Exception('Bad state!');
 
             $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
 
@@ -350,6 +356,12 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
             return false;
 
         return strtotime($info['modified']);
+
+    }
+
+    public function touch($path){
+        
+        return false;
 
     }
 

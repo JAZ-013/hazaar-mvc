@@ -20,8 +20,18 @@ class Request extends \Hazaar\Map {
 
     private $body    = null;
 
+    private $multipart = false;
+
     public  $context = null;
 
+    /**
+     * HTTP request constructor
+     *
+     * @param mixed $uri The URI of the resource that will be requested
+     * @param mixed $method The request method to use.  Typically GET, POST, etc
+     * @param mixed $content_type Optionally set the content type header.
+     * @param mixed $custom_context Optionally use a custom context.  Allows to define private SSL certificates.
+     */
     function __construct($uri = null, $method = 'GET', $content_type = null, $custom_context = null) {
 
         if($method)
@@ -50,8 +60,10 @@ class Request extends \Hazaar\Map {
     }
 
     /**
-     * Summary of uri
+     * Set the URI of the resource that is being requested
+     *
      * @param mixed $uri
+     *
      * @throws Exception\HostNotFound
      * @return \Hazaar\Http\Uri
      */
@@ -90,16 +102,96 @@ class Request extends \Hazaar\Map {
 
     }
 
-    public function enableMultipart(){
+    /**
+     * Sets the Content-Type header for the request.
+     *
+     * @param mixed $content_type
+     * @return void
+     */
+    public function setContentType($content_type){
 
-        if($this->body === null)
-            $this->body = array();
+        return $this->setHeader('Content-Type', $content_type);
 
     }
 
-    public function addMultipart($data, $content_type = null) {
+    /**
+     * Returns the current Content-Type header for the request.
+     * @return mixed
+     */
+    public function getContentType(){
 
-        if(! $content_type) {
+        return $this->getHeader('Content-Type');
+
+    }
+
+    /**
+     * Enable multipart mime request body optionally using the specified boundary and content type.
+     *
+     * @param mixed $content_type Optional request content type to use.  Defaults to multipart/form-data.
+     * @param mixed $boundary Optional boundary identifier. Defaults to HazaarMVCMultipartBoundary_{uniqid}
+     *
+     * @return bool True if multipart was enabled.  False if it was already enabled.
+     */
+    public function enableMultipart($content_type = null, $boundary = null){
+
+        if($this->multipart === true)
+            return false;
+
+        $this->multipart = true;
+
+        $this->body = ($this->body === null) ? array() : array($this->getContentType(), $this->body);
+
+        if(!$boundary)
+            $boundary = 'HazaarMVCMultipartBoundary_' . uniqid();
+
+        if(!$content_type)
+            $content_type = 'multipart/form-data';
+
+        $this->setContentType($content_type . '; boundary="' . $boundary . '"');
+
+        return true;
+
+    }
+
+    /**
+     * Returns a boolean indicating if the request is a multipart request
+     *
+     * @return bool
+     */
+    public function isMultipart(){
+
+        return $this->multipart;
+
+    }
+
+    /**
+     * Return the current multipart boundary name
+     *
+     * @return mixed
+     */
+    public function getMultipartBoundary(){
+
+        if($this->multipart !== true)
+            return false;
+
+        $content_type = $this->getHeader('Content-Type');
+
+        if(!preg_match('/^multipart\/.*boundary\s*=\s*"(.*)"/', $content_type, $matches))
+            return false;
+
+        return $matches[1];
+
+    }
+
+    /**
+     * Add a multipart chunk to the request
+     *
+     * @param mixed $data The data to add to the request.
+     * @param mixed $content_type The content type of the added data.
+     */
+    public function addMultipart($data, $content_type = null, $headers = null) {
+
+        if(!$content_type) {
 
             if(is_array($data))
                 $content_type = 'application/json';
@@ -108,53 +200,107 @@ class Request extends \Hazaar\Map {
 
         }
 
-        if($this->body && ! is_array($this->body)) {
+        if($this->multipart !== true)
+            $this->enableMultipart();
 
-            $part = array($this->getHeader('Content-Type'), $this->body);
+        if(!is_array($headers))
+            $headers = array();
 
-            $this->body = array($part);
+        $headers['Content-Type'] = $content_type;
 
-        }
-
-        $part = array($content_type, $data);
-
-        if(! is_array($this->body))
-            $this->body = array();
+        $part = array($headers, $data);
 
         $this->body[] = $part;
 
     }
 
+    /**
+     * Returns the name of the host that will be sent this request
+     *
+     * @return string
+     */
     public function getHost(){
 
         return $this->fsock_host;
 
     }
 
-    public function setBody($body) {
+    /**
+     * Set the request body.
+     *
+     * If multipart is enabled, then the body will be added as a new chunk.
+     *
+     * @param mixed $body
+     */
+    public function setBody($body, $content_type = null) {
 
-        $this->body = (string)$body;
+        if($body instanceof \Hazaar\Xml\Element){
+
+            if(!$content_type)
+                $content_type = 'application/xml';
+
+            $body = $body->toXML();
+
+        }
+
+        if(is_array($this->body)){
+
+            $this->body[] = array($content_type, $body);
+
+        }else{
+
+            if($content_type)
+                $this->setContentType($content_type);
+
+            $this->body = $body;
+
+        }
 
     }
 
+    /**
+     * Return the body of the request.
+     *
+     * If multipart is enabled, this will return an array containing request body and content type.
+     * @return mixed
+     */
     public function getBody() {
 
         return $this->body;
 
     }
 
+    /**
+     * Returns all the headers currently set on the request
+     *
+     * @return array
+     */
     public function getHeaders() {
 
         return $this->headers;
 
-
     }
+
+    /**
+     * Returns the value of the header specified by $key
+     *
+     * @param mixed $key The name of the header to return
+     * @return mixed
+     */
     public function getHeader($key) {
 
         return ake($this->headers, $key);
 
     }
 
+    /**
+     * Sets the value of a header
+     *
+     * @param mixed $key The name of the header to set.
+     * @param mixed $value The value to set on the header.
+     * @param mixed $allow_multiple Whether multiple instances of the header are allowed.  Defaults to false, meaning if the
+     *                              header exists, it will be updated.  Multiple headers are rare but the main one is 'Cookie'.
+     */
     public function setHeader($key, $value, $allow_multiple = false) {
 
         if($allow_multiple === true && array_key_exists($key, $this->headers)){
@@ -172,6 +318,15 @@ class Request extends \Hazaar\Map {
 
     }
 
+    /**
+     * Output the request as a string
+     *
+     * This is the method that renders the request as a HTTP/1.1 compliant request.
+     *
+     * @param mixed $encryption_key Optionally encrypt the request using this encryption key.
+     * @param mixed $encryption_cipher Optionally specifiy the cipher used to encrypt the request.
+     * @return string
+     */
     public function toString($encryption_key = null, $encryption_cipher = null) {
 
         $uri = clone $this->uri;
@@ -182,130 +337,75 @@ class Request extends \Hazaar\Map {
          * Convert any parameters into a HTTP POST query
          */
 
-        if($this->method == 'GET' && $this->count() > 0 && $encryption_key === null) {
+        if($this->method === 'GET' && $this->count() > 0 && $encryption_key === null) {
 
             $uri->setParams($this->toArray());
 
         } elseif($this->body !== null) {
 
-            if(count($this->elements) > 0) {
+            if($this->count() > 0)
+                $uri->setParams($this->toArray());
 
-                if(!is_array($this->body)) {
+            if($this->multipart === true){
 
-                    $saved_body = $this->body;
+                $boundary = $this->getMultipartBoundary();
 
-                    $this->body = array();
+                foreach($this->body as $part) {
 
-                }
+                    $body .= "--$boundary\r\n";
 
-                $content_type = $this->getHeader('Content-Type');
+                    if(! is_array($part[0]))
+                        $part[0] = array('Content-Type' => $part[0]);
 
-                if(($pos = strpos($content_type, ';')) > 0)
-                    $content_type = substr($content_type, 0, $pos);
+                    if($content_type = ake($part[0], 'Content-Type')) {
 
-                switch($content_type) {
+                        if(($pos = strpos($content_type, ';')) > 0)
+                            $content_type = substr($content_type, 0, $pos);
 
-                    case 'text/json' :
-                    case 'application/json' :
-                    case 'application/javascript' :
-                    case 'application/x-javascript' :
+                        switch($content_type) {
 
-                        $this->body[] = array($content_type, $this->toJSON());
+                            case 'text/json' :
+                            case 'application/json' :
 
-                        break;
+                                $data = json_encode($part[1]);
 
-                    case 'text/html' :
-                    case 'application/x-www-form-urlencoded':
-                    default:
+                                break;
 
-                        $elements = array();
+                            case 'text/html' :
+                            case 'application/x-www-form-urlencoded':
 
-                        foreach(array_build_html($this->toArray()) as $key => $value) {
+                                $data = is_array($part[1]) ? http_build_query($part[1]) : $part[1];
 
-                            $elements[] = array(
-                                array('Content-Disposition' => 'form-data; name="' . $key . '"'),
-                                $value
-                            );
+                                break;
 
-                        }
+                            default:
 
-                        $this->body = array_merge($elements, $this->body);
+                                $data =& $part[1];
 
-                        break;
-
-                }
-
-                if(isset($saved_body))
-                    $this->body[] = array($content_type, $saved_body);
-
-            }
-
-            if(is_array($this->body)) {
-
-                if(count($this->body[0]) == 2) {
-
-                    $boundary = 'HazaarMVCMultipartBoundary' . uniqid();
-
-                    $this->setHeader('Content-Type', 'multipart/form-data; boundary="' . $boundary . '"');
-
-                    foreach($this->body as $part) {
-
-                        $body .= "--$boundary\r\n";
-
-                        if(! is_array($part[0]))
-                            $part[0] = array('Content-Type' => $part[0]);
-
-                        if($content_type = ake($part[0], 'Content-Type')) {
-
-                            if(($pos = strpos($content_type, ';')) > 0)
-                                $content_type = substr($content_type, 0, $pos);
-
-                            switch($content_type) {
-
-                                case 'text/json' :
-                                case 'application/json' :
-
-                                    $data = json_encode($part[1]);
-
-                                    break;
-
-                                case 'text/html' :
-                                case 'application/x-www-form-urlencoded':
-
-                                    $data = is_array($part[1]) ? http_build_query($part[1]) : $part[1];
-
-                                    break;
-
-                                default:
-
-                                    $data =& $part[1];
-
-                                    break;
-
-                            }
-
-                        } else {
-
-                            $data = $part[1];
+                                break;
 
                         }
 
-                        foreach($part[0] as $key => $value)
-                            $body .= $key . ': ' . $value . "\r\n";
+                    } else {
 
-                        $body .= "\r\n$data\r\n";
+                        $data = $part[1];
 
                     }
 
-                    $body .= "--$boundary--\r\n";
+                    foreach($part[0] as $key => $value)
+                        $body .= $key . ': ' . $value . "\r\n";
 
-                } else {
-
-                    $this->setHeader('Content-Type', 'application/json');
-
-                    $body = json_encode($this->body);
+                    $body .= "\r\n$data\r\n";
 
                 }
+
+                $body .= "--$boundary--\r\n";
+
+            } elseif(is_array($this->body) || $this->body instanceof \stdClass) {
+
+                $this->setHeader('Content-Type', 'application/json');
+
+                $body = json_encode($this->body);
 
             } else { //Otherwise use the raw content body
 
@@ -362,7 +462,7 @@ class Request extends \Hazaar\Map {
         /*
          * Build the header section
          */
-        $access_uri = $uri->path() . $uri->queryString();
+        $access_uri = implode('/', array_map('rawurlencode', explode('/', $uri->path()))) . $uri->queryString();
 
         $http_request = "{$this->method} {$access_uri} HTTP/1.1\r\n";
 
@@ -400,26 +500,36 @@ class Request extends \Hazaar\Map {
 
     }
 
+    /**
+     * Alias for 'authorisation' for the bad 'merican spells.
+     *
+     * @param mixed $user
+     * @param mixed $type
+     * @return bool
+     */
     public function authorization($user, $type = 'Bearer'){
 
         return $this->authorisation($user, $type);
 
     }
 
-    public function authorisation($user, $type = null){
+    /**
+     * Use an auth adapter to set an Oauth token on the request
+     *
+     * @param \Hazaar\Auth\Adapter $user
+     * @param string $type
+     * @return bool
+     */
+    public function authorisation(\Hazaar\Auth\Adapter $user, $type = null){
 
-        if($user instanceof \Hazaar\Auth\Adapter){
+        if($token = $user->getToken()){
 
-            if($token = $user->getToken()){
+            if(!$type)
+                $type = $user->getTokenType();
 
-                if(!$type)
-                    $type = $user->getTokenType();
+            $this->setHeader('Authorization', $type . ' ' . $token);
 
-                $this->setHeader('Authorization', $type . ' ' . $token);
-
-                return true;
-
-            }
+            return true;
 
         }
 
@@ -445,7 +555,7 @@ class Request extends \Hazaar\Map {
         if($local_pk){
 
             if(!file_exists((string)$local_pk))
-                throw new \Exception('Local private key specified but the file does not exist!');
+                throw new \Hazaar\Exception('Local private key specified but the file does not exist!');
 
             stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
 

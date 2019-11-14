@@ -66,7 +66,7 @@ class Btree {
     public function __construct($file) {
 
         if(!$this->open($file))
-            throw new \Exception('Unable to open file: ' . $file);
+            throw new \Hazaar\Exception('Unable to open file: ' . $file);
 
     }
 
@@ -84,7 +84,7 @@ class Btree {
         if($file === null){
 
             if(!$this->file)
-                throw new \Exception('No file specified!');
+                throw new \Hazaar\Exception('No file specified!');
 
             if($this->file->isOpen())
                 return true;
@@ -102,11 +102,11 @@ class Btree {
         }
 
         if($file->backend() !== 'local')
-            throw new \Exception('The BTree file class currently only supports the local file manager backend!', 400);
+            throw new \Hazaar\Exception('The BTree file class currently only supports the local file manager backend!', 400);
 
         //Check if the file is too big.  The file size will be negative if PHP doesn't support the file.
         if($this->file->exists() && $this->file->size() < 0)
-            throw new \Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
+            throw new \Hazaar\Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
 
         $this->file->open('a+b');
 
@@ -188,9 +188,9 @@ class Btree {
      *
      * To get all data, use:
      *
-     * <code>
+     * ```php
      * $values = $btree->range("\x00", "\xff");
-     * </code>
+     * ```
      *
      * @param string $startkey
      * @param string $endkey

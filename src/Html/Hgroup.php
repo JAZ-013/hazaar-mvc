@@ -43,7 +43,7 @@ class Hgroup extends Block {
 
             } elseif(!preg_match('/^Hazaar\\\Html\\\H[1-6]$/', get_class($arg))) {
 
-                throw new \Exception('You can NOT add an object of type ' . get_class($arg) . ' to an Hgroup object.');
+                throw new \Hazaar\Exception('You can NOT add an object of type ' . get_class($arg) . ' to an Hgroup object.');
 
             } else {
 

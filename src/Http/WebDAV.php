@@ -30,7 +30,7 @@ class WebDAV extends \Hazaar\Http\Client {
         $this->settings = $settings;
 
         if(! $this->settings->has('baseuri'))
-            throw new \Exception('WebDAV: No baseuri specified');
+            throw new \Hazaar\Exception('WebDAV: No baseuri specified');
 
         $this->settings->baseuri = rtrim($this->settings->baseuri, '/');
 
@@ -42,18 +42,18 @@ class WebDAV extends \Hazaar\Http\Client {
         if($options->status != 401) {
 
             if($options->status != 200)
-                throw new \Exception('WebDAV server returned status ' . $options->status . ': ' . $options->name);
+                throw new \Hazaar\Exception('WebDAV server returned status ' . $options->status . ': ' . $options->name);
 
             if(! array_key_exists('dav', $options->headers))
-                throw new \Exception('Base URI does not support WebDAV protocol.  URI=' . $this->settings->baseuri);
+                throw new \Hazaar\Exception('Base URI does not support WebDAV protocol.  URI=' . $this->settings->baseuri);
 
             $this->classes = explode(',', $options->headers['dav'][0]);
 
             if(! in_array(1, $this->classes))
-                throw new \Exception('Server must at least support WebDAV class 1!');
+                throw new \Hazaar\Exception('Server must at least support WebDAV class 1!');
 
             if(array_key_exists('allow', $options->headers))
-                $this->allow = explode(',', $options->headers['allow']);
+                $this->allow = array_map('trim', explode(',', $options->headers['allow']));
 
             $this->authorised = TRUE;
 
@@ -120,7 +120,7 @@ class WebDAV extends \Hazaar\Http\Client {
         foreach($responseList as $response) {
 
             if(! ($href = rawurldecode($response->child('href')->value())))
-                throw new \Exception('No HREF in multi-status response');
+                throw new \Hazaar\Exception('No HREF in multi-status response');
 
             $propstat = $response->child('propstat');
 
@@ -143,7 +143,7 @@ class WebDAV extends \Hazaar\Http\Client {
         if(preg_match('/\w\:\/\/.*/', $url))
             return $url;
 
-        return $this->settings->baseuri . '/' . str_replace(' ', '%20', ltrim($url, '/'));
+        return $this->settings->baseuri . '/' . ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
 
     }
 
@@ -170,7 +170,10 @@ class WebDAV extends \Hazaar\Http\Client {
 
     public function propfind($url, $properties = array(), $depth = 1, $return_response = FALSE, $namespaces = array()) {
 
-        if(! $this->authorised)
+        if(!in_array('PROPFIND', $this->allow))
+            throw new \Exception('Host does not support PROPFIND command!');
+
+        if(!$this->authorised)
             return FALSE;
 
         $request = new \Hazaar\Http\Request($this->getAbsoluteUrl($url), 'PROPFIND', 'application/xml; charset="utf-8"');
@@ -181,7 +184,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
         $xml = new \Hazaar\Xml\Element();
 
-        $xml->addNamespace('d', 'DAV');
+        $xml->addNamespace('d', 'DAV:');
 
         $propfind = $xml->add('d:propfind');
 
@@ -219,7 +222,7 @@ class WebDAV extends \Hazaar\Http\Client {
         $response = parent::send($request);
 
         if($response->status != 207)
-            return NULL;
+            throw new \Exception('WebDAV server returned: ' . $response->body(), $response->status);
 
         if($return_response)
             return $response;
@@ -251,6 +254,9 @@ class WebDAV extends \Hazaar\Http\Client {
     }
 
     public function proppatch($url, array $properties) {
+
+        if(!in_array('PROPPATCH', $this->allow))
+            throw new \Exception('Host does not support PROPPATCH command!');
 
         if(! $this->authorised)
             return FALSE;
@@ -330,6 +336,9 @@ class WebDAV extends \Hazaar\Http\Client {
      */
     public function put($url, $content = NULL, $datatype = NULL) {
 
+        if(!in_array('PUT', $this->allow))
+            throw new \Exception('Host does not support PUT command!');
+
         if(! $this->authorised)
             return FALSE;
 
@@ -369,6 +378,9 @@ class WebDAV extends \Hazaar\Http\Client {
     }
 
     public function delete($url) {
+
+        if(!in_array('DELETE', $this->allow))
+            throw new \Exception('Host does not support DELETE command!');
 
         if(! $this->authorised)
             return FALSE;

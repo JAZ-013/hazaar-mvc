@@ -757,10 +757,10 @@ function bytes_str($string) {
  * Multiple interval support is also possible. Intervals can be separated with a comma (,) or the word
  * 'and', for example:
  *
- * <pre><code class="php">
+ * ```php
  * $foo = seconds('1 week, 2 days');
  * $bar = seconds('1 week and 2 days');
- * </code></pre>
+ * ```
  *
  * Both of these function calls will yeild the same result.
  *
@@ -1203,7 +1203,7 @@ function dump($data = NULL) {
 
         $style = "<style>
 body { padding: 0; margin: 0; font-family: Arial, Helvetica, sans-serif; }
-.exec_time { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
+.exec_time, .endtime { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
 .exec_time.good { background-color: #33bb33; }
 .exec_time.ok { background-color: gold; color: #333; }
 .exec_time.bad { background-color: #ea4040; }
@@ -1216,6 +1216,8 @@ pre { margin: 30px; }
         $speed_class = ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : 'good';
 
         echo "<div class=\"exec_time $speed_class\">{$exec_time}ms</div>";
+
+        echo "<div class=\"endtime\">" . date('c') . "</div>";
 
         echo "<h2>Dump</h2>\n\n";
 
@@ -1243,12 +1245,9 @@ pre { margin: 30px; }
  *
  * @param array   $patterns   An array of patterns to search for, as a string.
  * @param string  $subject    The input string.
- * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that     *                          matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
- *                            subpattern, and so on.
- * @param integer $flags      For details on available flags, see the "preg_match()":http://php.net/manual/en/function.preg-match.php
- *                            documentation.
- * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can
- *                            be used to specify the alternate place from which to start the search (in bytes).
+ * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized subpattern, and so on.
+ * @param integer $flags      For details on available flags, see the [preg_match()](http://php.net/manual/en/function.preg-match.php) documentation.
+ * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can be used to specify the alternate place from which to start the search (in bytes).
  *
  * @return boolean|integer
  */

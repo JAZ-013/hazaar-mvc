@@ -102,12 +102,12 @@ class GeoData {
         $city_zipfile->put_contents(file_get_contents(GeoData::$sources['city']['url']));
 
         if(!$city_zipfile->size() > 0)
-            throw new \Exception('Unable to download city info source file!');
+            throw new \Hazaar\Exception('Unable to download city info source file!');
 
         $md5 = file_get_contents(GeoData::$sources['city']['md5']);
 
         if($city_zipfile->md5() !== $md5)
-            throw new \Exception('City info source file MD5 signature does not match!');
+            throw new \Hazaar\Exception('City info source file MD5 signature does not match!');
 
         $files = $city_zipfile->unzip(GeoData::$sources['city']['csv'], $tmpdir);
 

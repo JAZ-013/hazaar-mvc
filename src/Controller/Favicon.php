@@ -6,12 +6,6 @@ class Favicon extends \Hazaar\Controller {
 
     protected $request;
 
-    public function __initialize(\Hazaar\Application\Request $request) {
-
-        $this->request = $request;
-
-    }
-
     public function __run() {
 
         if($this->application->config->app->has('favicon'))

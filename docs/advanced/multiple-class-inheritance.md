@@ -3,12 +3,10 @@
 Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. To palliate this limitation and to make the framework truly extendible, Hazaar introduces a class called [[Hazaar\Extender]]. The [[Hazaar\Extender]] class is a special class that allows you to extend your classes using multiple child classes.
 
 !!! warning
-
-Hazaar MVC implements a more tradition form of multiple class inheritance over PHP 5.4 'Trait' feature which attempts to implement similar functionality.
+    Hazaar MVC implements a more tradition form of multiple class inheritance over PHP 5.4 'Trait' feature which attempts to implement similar functionality.
 
 !!! warning
-
-Traits do not as accurately honour the private/protected/public member declaration but the Hazaar MVCExtender class does. The Extender class also allows you to extend from multiple classes without the need to explicitly define them as traits which makes them much more flexible.
+    Traits do not as accurately honour the private/protected/public member declaration but the Hazaar MVCExtender class does. The Extender class also allows you to extend from multiple classes without the need to explicitly define them as traits which makes them much more flexible.
 
 ## Understanding Multiple Inheritance
 
@@ -56,8 +54,7 @@ $myNovel->getISBN();
 ```
 
 !!! Danger
-
-This is wrong, so <b>DO NOT</b> do this.
+    This is wrong, so <b>DO NOT</b> do this.
 
 One possibility would be to have Novel implements two interfaces instead of having it extend two classes, but this would prevent you from having the methods actually written in the parent classes.
 
@@ -103,8 +100,7 @@ You declare your class as normal, extending it from Hazaar\Extender, in line wit
 To declare a class as extendible, you simply extend the Hazaar\Extender abstract class and call it's `extend()` method with the name of the class you want to extend as the first parameter, and any other parameters to pass to the child class constructor. For safety reasons I suggest using `parent::extend()` to make sure you access the Extender method and not a local method.
 
 !!! Notice
-
-Any class that is declared as abstract can still be extended using this method. Internally, a "wrapper class" is used to allow extending abstract classes.
+    Any class that is declared as abstract can still be extended using this method. Internally, a "wrapper class" is used to allow extending abstract classes.
 
 To extend the 'A' class and pass a string to the constructor:
 

@@ -43,6 +43,8 @@ class Error extends \Hazaar\Controller\Action {
 
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
+        parent::__initialize($request);
+
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
             if(!($this->response = $this->application->getResponseType())){
@@ -305,7 +307,8 @@ class Error extends \Hazaar\Controller\Action {
                 'type' => $this->errno,
                 'status' => $this->status,
                 'str' => $this->errstr
-            )
+            ),
+            'timestamp' => time()
         );
 
         if(ini_get('display_errors')){
@@ -371,6 +374,8 @@ class Error extends \Hazaar\Controller\Action {
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
         $out .= "Environment:\t" . APPLICATION_ENV . "\n";
+
+        $out .= "Timestamp:\t" . date('c') . "\n";
 
         if ($this->errno > 0)
             $out .= "Error:\t\t#" . $this->errno . "\n";

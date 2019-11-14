@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller;
 
-class Media extends \Hazaar\Controller\Action {
+class Media extends \Hazaar\Controller\Basic {
 
     private $allowPreview   = array(
         '/^image\//'
@@ -34,7 +34,7 @@ class Media extends \Hazaar\Controller\Action {
         $this->connector->setProgressCallback(array($this, 'progress'));
 
         if(($this->config = $this->loadConfig()) === false)
-            throw new \Exception('Media controller has not been configured!');
+            throw new \Hazaar\Exception('Media controller has not been configured!');
 
         if($this->config->disabled === true)
             return;
@@ -76,7 +76,8 @@ class Media extends \Hazaar\Controller\Action {
 
                 $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $id);
 
-                $connector->addSource($id, $manager, $source->get('name'));
+                if($manager->authorise())
+                    $connector->addSource($id, $manager, $source->get('name'));
 
             }
 
@@ -136,17 +137,17 @@ class Media extends \Hazaar\Controller\Action {
             && $this->config->global->allow['read'] !== true){
 
             if(!($this->auth && $this->auth->authenticated()))
-                throw new \Exception('Unauthorised!', 403);
+                throw new \Hazaar\Exception('Unauthorised!', 403);
 
         }
 
         $source = $this->connector->source($source_name);
 
         if(! $source)
-            throw new \Exception("Media source '$source_name' is unknown!", 404);
+            throw new \Hazaar\Exception("Media source '$source_name' is unknown!", 404);
 
         if(!$this->config->has($source->name))
-            throw new \Exception("Config missing for loaded source!  What the hell!?");
+            throw new \Hazaar\Exception("Config missing for loaded source!  What the hell!?");
 
         //Check for source specific authentication
         if($this->config[$source->name]->has('auth')
@@ -154,7 +155,7 @@ class Media extends \Hazaar\Controller\Action {
             && $this->config[$source->name]->public !== true){
 
             if(!($this->auth && $this->auth->authenticated()))
-                throw new \Exception('Unauthorised!', 403);
+                throw new \Hazaar\Exception('Unauthorised!', 403);
 
         }
 
@@ -163,7 +164,7 @@ class Media extends \Hazaar\Controller\Action {
         $this->file = $source->get($target);
 
         if(! $this->file->exists())
-            throw new \Exception('File not found!', 404);
+            throw new \Hazaar\Exception('File not found!', 404);
 
         $params = $this->request->getParams();
 
@@ -182,7 +183,7 @@ class Media extends \Hazaar\Controller\Action {
             $bootstrap = include($media_file);
 
             if($bootstrap === FALSE)
-                throw new \Exception('Access to the requested file is restricted.', 401);
+                throw new \Hazaar\Exception('Access to the requested file is restricted.', 401);
 
         }
 
@@ -209,7 +210,7 @@ class Media extends \Hazaar\Controller\Action {
         if($this->file->is_dir()){
 
             if($this->config->global->allow['dir'] !== true)
-                throw new \Exception('Directory listings are currently disabled.', 403);
+                throw new \Hazaar\Exception('Directory listings are currently disabled.', 403);
 
             $response = new \Hazaar\Controller\Response\View('@media/dir');
 
@@ -296,7 +297,7 @@ class Media extends \Hazaar\Controller\Action {
                             case 'image/svg+xml':
 
                                 if(! in_array('imagick', get_loaded_extensions()))
-                                    throw new \Exception('Not supported', 406);
+                                    throw new \Hazaar\Exception('Not supported', 406);
 
                                 $temp_dir = $this->application->runtimePath('temp', TRUE);
 
@@ -381,14 +382,14 @@ class Media extends \Hazaar\Controller\Action {
             && $this->config->global->allow['cmd'] !== true){
 
             if(!($this->auth && $this->auth->authenticated()))
-                throw new \Exception('Unauthorised!', 403);
+                throw new \Hazaar\Exception('Unauthorised!', 403);
 
         }
 
         if($cmd == 'authorise') {
 
             if(intval($_SERVER['REDIRECT_STATUS']) !== 200)
-                throw new \Exception('Authorisation process failed!');
+                throw new \Hazaar\Exception('Authorisation process failed!');
 
             $sess = new \Hazaar\Session();
 
@@ -406,7 +407,7 @@ class Media extends \Hazaar\Controller\Action {
         $reflection = new \ReflectionClass($connector);
 
         if(! $reflection->hasMethod($cmd))
-            throw new \Exception('Bad request');
+            throw new \Hazaar\Exception('Bad request');
 
         unset($this->request->cmd);
 

@@ -66,6 +66,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     protected $current;
 
     /**
+     * Scopes can be defined so that some fields are not available if the scope is not set.
+     * @var array
+     */
+    protected $scopes = array();
+
+    /**
      * Strict model constructor
      *
      * The constructor has optional parameters that can vary depending on the implementation.  The first parameter is
@@ -207,10 +213,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                     /*
                      * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
                      */
-                    if ($type == 'array' || $type == 'list' ) {
+                    if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
 
-                        if (array_key_exists('arrayOf', $def))
-                            $value = new ChildArray($def['arrayOf'], $value);
+                        $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
                     }elseif($type == 'model') {
@@ -367,18 +372,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         }
 
-        if (!array_key_exists($key, $this->values)) {
+        $null = null;
 
-            $null = null;
-
+        if (!array_key_exists($key, $this->values))
             return $null;
-
-        }
 
         $def = ake($this->fields, $key, ake($this->fields, '*'));
 
         if (!is_array($def))
             $def = array('type' => $def);
+
+        if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+            return $null;
 
         if(array_key_exists('value', $def)){
 
@@ -482,6 +487,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * If it is a string, it is a simple type, so convert to an array automatically with just a type def
          */
         $def = ake($this->fields, $key, ake($this->fields, '*'));
+        
+        if($this->loaded && array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+            return false;
 
         if (!is_array($def))
             $def = array('type' => $def);
@@ -908,6 +916,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             if (!is_array($def))
                 $def = array('type' => $def);
 
+            /**
+             * If the field has a scope and the scope is not set, skip it immediately.
+             */
+            if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
+                continue;
+
             if(array_key_exists('value', $def))
                 $value = $def['value'];
 
@@ -1111,12 +1125,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 2.0.0
      */
-    public function exportHMV($ignore_empty = false, $export_all = false, $obj = null){
+    public function export($ignore_empty = false, $export_all = false, $obj = null){
 
         if(!$obj)
             $obj = new \Hazaar\Map($this->toArray(false, 0, $export_all));
 
-        return $this->exportHMVArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
+        return $this->exportArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
 
     }
 
@@ -1131,7 +1145,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 2.0.0
      */
-    private function exportHMVArray($array, $def, $hide_empty = false, $export_all = false, $object = null){
+    private function exportArray($array, $def, $hide_empty = false, $export_all = false, $object = null){
 
         if(!is_array($array))
             return null;
@@ -1182,7 +1196,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 }else{
 
-                    $values[$key]['items'] = $value->exportHMV($hide_empty, $export_all, $object);
+                    $values[$key]['items'] = $value->export($hide_empty, $export_all, $object);
 
                 }
 
@@ -1208,7 +1222,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }else{
 
-                            $values[$key]['collection'][] = $subValue->exportHMV($hide_empty, $export_all, $object);
+                            $values[$key]['collection'][] = $subValue->export($hide_empty, $export_all, $object);
 
                         }
 
@@ -1216,7 +1230,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         $subDef = $key_def;
 
-                        $values[$key]['collection'][] = $this->exportHMVArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
+                        $values[$key]['collection'][] = $this->exportArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
 
                     }else{
 
@@ -1342,6 +1356,55 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->allow_undefined = $toggle;
 
         $this->ignore_undefined = !$toggle;
+
+    }
+
+    /**
+     * Add one or more scopes to the model
+     */
+    public function addScope(){
+
+        $args = func_get_args();
+
+        foreach($args as $arg){
+
+            $scopes = is_array($arg) ? $arg : preg_split('/\s+/', $arg);
+
+            foreach($scopes as $scope)
+                $this->scopes[] = strtolower(trim($scope));
+
+        }
+
+    }
+
+    /**
+     * Remove one or more scopes from the model
+     */
+    public function removeScope(){
+
+        $args = func_get_args();
+
+        foreach($args as $arg){
+
+            $scopes = preg_split('/s+/', $arg);
+
+            foreach($scopes as $scope){
+
+                if(($index = array_search($scope, $this->scopes)) !== false)
+                    unset($this->scopes[$index]);
+
+            }
+
+        }
+        
+    }
+
+    /**
+     * Return the list of currently defined scopes
+     */
+    public function getScopes(){
+
+        return $this->scopes;
 
     }
 

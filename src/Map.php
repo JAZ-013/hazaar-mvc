@@ -18,17 +18,17 @@ namespace Hazaar;
  *
  *              ### Example
  *
- *              <code class="php">
+ *              ```php
  *              $map = new Hazaar\Map();
  *              $map->depth0->depth1->depth2 = array('foo', 'bar');
  *              echo $map->toJson();
- *              </code>
+ *              ```
  *
  *              The above example will print the JSON string:
  *
- *              <code class="php">
+ *              ```php
  *              { "depth0" : { "depth1" : { "depth2" : [ "foo", "bar" ] } } }
- *              </code>
+ *              ```
  *
  *              ## Filters
  *
@@ -47,7 +47,7 @@ namespace Hazaar;
  *              Here is an example of using an input filter to convert a Date object into an array of MongoDate and a
  *              timezone field.
  *
- *              <code class="php">
+ *              ```php
  *              $callback = function($value, $key){
  *                  if(is_a('\Hazaar\Date', $value)){
  *                      $value = new Map(array(
@@ -58,12 +58,12 @@ namespace Hazaar;
  *                  return $value;
  *              }
  *              $map->addInputFilter($callback, '\Hazaar\Date', true);
- *              </code>
+ *              ```
  *
  *              Here is an example of using an output filter to convert an array with two elements back into a Date
  *              object.
  *
- *              <code class="php">
+ *              ```php
  *              $callback = funcion($value, $key){
  *                  if(Map::is_array($value) && isset('datetime', $value) && isset('timezone', $value)){
  *                      $value = new \Hazaar\Date($value['datetime'], $value['timezone']);
@@ -71,7 +71,7 @@ namespace Hazaar;
  *                  return $value;
  *              }
  *              $map->addInputFilter($callback, '\Hazaar\Map', true);
- *              </code>
+ *              ```
  *
  *              The second parameter to the addInputFilter/addOutputFilter methods is a class condition, meaning that
  *              the callback will only be called on objects of that type (uses is_a() internally).
@@ -127,7 +127,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      *              ### Example
      *
-     *              <code class="php">
+     *              ```php
      *                $config = array('enabled' => true);
      *                $map = new Hazaar\Map(array(
      *                  'enabled' => false,
@@ -135,17 +135,19 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *                ), $config);
      *
      *                var_dump($map->toArray());
-     *              </code>
+     *              ```
      *
      *              This will output the following text:
-     *              <code class="php">
-     *              array (size=2)
+     *
+     *              ```
+     *                array (size=2)
      *                  'enabled' => boolean true
      *                  'label' => string 'Test Map' (length=8)
-     *              </code>
+     *              ```
      *
-     *              p(notice notice-info). If the input arguments are strings then the Map class will try and
-     *              figure out what kind of string is is and either convert from JSON or unserialize the string.</div>
+     *              !!! notice
+     *              If the input arguments are strings then the Map class will try and figure out what kind of string it
+     *              is and either convert from JSON or unserialize the string.
      *
      * @since       1.0.0
      *
@@ -178,15 +180,18 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
         }
 
+        if($defaults instanceof Map)
+            $filter_def = array_merge($filter_def, $defaults->filter);
+
+        if($extend instanceof Map)
+            $filter_def = array_merge($filter_def, $extend->filter);
+
         $this->filter = $filter_def;
 
         $this->populate($defaults);
 
-        if($extend) {
-
+        if($extend)
             $this->extend($extend);
-
-        }
 
     }
 
@@ -214,7 +219,8 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      *              Input filters are also applied at this point so that default elements can also be modified.
      *
-     *              <div class="notice notice-warning">This method will overwrite ALL values currently in the Map.</div>
+     *              !!! warning
+     *              This method will overwrite ALL values currently in the Map.
      *
      * @since       1.0.0
      *
@@ -432,9 +438,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      * @detail     Read will return either the value stored with the specified key, or the default value.  This is
      *              essentially same as doing:
      *
-     *              <code class="php">
+     *              ```php
      *              $value = ($map->has('key')?$map->key:$default);
-     *              </code>
+     *              ```
      *
      *              It has the added benefits however, of being more streamlined and also allowing the value to be
      *              added automatically if it doesn't exist.
@@ -965,8 +971,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *              before the element is returned here.
      *              Filters are applied/executed only for element types specified in the 'out' filter definition.
      *
-     *              p(notice notice-warning). Note that when using an output filter the value will NOT be
-     *              returned by reference meaning in-place modifications will not work.</div>
+     *              !!! warning
+     *              Note that when using an output filter the value will NOT be returned by reference meaning
+     *              in-place modifications will not work.
      *
      * @since       1.0.0
      *

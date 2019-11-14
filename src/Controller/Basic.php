@@ -25,6 +25,8 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
+    public $url_default_action_name = 'index';
+
     protected $request;
 
     protected $__action        = 'index';
@@ -37,13 +39,15 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $__cache_key     = null;
 
+    protected $__stream        = FALSE;
+
     public function cacheAction($action, $timeout = 60, $public = false) {
 
         /*
          * To cache an action the caching library has to be installed
          */
         if(!class_exists('Hazaar\Cache'))
-            throw new \Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
+            throw new \Hazaar\Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
 
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
@@ -68,7 +72,7 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         $response = null;
 
@@ -80,7 +84,7 @@ abstract class Basic extends \Hazaar\Controller {
             $response = $this->init($request);
 
             if($response === FALSE)
-                throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
 
         }
 
@@ -157,6 +161,9 @@ abstract class Basic extends \Hazaar\Controller {
 
         $response = $method->invokeArgs($this, $this->__actionArgs);
 
+        if($this->__stream)
+            return new Response\Stream($response);
+
         return $response;
 
     }
@@ -197,60 +204,46 @@ abstract class Basic extends \Hazaar\Controller {
 
     }
 
-    /**
-     * Test if a controller and action is active.
-     *
-     * @param mixed $controller
-     * @param mixed $action
-     * @return boolean
-     */
-    public function active($controller = NULL, $action = NULL) {
+    public function stream($value) {
 
-        if($controller instanceof \Hazaar\Application\Url){
+        if(! headers_sent()) {
 
-            $action = $controller->method;
+            if(count(ob_get_status()) > 0)
+                ob_end_clean();
 
-            $controller = $controller->controller;
+            header('Content-Type: application/octet-stream;charset=ISO-8859-1');
 
-        }
+            header('Content-Encoding: none');
 
-        if(is_array($controller)) {
+            header("Cache-Control: no-cache, must-revalidate");
 
-            $parts = $controller;
+            header("Pragma: no-cache");
 
-            if(count($parts) > 0)
-                $controller = array_shift($parts);
+            header('X-Accel-Buffering: no');
 
-            if(count($parts) > 0)
-                $action = array_shift($parts);
+            header('X-Response-Type: stream');
+
+            flush();
+
+            $this->__stream = TRUE;
+
+            ob_implicit_flush();
 
         }
 
-        if(! $controller)
-            $controller = '/' . $this->getName();
+        $type = 's';
 
-        $controller = '/' . trim($controller, '/');
+        if(is_array($value)){
 
-        $is_controller = strcasecmp('/' . trim(substr($this->getName(), 0, strlen($controller)), '/'), $controller) === 0;
+            $value = json_encode($value);
 
-        if(! $action)
-            return $is_controller;
-
-        $params_match = true;
-
-        if(strpos($action, '/') > 0){
-
-            $args = explode('/', $action);
-
-            $action = array_shift($args);
-
-            $params_match = (count(array_intersect_assoc($args, $this->__actionArgs)) > 0);
+            $type = 'a';
 
         }
 
-        $is_action = (strcasecmp($this->getAction(), $action) == 0);
+        echo dechex(strlen($value)) . "\0" . $type . $value;
 
-        return ($is_controller && $is_action && $params_match);
+        return TRUE;
 
     }
 

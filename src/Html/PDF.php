@@ -17,7 +17,7 @@ class PDF {
 
         if(!$this->setSource($source)) {
 
-            throw new \Exception("File not found while trying to render PDF '$source'", 404);
+            throw new \Hazaar\Exception("File not found while trying to render PDF '$source'", 404);
 
         }
 

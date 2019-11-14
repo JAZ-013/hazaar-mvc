@@ -58,7 +58,7 @@ class Smarty extends \Hazaar\Template\Smarty {
             $file = new \Hazaar\File($file);
 
         if(!$file->exists())
-            throw new \Exception('Template file not found!');
+            throw new \Hazaar\Exception('Template file not found!');
 
         $this->__source_file = $file;
 
@@ -114,7 +114,7 @@ class Smarty extends \Hazaar\Template\Smarty {
         $this->__cache_file = null;
 
         if(!$this->__source_file instanceof \Hazaar\File)
-            throw new \Exception('Template compilation failed! No source file or template content has been loaded!');
+            throw new \Hazaar\Exception('Template compilation failed! No source file or template content has been loaded!');
 
         if($this->__cache_enabled){
 

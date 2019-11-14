@@ -58,6 +58,7 @@
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
     <Compile Include="src\Controller\Response\Packer\CSS.php" />
     <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
+    <Compile Include="src\File\Backend\SharePoint.php" />
     <Compile Include="src\File\PDF.php" />
     <Compile Include="src\File\TempDir.php" />
     <Compile Include="src\File\Temp.php" />
@@ -287,7 +288,7 @@
     <Compile Include="src\Http\WebDAV\Lock\Scope\Exclusive.php" />
     <Compile Include="src\Http\WebDAV\Lock\Type\Write.php" />
     <Compile Include="src\Http\WebDAV\Property.php" />
-    <Compile Include="src\Http\WebDAV\WebDAV.php" />
+    <Compile Include="src\Http\WebDAV.php" />
     <Compile Include="src\Loader.php" />
     <Compile Include="src\Logger\Backend.php" />
     <Compile Include="src\Logger\Backend\Chain.php" />
@@ -350,9 +351,9 @@
     <Compile Include="tests\ApplicationTest.php" />
     <Compile Include="tests\bootstrap.php" />
     <Compile Include="tests\MapTest.php" />
+    <Compile Include="tests\FilesystemTest.php" />
     <Compile Include="tests\MoneyTest.php" />
     <Compile Include="tests\README.txt" />
-    <Compile Include="tests\WarlockTest.php" />
     <Compile Include=".gitignore" />
     <Compile Include=".gitlab-ci.yml" />
     <Compile Include="Hazaar MVC.sln" />
@@ -403,6 +404,7 @@
     <Folder Include="src\File\" />
     <Folder Include="src\File\Backend\" />
     <Folder Include="src\File\Backend\Exception\" />
+    <Folder Include="src\File\Backend\XML\" />
     <Folder Include="src\File\Exception\" />
     <Folder Include="src\File\Exception\WKPDF\" />
     <Folder Include="src\File\Template\" />
@@ -546,6 +548,7 @@
     <Content Include="LICENCE.md" />
     <Content Include="mkdocs.yml" />
     <Content Include="phpunit.xml" />
+    <Content Include="src\File\Backend\Xml\SAML.xml" />
     <Content Include="tests\application\configs\application.json" />
   </ItemGroup>
 </Project>
