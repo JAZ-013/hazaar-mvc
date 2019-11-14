@@ -63,7 +63,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler->loadComposerModules($this->application);
 
-        return $this->handler->exec($this, $this->request);
+        return $this->handler->exec($this, $action, $this->request);
 
     }
 

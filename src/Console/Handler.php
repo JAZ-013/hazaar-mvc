@@ -226,7 +226,6 @@ class Handler {
             }
 
         }
-
         return;
 
     }
@@ -270,38 +269,21 @@ class Handler {
 
     }
 
-    public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
-
-        $parts = array();
-
-        if($path = $request->getBasePath())
-            $parts = array_slice(explode('/', $path), 2);
-
-        if(!($module_name = array_shift($parts)))
-            $module_name = 'app';
+    public function exec(\Hazaar\Controller $controller, $module_name, \Hazaar\Application\Request $request){
 
         if(!$this->moduleExists($module_name))
             throw new \Hazaar\Exception("Console module '$module_name' does not exist!", 404);
 
-        if(!($action = array_shift($parts)))
-            $action = 'index';
-
         $module = $this->modules[$module_name];
-
-        if(!method_exists($module, $action))
-            throw new \Hazaar\Exception("Method '$action' not found on module '$module_name'", 404);
 
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
 
-        $request->setPath(implode('/', $parts));
-
         $module->setBasePath('hazaar/console');
 
-        if($action !== 'file')
-            $module->__initialize($request);
+        $module->__initialize($request);
 
-        $response = call_user_func(array($module, $action), $request);
+        $response = $module->__run();
 
         if(!$response instanceof \Hazaar\Controller\Response){
 

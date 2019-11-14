@@ -88,6 +88,12 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
+    public function active(){
+
+        return call_user_func_array(array($this->application, 'active'), array_merge(array('hazaar', 'console'), func_get_args()));
+
+    }
+
     public function file(){
 
         $file = new \Hazaar\Controller\Response\File($this->view_path . DIRECTORY_SEPARATOR . $this->request->getPath());

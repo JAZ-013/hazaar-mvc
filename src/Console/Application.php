@@ -24,7 +24,7 @@ class Application extends Module {
 
             $this->metrics = new \Hazaar\File\Metric($this->application->runtimePath('metrics.dat'));
 
-            $group->addMenuItem('Metrics', 'metrics', 'line-chart');
+            $group->addMenuItem('Metrics', 'metrics', 'chart-line');
 
         }
 
@@ -36,7 +36,7 @@ class Application extends Module {
 
     }
 
-    public function index($request){
+    public function index(){
 
         $this->view('index');
 
@@ -66,7 +66,7 @@ class Application extends Module {
 
     }
 
-    public function metrics($request){
+    public function metrics(){
 
         if(!$this->metrics instanceof \Hazaar\File\Metric)
             throw new \Exception('Metrics are not enabled!', 501);
@@ -79,7 +79,7 @@ class Application extends Module {
 
     }
 
-    public function graphs($request) {
+    public function graphs() {
 
         if(!$this->metrics instanceof \Hazaar\File\Metric)
             throw new \Exception('Metrics are not enabled!', 501);
@@ -152,25 +152,25 @@ class Application extends Module {
 
     }
 
-    public function stats($request){
+    public function stats(){
 
         if(!$this->metrics instanceof \Hazaar\File\Metric)
             throw new \Exception('Metrics are not enabled!', 501);
 
-        if(!$request->isPost())
+        if(!$this->request->isPost())
             throw new \Exception('Method not allowed!', 405);
 
-        if(!$request->has('name'))
+        if(!$this->request->has('name'))
             throw new \Exception('No datasource name', 400);
 
-        if(!$request->has('archive'))
+        if(!$this->request->has('archive'))
             throw new \Exception('No archive name', 400);
 
-        if(($result = $this->metrics->graph($request->name, $request->archive)) === false)
+        if(($result = $this->metrics->graph($this->request->name, $this->request->archive)) === false)
             throw new \Exception('No data!', 204);
 
-        if($request->has('args'))
-            $result['args'] = $request->args;
+        if($this->request->has('args'))
+            $result['args'] = $this->request->args;
 
         $ticks = array();
 
@@ -183,7 +183,7 @@ class Application extends Module {
 
     }
 
-    public function models($request){
+    public function models(){
 
         $this->view('application/models');
 
@@ -202,7 +202,7 @@ class Application extends Module {
 
     }
 
-    public function views($request){
+    public function views(){
 
         $this->view('application/views');
 
@@ -220,7 +220,7 @@ class Application extends Module {
 
     }
 
-    public function controllers($request){
+    public function controllers(){
 
         $this->view('application/controllers');
 
@@ -239,15 +239,15 @@ class Application extends Module {
 
     }
 
-    public function config($request){
+    public function config(){
 
         \Hazaar\Application\Config::$override_paths = null;
 
-        $config = new \Hazaar\Application\Config('application', $request->get('env', APPLICATION_ENV));
+        $config = new \Hazaar\Application\Config('application', $this->request->get('env', APPLICATION_ENV));
 
-        if($request->isPost()){
+        if($this->request->isPost()){
 
-            if($config->fromJSON($request->config)){
+            if($config->fromJSON($this->request->config)){
 
                 if($config->write())
                     $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
@@ -257,7 +257,7 @@ class Application extends Module {
             }else
                 $this->notice('Invalid JSON.  Please fix and try again!', 'exclamation-triangle', 'warning');
 
-            $data = $request->config;
+            $data = $this->request->config;
 
         }else
             $data = json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT);
@@ -275,13 +275,13 @@ class Application extends Module {
 
     }
 
-    public function encrypt($request){
+    public function encrypt(){
 
-        if($request->isXMLHttpRequest()){
+        if($this->request->isXMLHTTPRequest()){
 
-            if($request->has('encrypt')){
+            if($this->request->has('encrypt')){
 
-                if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $request->encrypt)))
+                if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $this->request->encrypt)))
                     throw new \Hazaar\Exception('Config file not found!', 404);
 
                 $file = new \Hazaar\File($filename);
@@ -334,8 +334,10 @@ class Application extends Module {
 
     }
 
-    public function cache($request){
+    public function cache(){
 
+        $this->view('cache/settings');
+        
     }
 
 }
