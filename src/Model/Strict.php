@@ -1125,12 +1125,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 2.0.0
      */
-    public function export($ignore_empty = false, $export_all = false, $obj = null){
+    public function exportHMV($ignore_empty = false, $export_all = false, $obj = null){
 
         if(!$obj)
             $obj = new \Hazaar\Map($this->toArray(false, 0, $export_all));
 
-        return $this->exportArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
+        return $this->exportHMVArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
 
     }
 
@@ -1145,7 +1145,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 2.0.0
      */
-    private function exportArray($array, $def, $hide_empty = false, $export_all = false, $object = null){
+    private function exportHMVArray($array, $def, $hide_empty = false, $export_all = false, $object = null){
 
         if(!is_array($array))
             return null;
@@ -1196,7 +1196,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 }else{
 
-                    $values[$key]['items'] = $value->export($hide_empty, $export_all, $object);
+                    $values[$key]['items'] = $value->exportHMV($hide_empty, $export_all, $object);
 
                 }
 
@@ -1222,7 +1222,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }else{
 
-                            $values[$key]['collection'][] = $subValue->export($hide_empty, $export_all, $object);
+                            $values[$key]['collection'][] = $subValue->exportHMV($hide_empty, $export_all, $object);
 
                         }
 
@@ -1230,7 +1230,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         $subDef = $key_def;
 
-                        $values[$key]['collection'][] = $this->exportArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
+                        $values[$key]['collection'][] = $this->exportHMVArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
 
                     }else{
 
