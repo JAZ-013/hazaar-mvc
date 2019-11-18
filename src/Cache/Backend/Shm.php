@@ -172,7 +172,15 @@ class Shm extends \Hazaar\Cache\Backend {
 
     public function clear() {
 
-        return shm_remove($this->shm);
+        if(shm_remove($this->shm)){
+
+            $this->index = array();
+
+            return true;
+
+        }
+
+        return false;
 
     }
 
