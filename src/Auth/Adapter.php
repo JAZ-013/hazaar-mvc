@@ -323,7 +323,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                      */
                     $data = http_build_query(array(
                         'identity' => $identity,
-                        'hash' => hash($this->options->autologin['hash'], $auth['credential'] . $identity)
+                        'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
                     ));
 
                     $cookie = $this->getAutologinCookieName();
@@ -380,29 +380,33 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
              */
             $cookie_name = $this->getAutologinCookieName();
 
-            $cookie = array_unflatten(ake($_COOKIE, $cookie_name, array()), '=', '&');
+            parse_str(ake($_COOKIE, $cookie_name, ''), $cookie);
 
-            if($identity = urldecode(ake($cookie, 'identity')))
-                $this->setIdentity($identity);
+            if($cookie){
 
-            if($auth = $this->queryAuth($identity, $this->extra)) {
+                if($identity = urldecode(ake($cookie, 'identity')))
+                    $this->setIdentity($identity);
 
-                $hash = hash($this->options->autologin['hash'], $auth['credential'] . $identity);
+                if($auth = $this->queryAuth($identity, $this->extra)) {
 
-                /*
-                 * Check the cookie credentials against the ones we just got from the adapter
-                 */
-                if($identity === $auth['identity']
-                    && $hash === ake($cookie, 'hash')) {
+                    $hash = hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
 
-                    if(array_key_exists('data', $auth))
-                        $this->session->setValues($auth['data']);
+                    /*
+                    * Check the cookie credentials against the ones we just got from the adapter
+                    */
+                    if($identity === $auth['identity']
+                        && $hash === ake($cookie, 'hash')) {
 
-                    $this->session->hazaar_auth_identity = $identity;
+                        if(array_key_exists('data', $auth))
+                            $this->session->setValues($auth['data']);
 
-                    $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
+                        $this->session->hazaar_auth_identity = $identity;
 
-                    return TRUE;
+                        $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
+
+                        return TRUE;
+
+                    }else setcookie($cookie_name, NULL, 0, \Hazaar\Application::path());
 
                 }
 
