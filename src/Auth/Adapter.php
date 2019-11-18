@@ -406,7 +406,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
                         return TRUE;
 
-                    }else setcookie($cookie_name, NULL, 0, \Hazaar\Application::path());
+                    }else $this->deauth();
 
                 }
 
@@ -450,7 +450,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     public function deauth() {
 
-        $this->session->clear(TRUE);
+        $this->session->clear(true);
 
         $cookie = $this->getAutologinCookieName();
 

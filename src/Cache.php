@@ -241,12 +241,17 @@ class Cache implements \ArrayAccess {
                     $value = array_merge_recursive($c, $value);
 
                 $this->set($key, $value);
+
             } else {
 
                 $this->set($key, $value);
+
             }
+
         }
 
+        return true;
+        
     }
 
     public function clear() {

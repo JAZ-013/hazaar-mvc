@@ -24,6 +24,8 @@ class Session extends \Hazaar\Cache {
 
     private $session_id;
 
+    private $session_init = false;
+
     public function __construct($options = array(), $backend = null) {
 
         $options = new \Hazaar\Map(array(
@@ -34,13 +36,9 @@ class Session extends \Hazaar\Cache {
         if($options->has('session_name'))
             $this->session_name = $options->get('session_name');
 
-        if(!($this->session_id = ake($_COOKIE, $this->session_name))){
-
+        if(!($this->session_id = ake($_COOKIE, $this->session_name)))
             $this->session_id =  $options->has('session_id') ? $options->get('session_id') : hash($options->get('hash_algorithm'), uniqid());
-        
-            setcookie($this->session_name, $this->session_id, 0, APPLICATION_BASE);
-
-        }
+        else $this->session_init = true;
 
         $options->use_pragma = false;
 
@@ -59,12 +57,26 @@ class Session extends \Hazaar\Cache {
 
     }
 
+    public function set($key, $value, $timeout = NULL) {
+
+        if($this->session_init !== true){
+
+            setcookie($this->session_name, $this->session_id, 0,  \Hazaar\Application::path());
+
+            $this->session_init = true;
+
+        }
+
+        return parent::set($key, $value, $timeout);
+
+    }
+
     public function clear(){
 
         if(!parent::clear())
             return false;
 
-        setcookie($this->session_name, null, 0, APPLICATION_BASE);
+        setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
 
         return true;
 
