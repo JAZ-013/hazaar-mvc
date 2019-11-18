@@ -20,29 +20,25 @@ namespace Hazaar;
  */
 class Session extends \Hazaar\Cache {
 
-    static public  $SESSION_NAME = 'hazaar-session';
+    private $session_name = 'hazaar-session';
 
-    static private $session_id;
+    private $session_id;
 
     public function __construct($options = array(), $backend = null) {
 
         $options = new \Hazaar\Map(array(
-                'hash_algorithm' => 'ripemd128'
+                'hash_algorithm' => 'ripemd128',
+                'session_name' => 'hazaar-session'
         ), $options);
 
-        if($options->has('session_id'))
-            Session::$session_id = $options->get('session_id');
+        if($options->has('session_name'))
+            $this->session_name = $options->get('session_name');
 
-        $hash = hash($options->get('hash_algorithm'), Session::$session_id
-            . ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
-                . '-' . ake($_SERVER, 'HTTP_USER_AGENT') 
-                . '-' . APPLICATION_BASE);
+        if(!($this->session_id = ake($_COOKIE, $this->session_name))){
 
-        if((Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME)) !== $hash){
-
-            Session::$session_id = $hash;
-
-            setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
+            $this->session_id =  $options->has('session_id') ? $options->get('session_id') : hash($options->get('hash_algorithm'), uniqid());
+        
+            setcookie($this->session_name, $this->session_id, 0, APPLICATION_BASE);
 
         }
 
@@ -56,10 +52,21 @@ class Session extends \Hazaar\Cache {
             && !$app->config->cache->has('backend'))
             $backend = array('apc', 'session');
 
-        parent::__construct($backend, $options, Session::$session_id);
+        parent::__construct($backend, $options, $this->session_id);
 
         if(!$this->backend->can('keepalive'))
             throw new \Exception('The currently selected cache backend, ' . get_class($this->backend) . ', does not support the keepalive feature which is required by the ' . __CLASS__ . ' class.  Please choose a caching backend that supports the keepalive feature.');
+
+    }
+
+    public function clear(){
+
+        if(!parent::clear())
+            return false;
+
+        setcookie($this->session_name, null, 0, APPLICATION_BASE);
+
+        return true;
 
     }
 

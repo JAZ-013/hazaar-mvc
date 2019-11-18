@@ -111,7 +111,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                 'use_identity' => false
             ),
             'autologin' => array(
-                'cookie' => 'siteAuth',
+                'cookie' => 'hazaar-auth-autologin',
                 'period' => 1,
                 'hash'  => 'md5'
             ),
@@ -125,7 +125,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
         $cache_config = new \Hazaar\Map(array(
             'use_pragma' => FALSE,
             'lifetime' => $this->options->timeout,
-            'session_id' => 'hazaar-auth'
+            'session_name' => 'hazaar-auth'
         ), $cache_config);
 
         if($cache_backend instanceof \Hazaar\Cache){
@@ -148,6 +148,13 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             && $this->session->has('hazaar_auth_token')
             && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token)
             $this->identity = $this->session->hazaar_auth_identity;
+
+        if($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')){
+
+            if(hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity)) !== $this->session->hazaar_auth_token)
+                $this->deauth();
+            
+        }
 
     }
 
@@ -226,6 +233,14 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
+    private function getIdentifier($identity){
+
+        return hash('crc32b', $identity)
+         . ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
+         . ake($_SERVER, 'HTTP_USER_AGENT');
+
+    }
+
     public function setDataFields(array $fields) {
 
         $this->extra = $fields;
@@ -296,7 +311,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
                 $this->session->hazaar_auth_identity = $identity;
 
-                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $identity);
+                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
                 if(boolify($autologin) && $this->options->autologin['period'] > 0) {
 
@@ -306,16 +321,16 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                      * stored encrypted and the developer should re-think their auth strategy but
                      * we offer some minor protection from that stupidity here.
                      */
-                    $data = array(
+                    $data = http_build_query(array(
                         'identity' => $identity,
                         'hash' => hash($this->options->autologin['hash'], $auth['credential'] . $identity)
-                    );
+                    ));
 
                     $cookie = $this->getAutologinCookieName();
 
                     $timeout = (86400 * $this->options->autologin['period']);
 
-                    setcookie($cookie, http_build_query($data), time() + $timeout, \Hazaar\Application::path());
+                    setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path());
 
                 }
 
@@ -339,7 +354,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         if($this->session->has('hazaar_auth_identity')
             && $this->session->has('hazaar_auth_token')
-            && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token) {
+            && hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
 
             return true;
 
@@ -367,24 +382,25 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
             $cookie = array_unflatten(ake($_COOKIE, $cookie_name, array()), '=', '&');
 
-            $identity = urldecode(ake($cookie, 'identity'));
-
-            $hash = ake($cookie, 'hash');
+            if($identity = urldecode(ake($cookie, 'identity')))
+                $this->setIdentity($identity);
 
             if($auth = $this->queryAuth($identity, $this->extra)) {
+
+                $hash = hash($this->options->autologin['hash'], $auth['credential'] . $identity);
 
                 /*
                  * Check the cookie credentials against the ones we just got from the adapter
                  */
-                if($identity == $auth['identity']
-                    && $hash == hash($this->options->autologin['hash'], $auth['credential'] . $identity)) {
+                if($identity === $auth['identity']
+                    && $hash === ake($cookie, 'hash')) {
 
                     if(array_key_exists('data', $auth))
                         $this->session->setValues($auth['data']);
 
                     $this->session->hazaar_auth_identity = $identity;
 
-                    $this->session->hazaar_auth_token = hash($this->options->token['hash'], $identity);
+                    $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
                     return TRUE;
 
