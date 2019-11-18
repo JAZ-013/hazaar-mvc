@@ -119,13 +119,16 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                 'hash' => 'md5'
             ),
             'timeout' => 3600,
-            'cache_backend' => 'session'
+            'cache' => array(
+                'backend' => 'session',
+                'session_name' => 'hazaar-auth'
+            )
         ), \Hazaar\Application::getInstance()->config['auth']);
 
         $cache_config = new \Hazaar\Map(array(
             'use_pragma' => FALSE,
             'lifetime' => $this->options->timeout,
-            'session_name' => 'hazaar-auth'
+            'session_name' => $this->options->cache['session_name']
         ), $cache_config);
 
         if($cache_backend instanceof \Hazaar\Cache){
@@ -134,13 +137,13 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
             $this->session = $cache_backend;
 
-        }elseif($this->options->cache_backend === 'session'){
+        }elseif($this->options->cache['backend'] === 'session'){
 
             $this->session = new \Hazaar\Session($cache_config);
         
         }else{
 
-            $this->session = new \Hazaar\Cache($this->options->cache_backend, $cache_config);
+            $this->session = new \Hazaar\Cache($this->options->cache['backend'], $cache_config);
 
         }
         
