@@ -115,7 +115,7 @@ class Cache implements \ArrayAccess {
 
     }
 
-    protected function configure($options) {
+    public function configure($options) {
 
         $this->options->enhance($options);
 

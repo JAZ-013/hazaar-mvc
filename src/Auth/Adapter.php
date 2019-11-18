@@ -122,30 +122,28 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             'cache_backend' => 'session'
         ), \Hazaar\Application::getInstance()->config['auth']);
 
+        $cache_config = new \Hazaar\Map(array(
+            'use_pragma' => FALSE,
+            'lifetime' => $this->options->timeout,
+            'session_id' => 'hazaar-auth'
+        ), $cache_config);
+
         if($cache_backend instanceof \Hazaar\Cache){
+
+            $cache_backend->configure($cache_config);
 
             $this->session = $cache_backend;
 
         }elseif($this->options->cache_backend === 'session'){
 
-            $cache_config = new \Hazaar\Map(array(
-                'use_pragma' => FALSE,
-                'lifetime' => $this->options->timeout
-            ), $cache_config);
-
             $this->session = new \Hazaar\Session($cache_config);
-
+        
         }else{
 
-            $cache_config = new \Hazaar\Map(array(
-                'use_pragma' => FALSE,
-                'lifetime' => $this->options->timeout
-            ), $cache_config);
-
             $this->session = new \Hazaar\Cache($this->options->cache_backend, $cache_config);
-            
-        }
 
+        }
+        
         if($this->session->has('hazaar_auth_identity')
             && $this->session->has('hazaar_auth_token')
             && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token)
