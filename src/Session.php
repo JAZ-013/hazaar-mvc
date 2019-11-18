@@ -30,23 +30,19 @@ class Session extends \Hazaar\Cache {
                 'hash_algorithm' => 'ripemd128'
         ), $options);
 
-        if($options->has('session_id')){
-
+        if($options->has('session_id'))
             Session::$session_id = $options->get('session_id');
 
-        }else{
+        $hash = hash($options->get('hash_algorithm'), Session::$session_id
+            . ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
+                . '-' . ake($_SERVER, 'HTTP_USER_AGENT') 
+                . '-' . APPLICATION_BASE);
 
-            $hash = hash($options->get('hash_algorithm'), ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
-                 . '-' . ake($_SERVER, 'HTTP_USER_AGENT') 
-                 . '-' . APPLICATION_BASE);
+        if((Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME)) !== $hash){
 
-            if((Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME)) !== $hash){
+            Session::$session_id = $hash;
 
-                Session::$session_id = $hash;
-
-                setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
-
-            }
+            setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
 
         }
 
