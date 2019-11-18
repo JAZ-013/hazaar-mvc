@@ -24,27 +24,29 @@ class Session extends \Hazaar\Cache {
 
     static private $session_id;
 
-    public function __construct($options = array(), $backend = 'session') {
+    public function __construct($options = array(), $backend = null) {
 
-        if(!$options instanceof \Hazaar\Map){
+        $options = new \Hazaar\Map(array(
+                'hash_algorithm' => 'ripemd128'
+        ), $options);
 
-            if(!is_array($options))
-                $options = array();
+        if($options->has('session_id')){
 
-            $options = new \Hazaar\Map($options);
+            Session::$session_id = $options->get('session_id');
 
-        }
+        }else{
 
-        if($options->has('session_id'))
-            Session::$session_id = $options->session_id;
-        else
-            Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME, Session::$session_id);
+            $hash = hash($options->get('hash_algorithm'), ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
+                 . '-' . ake($_SERVER, 'HTTP_USER_AGENT') 
+                 . '-' . APPLICATION_BASE);
 
-        if(! Session::$session_id) {
+            if((Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME)) !== $hash){
 
-            Session::$session_id = md5(uniqid());
+                Session::$session_id = $hash;
 
-            setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
+                setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
+
+            }
 
         }
 
@@ -53,7 +55,7 @@ class Session extends \Hazaar\Cache {
         $options->keepalive = true;
 
         //If there is no backend requested, and none configured, use SESSION
-        if ($backend === NULL
+        if($backend === NULL
             && ($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application
             && !$app->config->cache->has('backend'))
             $backend = array('apc', 'session');
