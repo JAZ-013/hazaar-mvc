@@ -183,7 +183,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return NULL;
 
-        if(is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']))
+        if(array_key_exists('resourcetype', $info) && is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']))
             return TRUE;
 
         return FALSE;
@@ -253,7 +253,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function filesize($path) {
 
-        if(!($info = $this->info($path)) || $info['scanned'] === false)
+        if(!($info = $this->info($path)))
             return NULL;
 
         if($this->is_dir($path))
