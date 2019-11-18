@@ -107,7 +107,8 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             'encryption' => array(
                 'hash' => 'sha1',
                 'count' => 1,
-                'salt' => ''
+                'salt' => '',
+                'use_identity' => false
             ),
             'autologin' => array(
                 'cookie' => 'siteAuth',
@@ -192,6 +193,9 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             return $credential;
 
         $hash = false;
+
+        if($this->options->encryption['use_identity'] === true)
+            $credential =  $this->identity . ':' . $credential;
 
         $count = $this->options->encryption['count'];
 
