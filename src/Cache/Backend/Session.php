@@ -160,7 +160,7 @@ class Session extends \Hazaar\Cache\Backend {
 
             $expire = ake($this->values[$key], 'expire');
 
-            if ($expire && $expire < time())
+            if ($expire !== null && $expire < time())
                 unset($this->values[$key]);
 
             else
@@ -272,7 +272,7 @@ class Session extends \Hazaar\Cache\Backend {
 
         foreach($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item){
 
-            if(ake($item, 'expire') <= time()){
+            if(array_key_exists('expire', $item) && $item['expire'] <= time()){
 
                 unset($_SESSION[APPLICATION_BASE][$this->namespace][$key]);
 
