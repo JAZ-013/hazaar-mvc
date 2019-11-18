@@ -41,7 +41,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
         $this->namespace = $namespace;
 
-        $this->addCapabilities('store_objects');
+        $this->addCapabilities('store_objects', 'keepalive', 'array');
 
         $shm_index = shm_attach(1);
 
@@ -89,16 +89,45 @@ class Shm extends \Hazaar\Cache\Backend {
         if(!($index = array_search($key, $this->index)))
             return false;
 
-        return shm_has_var($this->shm, $index);
+        if(!shm_has_var($this->shm, $index))
+            return false;
+
+        $info = shm_get_var($this->shm, $index);
+
+        if(array_key_exists('expire', $info) && $info['expire'] < time())
+            return false;
+
+        return $info['data'];
+
+    }
+
+    private function info($index){
+
+        $info = shm_get_var($this->shm, $index);
+
+        if(array_key_exists('expire', $info)){
+
+            if($info['expire'] < time())
+                return false;
+
+            $info['expire'] = time() + $info['timeout'];
+
+            shm_put_var($this->shm, $index, $info);
+
+        }
+
+        return $info;
 
     }
 
     public function get($key) {
 
-        if(!($index = array_search($key, $this->index)))
-            return false;
+            if(!($index = array_search($key, $this->index)))
+                return false;
 
-        return shm_get_var($this->shm, $index);
+        $info = $this->info($index);
+
+        return $info['data'];
 
     }
 
@@ -114,7 +143,17 @@ class Shm extends \Hazaar\Cache\Backend {
 
         }
 
-        return shm_put_var($this->shm, $index, $value);
+        $info = array('data' => $value);
+
+        if($timeout !== null){
+
+            $info['timeout'] = $timeout;
+
+            $info['expire'] = time() + $timeout;
+
+        }
+
+        return shm_put_var($this->shm, $index, $info);
 
     }
 
@@ -135,6 +174,21 @@ class Shm extends \Hazaar\Cache\Backend {
 
         return shm_remove($this->shm);
 
+    }
+
+    public function toArray(){
+
+        $array = array();
+
+        foreach($this->index as $index =>  $key){
+
+            if($info = $this->info($index))
+                $array[$key] = $info['data'];
+
+        }
+
+        return $array;
+        
     }
 
 }
