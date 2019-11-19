@@ -345,7 +345,7 @@ class Client {
 
     public function setCookie($cookie){
 
-        if(is_array($cookie)){
+        if(\Hazaar\Map::is_array($cookie)){
 
             $cookies = array();
 
