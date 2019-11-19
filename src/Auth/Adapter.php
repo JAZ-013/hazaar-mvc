@@ -113,22 +113,22 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             'autologin' => array(
                 'cookie' => 'hazaar-auth-autologin',
                 'period' => 1,
-                'hash'  => 'md5'
+                'hash'  => 'sha1'
             ),
             'token' => array(
-                'hash' => 'md5'
+                'hash' => 'sha1'
             ),
             'timeout' => 3600,
             'cache' => array(
                 'backend' => 'session',
-                'session_name' => 'hazaar-auth'
+                'cookie' => 'hazaar-auth'
             )
         ), \Hazaar\Application::getInstance()->config['auth']);
 
         $cache_config = new \Hazaar\Map(array(
             'use_pragma' => FALSE,
             'lifetime' => $this->options->timeout,
-            'session_name' => $this->options->cache['session_name']
+            'session_name' => $this->options->cache['cookie']
         ), $cache_config);
 
         if($cache_backend instanceof \Hazaar\Cache){
@@ -238,9 +238,10 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     private function getIdentifier($identity){
 
-        return hash('crc32b', $identity)
-         . ake($_SERVER, 'HTTP_X_FORWARDED_FOR', $_SERVER['REMOTE_ADDR'])
-         . ake($_SERVER, 'HTTP_USER_AGENT');
+        return hash('sha1', $identity)
+            . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
+            . (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '')
+            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua');
 
     }
 
