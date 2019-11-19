@@ -8,10 +8,9 @@ class FilesystemTest extends \PHPUnit\Framework\TestCase {
 
         $file = new \Hazaar\File\Temp();
 
+        $file->put_contents('test');
+
         $this->assertTrue($file->exists());
-
-        $this->assertTrue($file->touch());
-
 
     }
 
