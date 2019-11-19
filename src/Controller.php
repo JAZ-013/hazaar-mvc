@@ -161,7 +161,7 @@ abstract class Controller {
 
         $this_parts = explode('/', $this->name);
 
-        if($this_parts[count($this_parts)-1] === $this->url_default_action_name)
+        if(count($parts) === 0 && $this_parts[count($this_parts)-1] === $this->url_default_action_name)
             array_pop($this_parts);
 
         call_user_func_array(array($url, '__construct'), array_merge($this_parts, $parts));

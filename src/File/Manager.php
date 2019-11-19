@@ -131,8 +131,10 @@ class Manager {
      * Loads a Manager class by name as configured in media.json config
      *
      * @param mixed $name The name of the media source to load
+     *
+     * @param array $options Extra options to override configured options
      */
-    static public function select($name){
+    static public function select($name, $options = null){
 
         $config = new \Hazaar\Application\Config('media');
 
@@ -140,6 +142,9 @@ class Manager {
             return false;
 
         $source = new \Hazaar\Map(\Hazaar\File\Manager::$default_config, $config->get($name));
+
+        if($options !== null)
+            $source->options->extend($options);
 
         $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
 
@@ -274,7 +279,12 @@ class Manager {
      */
     public function get($path) {
 
-        return new \Hazaar\File('/' . ltrim($path, '/ '), $this->backend, $this);
+        $path = $this->fixPath($path);
+
+        if($this->backend->is_dir($path))
+            return new Dir($path, $this->backend, $this);
+
+        return new \Hazaar\File($path, $this->backend, $this);
 
     }
 

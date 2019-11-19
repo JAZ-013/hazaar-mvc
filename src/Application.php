@@ -646,6 +646,9 @@ class Application {
              */
             $this->response = $controller->__run();
 
+            if(!$this->response->hasController())
+                $this->response->setController($controller);
+
             /*
              * The run method should have returned a response object that we can output to the client
              */

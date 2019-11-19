@@ -149,14 +149,12 @@ class WebDAV extends \Hazaar\Http\Client {
 
     public function path($url) {
 
-        $pos = strpos($this->settings->baseuri, '/', 7);
+        $expr = '/^' . preg_quote(trim($this->settings->baseuri, '/'), '/') . '\/(.*)/';
 
-        $basepath = (($pos > 0) ? substr($this->settings->baseuri, $pos) : '/');
+        if(preg_match($expr, $url, $matches))
+            return '/' . trim($matches[1], '/');
 
-        if(substr($url, 0, strlen($basepath)) == $basepath)
-            return substr($url, strlen($basepath));
-
-        return FALSE;
+        return false;
 
     }
 
