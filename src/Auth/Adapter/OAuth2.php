@@ -54,7 +54,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function discover($uri){
 
-        $key = md5($uri);
+        $key = hash('sha1', $uri);
 
         if(!$this->session->has('oauth2_metadata'))
             $this->session->oauth2_metadata = array();
@@ -261,7 +261,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }else{
 
-            $this->session->state = md5(uniqid());
+            $this->session->state = hash('sha1', uniqid());
 
             $this->session->redirect_uri = $this->getRedirectUri();
 
