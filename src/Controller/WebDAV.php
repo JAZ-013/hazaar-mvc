@@ -25,7 +25,8 @@ abstract class WebDAV extends Basic {
         'PROPFIND',
         'PROPPATCH',
         'COPY',
-        'MOVE'
+        'MOVE',
+        'LOCK'
     );
 
     protected $manager;
@@ -34,7 +35,8 @@ abstract class WebDAV extends Basic {
 
         parent::__initialize($request);
 
-        $this->manager = \Hazaar\File\Manager::select($this->__action);
+        if(($this->manager = \Hazaar\File\Manager::select($this->__action)) === false)
+            throw new \Exception('Unknown media source!', 404);
 
     }
 
@@ -161,6 +163,48 @@ abstract class WebDAV extends Basic {
         $propstat->add('D:status', ($object->exists() ? 'HTTP/1.1 200 OK' : 'HTTP/1.1 404 Not Found'));
 
         return $response;
+
+    }
+
+    public function proppatch(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function lock(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function post(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function copy(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function move(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function delete(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
+
+    }
+
+    public function trace(){
+
+        throw new \Exception(__METHOD__ . ' not currently implemented!', 403);
 
     }
 

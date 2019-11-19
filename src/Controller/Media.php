@@ -64,7 +64,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     private function loadSources($config, $connector, $names = array()) {
 
-        if(! is_array($names))
+        if(!is_array($names))
             $names = array($names);
 
         foreach($config as $id => $source) {
@@ -143,7 +143,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $source = $this->connector->source($source_name);
 
-        if(! $source)
+        if(!$source)
             throw new \Hazaar\Exception("Media source '$source_name' is unknown!", 404);
 
         if(!$this->config->has($source->name))
@@ -163,7 +163,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $this->object = $source->get($target);
 
-        if(! $this->object->exists())
+        if(!$this->object->exists())
             throw new \Hazaar\Exception('File not found!', 404);
 
         $params = $this->request->getParams();
@@ -296,7 +296,7 @@ class Media extends \Hazaar\Controller\WebDAV {
                         case 'application/pdf':
                         case 'image/svg+xml':
 
-                            if(! in_array('imagick', get_loaded_extensions()))
+                            if(!in_array('imagick', get_loaded_extensions()))
                                 throw new \Hazaar\Exception('Not supported', 406);
 
                             $temp_dir = $this->application->runtimePath('temp', TRUE);
@@ -404,7 +404,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $reflection = new \ReflectionClass($connector);
 
-        if(! $reflection->hasMethod($cmd))
+        if(!$reflection->hasMethod($cmd))
             throw new \Hazaar\Exception('Bad request');
 
         unset($this->request->cmd);
@@ -439,4 +439,5 @@ class Media extends \Hazaar\Controller\WebDAV {
         return $response;
 
     }
+
 }
