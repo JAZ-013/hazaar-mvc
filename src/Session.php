@@ -20,48 +20,65 @@ namespace Hazaar;
  */
 class Session extends \Hazaar\Cache {
 
-    static public  $SESSION_NAME = 'hazaar-session';
+    private $session_name = 'hazaar-session';
 
-    static private $session_id;
+    private $session_id;
 
-    public function __construct($options = array(), $backend = 'session') {
+    private $session_init = false;
 
-        if(!$options instanceof \Hazaar\Map){
+    public function __construct($options = array(), $backend = null) {
 
-            if(!is_array($options))
-                $options = array();
+        $options = new \Hazaar\Map(array(
+                'hash_algorithm' => 'ripemd128',
+                'session_name' => 'hazaar-session'
+        ), $options);
 
-            $options = new \Hazaar\Map($options);
+        if($options->has('session_name'))
+            $this->session_name = $options->get('session_name');
 
-        }
-
-        if($options->has('session_id'))
-            Session::$session_id = $options->session_id;
-        else
-            Session::$session_id = ake($_COOKIE, Session::$SESSION_NAME, Session::$session_id);
-
-        if(! Session::$session_id) {
-
-            Session::$session_id = md5(uniqid());
-
-            setcookie(Session::$SESSION_NAME, Session::$session_id, 0, APPLICATION_BASE);
-
-        }
+        if(!($this->session_id = ake($_COOKIE, $this->session_name)))
+            $this->session_id =  $options->has('session_id') ? $options->get('session_id') : hash($options->get('hash_algorithm'), uniqid());
+        else $this->session_init = true;
 
         $options->use_pragma = false;
 
         $options->keepalive = true;
 
         //If there is no backend requested, and none configured, use SESSION
-        if ($backend === NULL
+        if($backend === NULL
             && ($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application
             && !$app->config->cache->has('backend'))
             $backend = array('apc', 'session');
 
-        parent::__construct($backend, $options, Session::$session_id);
+        parent::__construct($backend, $options, $this->session_id);
 
         if(!$this->backend->can('keepalive'))
             throw new \Exception('The currently selected cache backend, ' . get_class($this->backend) . ', does not support the keepalive feature which is required by the ' . __CLASS__ . ' class.  Please choose a caching backend that supports the keepalive feature.');
+
+    }
+
+    public function set($key, $value, $timeout = NULL) {
+
+        if($this->session_init !== true){
+
+            setcookie($this->session_name, $this->session_id, 0,  \Hazaar\Application::path());
+
+            $this->session_init = true;
+
+        }
+
+        return parent::set($key, $value, $timeout);
+
+    }
+
+    public function clear(){
+
+        if(!parent::clear())
+            return false;
+
+        setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
+
+        return true;
 
     }
 

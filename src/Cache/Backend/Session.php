@@ -160,7 +160,7 @@ class Session extends \Hazaar\Cache\Backend {
 
             $expire = ake($this->values[$key], 'expire');
 
-            if ($expire && $expire < time())
+            if ($expire !== null && $expire < time())
                 unset($this->values[$key]);
 
             else
@@ -242,7 +242,8 @@ class Session extends \Hazaar\Cache\Backend {
 
             $params = session_get_cookie_params();
 
-            setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+            setcookie(session_name(), null, time() - 3600, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+
         }
 
         session_destroy();
@@ -253,16 +254,16 @@ class Session extends \Hazaar\Cache\Backend {
 
         $_SESSION[APPLICATION_BASE][$this->namespace] = array();
 
+        return true;
+
     }
 
     public function extend() {
 
         $args = func_get_args();
 
-        foreach($args as $arg) {
-
+        foreach($args as $arg)
             $_SESSION[APPLICATION_BASE][$this->namespace] = array_merge($_SESSION[APPLICATION_BASE][$this->namespace], $arg);
-        }
 
     }
 
@@ -272,7 +273,7 @@ class Session extends \Hazaar\Cache\Backend {
 
         foreach($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item){
 
-            if(ake($item, 'expire') <= time()){
+            if(array_key_exists('expire', $item) && $item['expire'] <= time()){
 
                 unset($_SESSION[APPLICATION_BASE][$this->namespace][$key]);
 
