@@ -236,7 +236,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    private function getIdentifier($identity){
+    protected function getIdentifier($identity){
 
         return hash('sha1', $identity)
             . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
@@ -245,7 +245,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    public function setDataFields(array $fields) {
+    protected function setDataFields(array $fields) {
 
         $this->extra = $fields;
 
@@ -483,7 +483,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    private function canAutoLogin() {
+    protected function canAutoLogin() {
 
         $cookie = $this->getAutologinCookieName();
 
@@ -491,7 +491,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    private function getAutologinCookieName() {
+    protected function getAutologinCookieName() {
 
         return $this->options['autologin']['cookie'];
 
