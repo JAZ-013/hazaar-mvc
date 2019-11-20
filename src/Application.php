@@ -197,14 +197,6 @@ class Application {
          */
         $this->loader->addSearchPaths($this->config->get('paths'));
 
-        if(!defined('RUNTIME_PATH')){
-
-            define('RUNTIME_PATH', $this->runtimePath(null, true));
-
-            $this->GLOBALS['runtime'] = RUNTIME_PATH;
-
-        }
-
         /*
          * Create a new router object for evaluating routes
          */
@@ -547,6 +539,14 @@ class Application {
             throw new Application\Exception\RouteNotFound($this->request->getPath());
 
         if($this->router->getController() !== 'hazaar') {
+
+            if(!defined('RUNTIME_PATH')){
+
+                define('RUNTIME_PATH', $this->runtimePath(null, true));
+    
+                $this->GLOBALS['runtime'] = RUNTIME_PATH;
+    
+            }
 
             /*
              * Check that all required modules are loaded
