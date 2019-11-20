@@ -325,10 +325,10 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                      * stored encrypted and the developer should re-think their auth strategy but
                      * we offer some minor protection from that stupidity here.
                      */
-                    $data = http_build_query(array(
+                    $data = base64_encode(http_build_query(array(
                         'identity' => $identity,
                         'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
-                    ));
+                    )));
 
                     $cookie = $this->getAutologinCookieName();
 
@@ -384,7 +384,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
              */
             $cookie_name = $this->getAutologinCookieName();
 
-            parse_str(ake($_COOKIE, $cookie_name, ''), $cookie);
+            parse_str(base64_decode(ake($_COOKIE, $cookie_name, '')), $cookie);
 
             if($cookie){
 
