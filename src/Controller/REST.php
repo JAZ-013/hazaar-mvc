@@ -97,15 +97,15 @@ abstract class REST extends \Hazaar\Controller {
 
     protected $allow_directory = true;
 
-    private $__rest_endpoints = array();
+    protected $__rest_endpoints = array();
 
-    private $__endpoint;
+    protected $__endpoint;
 
-    private $__rest_cache;
+    protected $__rest_cache;
 
-    private $__rest_cache_enable_global = false;
+    protected $__rest_cache_enable_global = false;
 
-    static private $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
+    static protected $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
 
     protected function enableEndpointCaching($boolean){
 
