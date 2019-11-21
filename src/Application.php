@@ -127,8 +127,7 @@ class Application {
      *
      * @since 1.0.0
      *
-     * @param string $env
-     *            The application environment name. eg: 'development' or 'production'
+     * @param string $env The application environment name. eg: 'development' or 'production'
      */
     function __construct($env) {
 
@@ -365,7 +364,8 @@ class Application {
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
-     * @var string $suffix An optional suffix to tack on the end of the path
+     * @param string $suffix An optional suffix to tack on the end of the path
+     * @param boolean $create_dir Automatically create the runtime directory if it does not exist.
      *
      * @since 1.0.0
      *
@@ -422,8 +422,11 @@ class Application {
      * This method allows access to the raw URL path part, relative to the current application request.
      *
      * @since 1.0.0
+     * 
+     * @param string $path Path suffix to append to the application path.
+     * @param boolean $force_realpath Return the real path to a file.  If the file does not exist, this will return false.
      */
-    static public function filePath($path = NULL, $file = NULL, $force_realpath = TRUE) {
+    static public function filePath($path = NULL, $force_realpath = TRUE) {
 
         if(strlen($path) > 0)
             $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
@@ -433,12 +436,10 @@ class Application {
 
         $path = APPLICATION_PATH . ($path ? $path : NULL);
 
-        $real = realpath($path);
+        if($force_realpath === true)
+            return realpath($path);
 
-        if($force_realpath === FALSE && $real == FALSE)
-            return $path;
-
-        return $real;
+        return $path;
 
     }
 
@@ -458,11 +459,13 @@ class Application {
      *
      * @since 1.0.0
      *
+     * @param string $suffix Application path suffix.
+     * 
      * @return string The resolved application path
      */
-    public function getApplicationPath($suffix = '') {
+    public function getApplicationPath($suffix = null) {
 
-        return realpath(APPLICATION_PATH . '/' . $suffix);
+        return realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . (string)$suffix);
 
     }
 
@@ -474,11 +477,13 @@ class Application {
      *
      * @since 1.0.0
      *
+     * @param string $suffix Application base path suffix.
+     * 
      * @return string The resolved base path
      */
-    public function getBasePath($suffix = '') {
+    public function getBasePath($suffix = null) {
 
-        return realpath(APPLICATION_PATH . '/../' . $suffix);
+        return realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . (string)$suffix);
 
     }
 
@@ -946,14 +951,9 @@ class Application {
      *
      * @since 1.0.0
      *
-     * @param $location string
-     *            The URL you want to redirect to
-     *
-     * @param $args array
-     *            An optional array of parameters to tack onto the URL
-     *
-     * @param $save_url boolean
-     *            Optionally save the URL so we can redirect back. See: Application::redirectBack()
+     * @param string $location  The URL you want to redirect to
+     * @param array  $args      An optional array of parameters to tack onto the URL
+     * @param boolean $save_url Optionally save the URL so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
     public function redirect($location, $args = array(), $save_url = TRUE) {
 
@@ -1000,10 +1000,10 @@ class Application {
     /**
      * Redirect back to a URL saved during redirection
      *
-     * This mechanism is used with the $save_url parameter of Application::redirect() so save the current
+     * This mechanism is used with the $save_url parameter of `Hazaar\Application::redirect()` so save the current
      * URL into the session so that once we're done processing the request somewhere else we can come back
      * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
-     * redirect them to a login page and then that page can call this redirectBack() method to redirect the
+     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
      * user back to the page they were originally looking for.
      *
      * @since 1.0.0
@@ -1012,32 +1012,25 @@ class Application {
 
         $sess = new \Hazaar\Session();
 
-        if($sess->has('REDIRECT')) {
+        if(!($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))))
+            return false;
 
-            if($uri = trim(ake($sess['REDIRECT'], 'URI'))) {
+        if(ake($sess['REDIRECT'], 'METHOD') == 'POST') {
 
-                if(ake($sess['REDIRECT'], 'METHOD') == 'POST') {
+            if(substr($uri, -1, 1) !== '?')
+                $uri .= '?';
+            else
+                $uri .= '&';
 
-                    if(substr($uri, -1, 1) !== '?')
-                        $uri .= '?';
-                    else
-                        $uri .= '&';
-
-                    $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
-
-                }
-
-                unset($sess['REDIRECT']);
-
-                header('Location: ' . $uri);
-
-                exit();
-
-            }
+            $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
 
         }
 
-        return FALSE;
+        unset($sess['REDIRECT']);
+
+        header('Location: ' . $uri);
+
+        exit();
 
     }
 
@@ -1069,6 +1062,12 @@ class Application {
 
     }
 
+    /**
+     * Set the response type override for a request.
+     * 
+     * The response type should be set in the response object itself.  However, setting this allows that to be overridden.  This should
+     * be used sparingly but can be used from a controller to force reponses to a certain type, such as *application/json*.
+     */
     public function setResponseType($type){
 
         $this->response_type = $type;

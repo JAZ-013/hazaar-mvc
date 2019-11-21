@@ -134,7 +134,21 @@ abstract class Controller {
      */
     public function redirect($location, $args = array(), $save_url = TRUE) {
 
-        $this->application->redirect($location, $args, $save_url);
+        return $this->application->redirect($location, $args, $save_url);
+
+    }
+
+    /**
+     * Redirect back to a URL saved during redirection
+     * 
+     * This mechanism is used with the $save_url parameter of `Hazaar\Application::redirect()` so save the current URL into the session
+     * so that once we're done processing the request somewhere else we can come back to where we were. This is useful for when
+     * a user requests a page but isn't authenticated, we can redirect them to a login page and then that page can call this
+     * `Hazaar\Controller::redirectBack()` method to redirect the user back to the page they were originally looking for.
+     */
+    public function redirectBack(){
+
+        return $this->application->redirectBack();
 
     }
 
@@ -143,7 +157,7 @@ abstract class Controller {
      *
      * This is the controller relative method for generating URLs in your application.  URLs generated from
      * here are relative to the controller.  For URLs that are relative to the current application see
-     * `Application::url()`.
+     * `Hazaar\Application::url()`.
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
