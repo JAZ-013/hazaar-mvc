@@ -676,7 +676,7 @@ class Application {
             /*
              * Shutdown the controller
              */
-            $controller->__shutdown();
+            $controller->__shutdown($this->response);
 
         }
         catch(Controller\Exception\HeadersSent $e) {
