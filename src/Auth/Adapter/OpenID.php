@@ -40,23 +40,21 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
     public function logout($redirect_url = null){
 
-        $request = new \Hazaar\Http\Request(ake($this->metadata, 'end_session_endpoint'), 'GET');
+        if(!$this->deauth())
+            return false;
 
-        $request->client_id = $this->client_id;
+        $endpoint = new \Hazaar\Http\Uri(ake($this->metadata, 'end_session_endpoint'));
 
-        $request->id_token_hint = ake($this->session->oauth2_data, 'id_token');
+        $endpoint->client_id = $this->client_id;
 
-        if($redirect_url){
+        $endpoint->id_token_hint = ake($this->session->oauth2_data, 'id_token');
 
-            $url = new \Hazaar\Application\Url($redirect_url);
+        if($redirect_url)
+            $endpoint->post_logout_redirect_uri = (string)$redirect_url;
 
-            $request->post_logout_redirect_uri = (string)$url;
+        \header('Location: ' . $endpoint);
 
-        }
-
-        $response = $this->http_client->send($request, false);
-
-        return ($response->status === 302);
+        exit;
 
     }
 
