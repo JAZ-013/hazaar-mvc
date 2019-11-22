@@ -85,4 +85,10 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     }
 
+    public function view($view, $key = null){
+
+        return $this->_layout->add($view, $key);
+
+    }
+
 }
