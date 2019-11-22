@@ -175,6 +175,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
                 header('Location: ' . $uri);
 
+                unset($this->session->redirect_uri);
+                
                 exit;
 
             }

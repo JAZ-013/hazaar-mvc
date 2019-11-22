@@ -52,7 +52,7 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
         if($redirect_url)
             $endpoint->post_logout_redirect_uri = (string)$redirect_url;
 
-        \header('Location: ' . $endpoint);
+        header('Location: ' . $endpoint);
 
         exit;
 
