@@ -92,7 +92,7 @@ class Apc extends \Hazaar\Cache\Backend {
 
     public function clear() {
 
-        apcu_clear_cache('user');
+        apcu_clear_cache();
 
     }
 
