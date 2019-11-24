@@ -61,9 +61,12 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $metadata = $this->session->oauth2_metadata;
             
-        if(!array_key_exists($key, $metadata)){
+        if(!(array_key_exists($key, $metadata) && $metadata[$key])){
 
-            $metadata[$key] = json_decode(file_get_contents($uri), true);
+            if(!($meta_source = @file_get_contents($uri)))
+                throw new \Exception('Authentication platform offline.  Service discovery failed!');
+
+            $metadata[$key] = json_decode($meta_source, true);
 
             $this->session->oauth2_metadata = $metadata;
 
@@ -88,6 +91,18 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
+    }
+
+    public function hasScope($key){
+
+        return $this->authenticated() && in_array($key, $this->scopes);
+
+    }
+
+    public function scopes(){
+
+        return $this->scopes;
+        
     }
 
     /**
