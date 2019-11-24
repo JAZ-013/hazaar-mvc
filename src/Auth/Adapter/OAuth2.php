@@ -365,9 +365,14 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     private function getRedirectUri(){
 
         if(substr($_SERVER['REQUEST_URI'], 0, strlen(APPLICATION_BASE)) !== APPLICATION_BASE)
-            throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
+        throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
 
-        $url = new \Hazaar\Application\Url(trim(str_replace(APPLICATION_BASE, '', $_SERVER['REQUEST_URI']), '/'));
+        $action = $_SERVER['REQUEST_URI'];
+
+        if(APPLICATION_BASE !== '/')
+            $action = trim(str_replace(addslashes(APPLICATION_BASE), '', $_SERVER['REQUEST_URI']), '/');
+
+        $url = new \Hazaar\Application\Url($action);
 
         return (string)$url;
 
