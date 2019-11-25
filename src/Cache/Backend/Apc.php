@@ -86,13 +86,19 @@ class Apc extends \Hazaar\Cache\Backend {
 
     public function remove($key) {
 
-        apcu_delete($this->key($key));
+        if(!apcu_delete($this->key($key)))
+            return false;
+
+        if(isset($this->refresh[$key]))
+            unset($this->refresh[$key]);
+
+        return true;
 
     }
 
     public function clear() {
 
-        apcu_clear_cache();
+        return apcu_clear_cache();
 
     }
 
