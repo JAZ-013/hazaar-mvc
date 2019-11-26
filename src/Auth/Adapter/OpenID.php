@@ -40,9 +40,6 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
     public function logout($redirect_url = null){
 
-        if(!$this->deauth())
-            return false;
-
         $endpoint = new \Hazaar\Http\Uri(ake($this->metadata, 'end_session_endpoint'));
 
         $endpoint->client_id = $this->client_id;
@@ -51,6 +48,9 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
         if($redirect_url)
             $endpoint->post_logout_redirect_uri = (string)$redirect_url;
+
+        if(!$this->deauth())
+            return false;
 
         header('Location: ' . $endpoint);
 
