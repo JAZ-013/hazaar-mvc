@@ -120,7 +120,22 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
             return (ake($this->session->oauth2_data, 'access_token', '') != '');
 
+        if($refresh_token = ake($this->session->oauth2_data, 'refresh_token'))
+            return $this->authorize($this->refresh($refresh_token));
+
         return false;
+    }
+
+    private function authorize($data){
+
+        if(!(is_array($data) && count($data) > 0))
+            return false;
+
+        $this->session->oauth2_expiry = time() + ake($data, 'expires_in');
+
+        $this->session->oauth2_data = $data;
+
+        return true;
 
     }
 
@@ -135,9 +150,9 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
      *                              a new access token when it expires.
      * @return boolean              True if the authentication was successful.  False otherwise.
      */
-    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE){
+    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE, $skip_auth_check = false){
 
-        if($this->authenticated()){
+        if($skip_auth_check !== true && $this->authenticated()){
 
             if($uri = $this->session->redirect_uri){
 
@@ -178,19 +193,15 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        if($data !== false){
-
-            $this->session->oauth2_expiry = time() + ake($data, 'expires_in');
-
-            $this->session->oauth2_data = $data;
-
-            $this->session->oauth2_identity = $identity;
+        if($this->authorize($data) !== false){
 
             //Set the standard hazaar auth session details for compatibility
             $this->session->hazaar_auth_identity = $identity;
 
             $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
+            $this->session->oauth2_identity = $identity;
+            
             if($uri = $this->session->redirect_uri){
 
                 header('Location: ' . $uri);
@@ -332,15 +343,15 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $target_url = (is_array($this->target_url) ? ake($this->target_url, 1, ake($this->target_url, 0)) : $this->target_url);
-
-        $request = new \Hazaar\Http\Request($target_url, 'POST');
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'token_endpoint'), 'POST');
 
         $request->grant_type = 'refresh_token';
 
         $request->client_id = $this->client_id;
 
         $request->client_secret = $this->client_secret;
+
+        $request->refresh_token = $token;
 
         if($identity){
 
@@ -355,13 +366,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $response = $this->http_client->send($request);
 
-        if($response->status == 200 && $data = json_decode($response->body, true)){
-
-            $this->session->oauth2_data = $data;
-
-            return true;
-
-        }
+        if($response->status == 200 && $data = json_decode($response->body, true))
+            return $data;
 
         return false;
 
