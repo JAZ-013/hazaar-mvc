@@ -895,7 +895,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false) {
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = false) {
 
         return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder);
 
