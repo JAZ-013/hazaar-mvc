@@ -83,9 +83,9 @@ abstract class Request implements Request\_Interface {
 
     /**
      * Pop a part off the path.
-     * 
+     *
      * A "part" is simple anything delimited by '/' in the path section of the URL.
-     * 
+     *
      * @return string
      */
     public function popPath(){
@@ -220,28 +220,24 @@ abstract class Request implements Request\_Interface {
      * Check to see if a request value has been set
      *
      * @param mixed $keys The key of the request value to check for.
+     * @param boolean $check_any The check type when $key is an array.  TRUE means that ANY key must exist.  FALSE means ALL keys must exist.
+     *
      * @return boolean True if the value is set, False otherwise.
      */
-    public function has($keys) {
+    public function has($keys, $check_any = false) {
 
         /**
          * If the parameter is an array, make sure all of the keys exist before returning true
          */
 
-        if(! is_array($keys))
+        if(!is_array($keys))
             $keys = array($keys);
 
-        foreach($keys as $key) {
+        $result = false;
 
-            if(! array_key_exists($key, $this->params)) {
+        $count = count(array_intersect($keys, array_keys($this->params)));
 
-                return FALSE;
-
-            }
-
-        }
-
-        return TRUE;
+        return $check_any ? $count > 0 : $count === count($keys);
 
     }
 

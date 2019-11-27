@@ -28,6 +28,9 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(! $this->options->has('baseuri'))
             throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
 
+        if($this->options->has('cookies'))
+            $this->setCookie($this->options->cookies);
+
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username));
 
         if($this->options->get('cache_meta', FALSE)) {
@@ -180,7 +183,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(! ($info = $this->info($path)))
             return NULL;
 
-        if(is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']))
+        if(array_key_exists('resourcetype', $info) && is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']))
             return TRUE;
 
         return FALSE;
@@ -250,7 +253,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function filesize($path) {
 
-        if(!($info = $this->info($path)) || $info['scanned'] === false)
+        if(!($info = $this->info($path)))
             return NULL;
 
         if($this->is_dir($path))
