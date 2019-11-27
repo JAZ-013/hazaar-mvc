@@ -50,7 +50,7 @@ class Cache implements \ArrayAccess {
         if (!$backend){
 
             //Set up a default backend chain
-            $backend = array('shm', 'apc', 'session');
+            $backend = array('apc', 'session');
 
             //Grab the application context so we can load any cache settings
             if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
