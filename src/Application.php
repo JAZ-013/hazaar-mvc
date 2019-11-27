@@ -952,27 +952,24 @@ class Application {
      * @since 1.0.0
      *
      * @param string $location  The URI you want to redirect to
-     * @param array  $args      An optional array of parameters to tack onto the URI
      * @param boolean $save_uri Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect($location, $args = array(), $save_uri = TRUE) {
+    public function redirect($location, $save_uri = false) {
 
-        if(!$args)
-            $args = array();
-
-        $uri = $location . ((count($args) > 0) ? '?' . http_build_query($args) : NULL);
+        if(!$location)
+            return false;
 
         $headers = apache_request_headers();
 
-        if(array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] == 'XMLHttpRequest') {
+        if(array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] === 'XMLHttpRequest') {
 
-            echo "<script>document.location = '$uri';</script>";
+            echo "<script>document.location = '$location';</script>";
 
         } else {
 
             $sess = new \Hazaar\Session();
 
-            if($sess->has('REDIRECT') && $sess['REDIRECT'] == $location)
+            if($sess->has('REDIRECT') && $sess['REDIRECT'] === $location)
                 unset($sess['REDIRECT']);
 
             if($save_uri) {
@@ -982,7 +979,7 @@ class Application {
                     'METHOD' => $_SERVER['REQUEST_METHOD']
                 );
 
-                if($_SERVER['REQUEST_METHOD'] == 'POST')
+                if($_SERVER['REQUEST_METHOD'] === 'POST')
                     $data['POST'] = $_POST;
 
                 $sess['REDIRECT'] = $data;
@@ -991,7 +988,7 @@ class Application {
 
         }
 
-        return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
+        return new \Hazaar\Controller\Response\HTTP\Redirect($location);
 
     }
 
@@ -1013,7 +1010,7 @@ class Application {
         if(!($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))))
             return false;
 
-        if(ake($sess['REDIRECT'], 'METHOD') == 'POST') {
+        if(ake($sess['REDIRECT'], 'METHOD') === 'POST') {
 
             if(substr($uri, -1, 1) !== '?')
                 $uri .= '?';

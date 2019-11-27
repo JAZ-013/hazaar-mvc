@@ -132,9 +132,9 @@ abstract class Controller {
     /**
      * Initiate a redirect response to the client
      */
-    public function redirect($location, $args = array(), $save_url = TRUE) {
+    public function redirect($location, $save_uri = false) {
 
-        return $this->application->redirect($location, $args, $save_url);
+        return $this->application->redirect($location, $save_uri);
 
     }
 

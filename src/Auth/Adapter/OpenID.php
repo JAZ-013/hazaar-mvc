@@ -52,9 +52,7 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
         if(!$this->deauth())
             return false;
 
-        header('Location: ' . $endpoint);
-
-        exit;
+        return $endpoint;
 
     }
 
