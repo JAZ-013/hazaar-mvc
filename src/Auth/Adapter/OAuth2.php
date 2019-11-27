@@ -121,7 +121,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             return (ake($this->session->oauth2_data, 'access_token', '') !== '');
 
         if($refresh_token = ake($this->session->oauth2_data, 'refresh_token'))
-            return $this->authorize($this->refresh($refresh_token));
+            return $this->refresh($refresh_token);
 
         return false;
     }
@@ -370,7 +370,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         $response = $this->http_client->send($request);
 
         if($response->status == 200 && $data = json_decode($response->body))
-            return $data;
+            return $this->authorize($data);
 
         return false;
 
