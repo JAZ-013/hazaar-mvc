@@ -369,8 +369,17 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $response = $this->http_client->send($request);
 
-        if($response->status == 200 && $data = json_decode($response->body))
-            return $this->authorize($data);
+        if($response->status == 200 && $data = json_decode($response->body)){
+
+            if($this->authorize($data) !== false){
+
+                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
+                
+                return true;
+    
+            }
+
+        }
 
         return false;
 
