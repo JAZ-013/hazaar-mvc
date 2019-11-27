@@ -128,7 +128,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function authorize($data){
 
-        if(!(is_array($data) && count($data) > 0))
+        if(!($data instanceof \stdClass 
+            && (property_exists($data, 'token_type') && strtolower($data->token_type) === 'bearer')
+            && \property_exists($data, 'access_token')
+            && \property_exists($data, 'expires_in')))
             return false;
 
         $this->session->oauth2_expiry = time() + ake($data, 'expires_in');
@@ -366,7 +369,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $response = $this->http_client->send($request);
 
-        if($response->status == 200 && $data = json_decode($response->body, true))
+        if($response->status == 200 && $data = json_decode($response->body))
             return $data;
 
         return false;
