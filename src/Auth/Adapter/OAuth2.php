@@ -118,7 +118,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             && $this->session->has('oauth2_identity') 
             && $this->session->has('oauth2_data')
             && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
-            return (ake($this->session->oauth2_data, 'access_token', '') != '');
+            return (ake($this->session->oauth2_data, 'access_token', '') !== '');
 
         if($refresh_token = ake($this->session->oauth2_data, 'refresh_token'))
             return $this->authorize($this->refresh($refresh_token));
@@ -428,19 +428,21 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
-    public function introspect(){
+    public function introspect($token = null, $token_type = 'access_token'){
 
         $request = new \Hazaar\Http\Request(ake($this->metadata, 'introspection_endpoint'), 'POST');
 
         $request->client_id = $this->client_id;
 
-        $request->token_type_hint = 'access_token';
+        $request->client_secret = $this->client_secret;
 
-        $request->token = ake($this->session->oauth2_data, 'access_token');
+        $request->token = $token ? $token : ake($this->session->oauth2_data, 'access_token');
+
+        $request->token_type_hint = $token_type;
 
         $response = $this->http_client->send($request);
 
-        return ake($response->body(), 'result', false);
+        return $response->body();
 
     }
 
