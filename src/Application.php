@@ -236,7 +236,7 @@ class Application {
      * The main application destructor
      *
      * The destructor cleans up any application redirections. ifthe controller hasn't used it in this
-     * run then it loses it. This prevents stale redirect URLs from accidentally being used.
+     * run then it loses it. This prevents stale redirect URIs from accidentally being used.
      *
      * @since 1.0.0
      *
@@ -640,7 +640,7 @@ class Application {
 
                 $response->__writeOutput();
 
-                $controller->__shutdown();
+                $controller->__shutdown($response);
 
                 return 0;
 
@@ -951,22 +951,22 @@ class Application {
      *
      * @since 1.0.0
      *
-     * @param string $location  The URL you want to redirect to
-     * @param array  $args      An optional array of parameters to tack onto the URL
-     * @param boolean $save_url Optionally save the URL so we can redirect back. See: `Hazaar\Application::redirectBack()`
+     * @param string $location  The URI you want to redirect to
+     * @param array  $args      An optional array of parameters to tack onto the URI
+     * @param boolean $save_uri Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect($location, $args = array(), $save_url = TRUE) {
+    public function redirect($location, $args = array(), $save_uri = TRUE) {
 
         if(!$args)
             $args = array();
 
-        $url = $location . ((count($args) > 0) ? '?' . http_build_query($args) : NULL);
+        $uri = $location . ((count($args) > 0) ? '?' . http_build_query($args) : NULL);
 
         $headers = apache_request_headers();
 
         if(array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] == 'XMLHttpRequest') {
 
-            echo "<script>document.location = '$url';</script>";
+            echo "<script>document.location = '$uri';</script>";
 
         } else {
 
@@ -975,7 +975,7 @@ class Application {
             if($sess->has('REDIRECT') && $sess['REDIRECT'] == $location)
                 unset($sess['REDIRECT']);
 
-            if($save_url) {
+            if($save_uri) {
 
                 $data = array(
                     'URI' => $_SERVER['REQUEST_URI'],
@@ -991,17 +991,15 @@ class Application {
 
         }
 
-        header('Location: ' . $url);
-
-        exit();
+        return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
 
     }
 
     /**
-     * Redirect back to a URL saved during redirection
+     * Redirect back to a URI saved during redirection
      *
-     * This mechanism is used with the $save_url parameter of `Hazaar\Application::redirect()` so save the current
-     * URL into the session so that once we're done processing the request somewhere else we can come back
+     * This mechanism is used with the $save_uri parameter of `Hazaar\Application::redirect()` so save the current
+     * URI into the session so that once we're done processing the request somewhere else we can come back
      * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
      * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
      * user back to the page they were originally looking for.
@@ -1028,9 +1026,7 @@ class Application {
 
         unset($sess['REDIRECT']);
 
-        header('Location: ' . $uri);
-
-        exit();
+        return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
 
     }
 

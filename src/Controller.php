@@ -51,7 +51,7 @@ abstract class Controller {
      * This method is called when a controller is being shut down.  It will call the extending controllers
      * shutdown method if it exists, otherwise it will silently carry on.
      */
-    public function __shutdown($response = null) {
+    public function __shutdown($response) {
 
         if(method_exists($this, 'shutdown'))
             $this->shutdown($response);
