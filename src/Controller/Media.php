@@ -126,6 +126,12 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     }
 
+    public function post(){
+
+        return $this->command($this->request->get('cmd'), $this->connector);
+
+    }
+
     public function __default($controller, $source_name = null) {
 
         if($this->request->has('cmd'))

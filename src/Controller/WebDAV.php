@@ -35,8 +35,12 @@ abstract class WebDAV extends Basic {
 
         parent::__initialize($request);
 
-        if(($this->manager = \Hazaar\File\Manager::select($this->__action)) === false)
-            throw new \Exception('Unknown media source!', 404);
+        if($this->__action !== 'index'){
+
+            if(($this->manager = \Hazaar\File\Manager::select($this->__action)) === false)
+                throw new \Exception('Unknown media source!', 404);
+
+        }
 
     }
 
@@ -55,6 +59,9 @@ abstract class WebDAV extends Basic {
         }
 
         $response = call_user_func(array($this, $method));
+
+        if($this->__stream)
+            $response = new Response\Stream($response);
 
         if(!$response instanceof Response)
             throw new \Exception('Internal Server Error', 500);
