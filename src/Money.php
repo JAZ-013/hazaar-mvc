@@ -272,7 +272,7 @@ class Money {
 
             if(!Money::$cache || (Money::$exchange_rates[$base] = Money::$cache->get($key)) == FALSE){
 
-                $url = 'http://api.hazaarmvc.com/api/money/latest?base=' . $base;
+                $url = 'https://api.hazaarmvc.com/api/money/latest?base=' . $base;
 
                 $result = json_decode(file_get_contents($url), true);
 
