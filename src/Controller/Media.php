@@ -20,7 +20,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     private $config;
 
-    private $object;
+    private $file;
 
     public function init($request) {
 
@@ -167,9 +167,9 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $target = $this->request->getPath();
 
-        $this->object = $source->get($target);
+        $this->file = $source->get($target);
 
-        if(!$this->object->exists())
+        if(!$this->file->exists())
             throw new \Hazaar\Exception('File not found!', 404);
 
         $params = $this->request->getParams();
@@ -193,7 +193,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         }
 
-        if($this->object instanceof \Hazaar\File\Dir){
+        if($this->file instanceof \Hazaar\File\Dir){
 
             if($this->config->global->allow['dir'] !== true)
                 throw new \Hazaar\Exception('Directory listings are currently disabled.', 403);
@@ -202,13 +202,13 @@ class Media extends \Hazaar\Controller\WebDAV {
 
             $response->source = $source->getOption('name');
 
-            $response->path =  $this->object->fullpath();
+            $response->path =  $this->file->fullpath();
 
             $response->vpath = '/' . $source_name . ($target ? '/' . $target : '');
 
-            $response->root = ($this->object->fullpath() === '/');
+            $response->root = ($this->file->fullpath() === '/');
 
-            $response->dir = $this->object;
+            $response->dir = $this->file;
 
             return $response;
 
@@ -223,10 +223,10 @@ class Media extends \Hazaar\Controller\WebDAV {
          */
         if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
 
-            if($preview_uri = $this->object->preview_uri($params))
+            if($preview_uri = $this->file->preview_uri($params))
                 $this->redirect($preview_uri);
 
-        } else if($direct_uri = $this->object->direct_uri()) {
+        } else if($direct_uri = $this->file->direct_uri()) {
 
             $direct_uri = new \Hazaar\Http\Uri($direct_uri, $this->request->getParams());
 
@@ -234,10 +234,10 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         }
 
-        $response = new \Hazaar\Controller\Response\File($this->object);
+        $response = new \Hazaar\Controller\Response\File($this->file);
 
-        if(preg_match_array($this->allowPreview, $this->object->mime_content_type()) > 0)
-            $response = new \Hazaar\Controller\Response\Image($this->object);
+        if(preg_match_array($this->allowPreview, $this->file->mime_content_type()) > 0)
+            $response = new \Hazaar\Controller\Response\Image($this->file);
 
         if($this->request->has('download') && boolify($this->request->download))
             $response->setDownloadable(TRUE);
@@ -263,7 +263,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
             }
 
-            $hash = md5($this->object->fullpath() . '-' . json_encode($params));
+            $hash = md5($this->file->fullpath() . '-' . json_encode($params));
 
             $cache_file = $cache_file = $cache_dir . '/' . $hash;
 
@@ -292,13 +292,13 @@ class Media extends \Hazaar\Controller\WebDAV {
                 if($this->request->has('format'))
                     $response->setFormat($this->request->format);
 
-                if($thumbnail = $this->object->thumbnail($params)) {
+                if($thumbnail = $this->file->thumbnail($params)) {
 
                     $response->setContent($thumbnail);
 
                 } else {
 
-                    switch($this->object->mime_content_type()) {
+                    switch($this->file->mime_content_type()) {
                         case 'application/pdf':
                         case 'image/svg+xml':
 
@@ -309,7 +309,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
                             $temp_file = $temp_dir . '/' . $hash;
 
-                            file_put_contents($temp_file, $this->object->get_contents());
+                            file_put_contents($temp_file, $this->file->get_contents());
 
                             $pdf = new \Imagick($temp_file . '[0]');
 
