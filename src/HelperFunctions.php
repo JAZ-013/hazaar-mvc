@@ -9,10 +9,10 @@
  */
 
 /**
- * @brief Array value normalizer
+ * @brief Array/Object value normalizer
  *
- * @detail Returns a value from an array if it exists. If it doesn't exist a default value can be specified.
- * Otherwise null is returned.
+ * @detail Returns a value from an arraym or a property from an object, if it exists. If it doesn't exist a default
+ * value can be specified.  Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
  *
@@ -24,11 +24,12 @@
  *
  * @since 1.0.0
  *
- * @param mixed $array      The array to search.
- * @param mixed $key        The array key value to look for.
- * @param mixed $default    An optional default value to return if the key does not exist.
+ * @param mixed   $array     The array to search.  Objects with public properties are also supported.
+ * @param mixed   $key       The array key or object property name to look for.
+ * @param mixed   $default   An optional default value to return if the key or property does not exist.
+ * @param boolean $non_empty Indicates that empty values, such as empty arrays and strings should be treated as NULL, even if they exist as elements in the array/object.
  *
- * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null if not specified.
+ * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null if no other default is specified.
  */
 function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
