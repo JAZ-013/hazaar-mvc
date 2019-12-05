@@ -229,14 +229,6 @@ class Application {
          */
         $this->loader->addSearchPaths($this->config->get('paths'));
 
-        if(!defined('RUNTIME_PATH')){
-
-            define('RUNTIME_PATH', $this->runtimePath(null, true));
-
-            $this->GLOBALS['runtime'] = RUNTIME_PATH;
-
-        }
-
         /*
          * Create a new router object for evaluating routes
          */
