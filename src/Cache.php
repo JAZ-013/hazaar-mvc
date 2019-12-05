@@ -50,7 +50,7 @@ class Cache implements \ArrayAccess {
         if (!$backend){
 
             //Set up a default backend chain
-            $backend = array('shm', 'apc', 'session');
+            $backend = array('apc', 'session');
 
             //Grab the application context so we can load any cache settings
             if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
@@ -115,7 +115,7 @@ class Cache implements \ArrayAccess {
 
     }
 
-    protected function configure($options) {
+    public function configure($options) {
 
         $this->options->enhance($options);
 
@@ -241,12 +241,17 @@ class Cache implements \ArrayAccess {
                     $value = array_merge_recursive($c, $value);
 
                 $this->set($key, $value);
+
             } else {
 
                 $this->set($key, $value);
+
             }
+
         }
 
+        return true;
+        
     }
 
     public function clear() {

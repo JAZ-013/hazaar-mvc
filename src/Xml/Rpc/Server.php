@@ -10,7 +10,7 @@ abstract class Server extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         $auto_register = true;
 

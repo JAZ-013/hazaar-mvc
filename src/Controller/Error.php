@@ -43,6 +43,8 @@ class Error extends \Hazaar\Controller\Action {
 
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
+        parent::__initialize($request);
+
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
             if(!($this->response = $this->application->getResponseType())){
@@ -245,7 +247,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    public function __shutdown(){
+    public function __shutdown($response = null){
 
         $this->report();
 

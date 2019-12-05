@@ -39,6 +39,12 @@ abstract class Response implements Response\_Interface {
 
     }
 
+    public function hasController(){
+
+        return ($this->controller instanceof \Hazaar\Controller);
+        
+    }
+
     /**
      * Add Header Directive
      */

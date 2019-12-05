@@ -142,6 +142,8 @@ class Router {
 
         foreach($parts as $index => $part){
 
+            $part = ucfirst($part);
+
             $found = false;
 
             $path = $controller_root . $controller_path;
@@ -162,11 +164,11 @@ class Router {
 
             }
 
-            if(file_exists($path . ucfirst($part) . '.php')){
+            if(file_exists($path . $part . '.php')){
 
                 $found = true;
 
-                $controller = (($index > 0) ? implode('/', array_slice($parts, 0, $index)) . '/' : null) . $part;
+                $controller = (($index > 0) ? implode('/', array_slice($parts, 0, $index)) . '/' : null) . strtolower($part);
 
                 $controller_index = $index;
 

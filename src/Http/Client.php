@@ -157,6 +157,13 @@ class Client {
 
     }
 
+    /**
+     * Send a Hazaar\HTTP\Request to the desination host
+     * 
+     * @param Hazaar\Http\Request $request The request to send
+     * 
+     * @param mixed $redirect_limit The number of allowed redirects.  To disable automated redirects on this request, set to FALSE.
+     */
     public function send(Request $request, $redirect_limit = 10) {
 
         if(! $request instanceof Request)
@@ -217,7 +224,7 @@ class Client {
             if(!$response->status > 0)
                 throw new \Exception('Host returned no data', 503);
 
-            if($this->auto_redirect && ($response->status == 301 || $response->status == 302)) {
+            if($this->auto_redirect && $redirect_limit !== false && ($response->status == 301 || $response->status == 302)) {
 
                 if(in_array($request->method, $this->redirect_methods)) {
 
@@ -338,7 +345,7 @@ class Client {
 
     public function setCookie($cookie){
 
-        if(is_array($cookie)){
+        if(\Hazaar\Map::is_array($cookie)){
 
             $cookies = array();
 

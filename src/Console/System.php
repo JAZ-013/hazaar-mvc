@@ -10,7 +10,7 @@ class System extends Module {
 
     }
 
-    public function index($request){
+    public function index(){
 
         $this->view('system/phpinfo');
 

@@ -20,9 +20,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     protected $http_client;
 
-    protected $auth_uri;
-
-    protected $token_uri;
+    protected $metadata = array();
 
     protected $scopes = array();
 
@@ -31,6 +29,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         parent::__construct($cache_config, $cache_backend);
 
         $this->http_client = new \Hazaar\Http\Client();
+
+        $this->http_client->authorisation($this);
 
         $this->grant_type = $grant_type;
 
@@ -42,36 +42,37 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function setAuthURI($uri){
 
-        $this->auth_uri = $uri;
+        $this->metadata['authorization_endpoint'] = $uri;
 
     }
 
     public function setTokenURI($uri){
 
-        $this->token_uri = $uri;
+        $this->metadata['token_endpoint'] = $uri;
 
     }
 
     public function discover($uri){
 
-        $key = md5($uri);
+        $key = hash('sha1', $uri);
 
         if(!$this->session->has('oauth2_metadata'))
             $this->session->oauth2_metadata = array();
 
         $metadata = $this->session->oauth2_metadata;
             
-        if(!array_key_exists($key, $metadata)){
+        if(!(array_key_exists($key, $metadata) && $metadata[$key])){
 
-            $metadata[$key] = json_decode(file_get_contents($uri));
+            if(!($meta_source = @file_get_contents($uri)))
+                throw new \Exception('Authentication platform offline.  Service discovery failed!');
+
+            $metadata[$key] = json_decode($meta_source, true);
 
             $this->session->oauth2_metadata = $metadata;
 
         }
 
-        $this->auth_uri = ake($metadata[$key], 'authorization_endpoint');
-
-        $this->token_uri = ake($metadata[$key], 'token_endpoint');
+        $this->metadata = $metadata[$key];
 
         return true;
 
@@ -92,6 +93,18 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
+    public function hasScope($key){
+
+        return $this->authenticated() && in_array($key, $this->scopes);
+
+    }
+
+    public function scopes(){
+
+        return $this->scopes;
+        
+    }
+
     /**
      * Check if there is a current user authentication in the session namespace.
      *
@@ -101,10 +114,31 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
      */
     public function authenticated() {
 
-        if($this->session->has('oauth2_identity') && $this->session->has('oauth2_data'))
-            return (ake($this->session->oauth2_data, 'access_token', '') != '');
+        if(parent::authenticated() 
+            && $this->session->has('oauth2_identity') 
+            && $this->session->has('oauth2_data')
+            && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
+            return (ake($this->session->oauth2_data, 'access_token', '') !== '');
+
+        if($refresh_token = ake($this->session->oauth2_data, 'refresh_token'))
+            return $this->refresh($refresh_token);
 
         return false;
+    }
+
+    private function authorize($data){
+
+        if(!($data instanceof \stdClass 
+            && (property_exists($data, 'token_type') && strtolower($data->token_type) === 'bearer')
+            && \property_exists($data, 'access_token')
+            && \property_exists($data, 'expires_in')))
+            return false;
+
+        $this->session->oauth2_expiry = time() + ake($data, 'expires_in');
+
+        $this->session->oauth2_data = $data;
+
+        return true;
 
     }
 
@@ -119,9 +153,9 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
      *                              a new access token when it expires.
      * @return boolean              True if the authentication was successful.  False otherwise.
      */
-    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE){
+    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE, $skip_auth_check = false){
 
-        if($this->authenticated()){
+        if($skip_auth_check !== true && $this->authenticated()){
 
             if($uri = $this->session->redirect_uri){
 
@@ -162,16 +196,21 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        if($data !== false){
+        if($this->authorize($data) !== false){
 
-            $this->session->oauth2_data = $data;//, ake($data, 'expires_in'));
+            //Set the standard hazaar auth session details for compatibility
+            $this->session->hazaar_auth_identity = $identity;
 
-            $this->session->oauth2_identity = $identity;//, ake($data, 'expires_in'));
+            $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
+            $this->session->oauth2_identity = $identity;
+            
             if($uri = $this->session->redirect_uri){
 
                 header('Location: ' . $uri);
 
+                unset($this->session->redirect_uri);
+                
                 exit;
 
             }
@@ -213,9 +252,12 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function authenticateCode(){
 
-        if(($code = ake($_REQUEST, 'code')) && ake($_REQUEST, 'state') == $this->session->state){
+        if(($code = ake($_REQUEST, 'code'))){
 
-            $request = new \Hazaar\Http\Request($this->token_uri, 'POST');
+            if(ake($_REQUEST, 'state') !== $this->session->state)
+                throw new \Exception('Invalid state code', 400);
+
+            $request = new \Hazaar\Http\Request(ake($this->metadata, 'token_endpoint'), 'POST');
 
             $request->client_id = $this->client_id;
 
@@ -260,7 +302,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }else{
 
-            $this->session->state = md5(uniqid());
+            $this->session->state = hash('sha1', uniqid());
 
             $this->session->redirect_uri = $this->getRedirectUri();
 
@@ -285,7 +327,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             if(count($this->scopes) > 0)
                 $params['scope'] = implode(' ' , $this->scopes);
 
-            $url = $this->auth_uri . '?' . array_flatten($params, '=', '&');
+            $url = ake($this->metadata, 'authorization_endpoint') . '?' . array_flatten($params, '=', '&');
 
             header('Location: ' . $url);
 
@@ -304,15 +346,15 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $target_url = (is_array($this->target_url) ? ake($this->target_url, 1, ake($this->target_url, 0)) : $this->target_url);
-
-        $request = new \Hazaar\Http\Request($target_url, 'POST');
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'token_endpoint'), 'POST');
 
         $request->grant_type = 'refresh_token';
 
         $request->client_id = $this->client_id;
 
         $request->client_secret = $this->client_secret;
+
+        $request->refresh_token = $token;
 
         if($identity){
 
@@ -327,13 +369,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $response = $this->http_client->send($request);
 
-        if($response->status == 200 && $data = json_decode($response->body, true)){
-
-            $this->session->oauth2_data = $data;
-
-            return true;
-
-        }
+        if($response->status == 200 && $data = json_decode($response->body))
+            return $this->authorize($data);
 
         return false;
 
@@ -341,10 +378,17 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function getRedirectUri(){
 
-        return (array_key_exists('HTTPS', $_SERVER) && boolify($_SERVER['HTTPS']) ? 'https' : 'http' )
-            . '://' . $_SERVER['SERVER_NAME']
-            . ':' . ake($_SERVER, 'SERVER_PORT', 80)
-            . $_SERVER['REQUEST_URI'];
+        if(substr($_SERVER['REQUEST_URI'], 0, strlen(APPLICATION_BASE)) !== APPLICATION_BASE)
+        throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
+
+        $action = $_SERVER['REQUEST_URI'];
+
+        if(APPLICATION_BASE !== '/')
+            $action = trim(str_replace(addslashes(APPLICATION_BASE), '', $_SERVER['REQUEST_URI']), '/');
+
+        $url = new \Hazaar\Application\Url($action);
+
+        return (string)$url;
 
     }
 
@@ -381,6 +425,53 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     public function getTokenType(){
 
         return ake($this->session->oauth2_data, 'token_type', 'Bearer');
+
+    }
+
+    public function introspect($token = null, $token_type = 'access_token'){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'introspection_endpoint'), 'POST');
+
+        $request->client_id = $this->client_id;
+
+        $request->client_secret = $this->client_secret;
+
+        $request->token = $token ? $token : ake($this->session->oauth2_data, 'access_token');
+
+        $request->token_type_hint = $token_type;
+
+        $response = $this->http_client->send($request);
+
+        return $response->body();
+
+    }
+
+    public function revoke(){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'revocation_endpoint'), 'POST');
+
+        $request->client_id = $this->client_id;
+
+        $request->token_type_hint = 'access_token';
+
+        $request->token = ake($this->session->oauth2_data, 'access_token');
+
+        $response = $this->http_client->send($request);
+
+        return ake($response->body(), 'result', false);
+
+    }
+
+    public function userinfo(){
+
+        $request = new \Hazaar\Http\Request(ake($this->metadata, 'user_info_endpoint'), 'GET');
+
+        $response = $this->http_client->send($request);
+
+        if($response->status !== 200)
+            return false;
+        
+        return $response->body();
 
     }
 

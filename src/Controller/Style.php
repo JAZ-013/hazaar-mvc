@@ -24,7 +24,7 @@ class Style extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         $this->filename = $this->application->loader->getFilePath(FILE_PATH_VIEW)
             . DIRECTORY_SEPARATOR . 'styles' . DIRECTORY_SEPARATOR . $request->getPath();

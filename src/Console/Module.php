@@ -30,7 +30,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        $this->request = $request;
+        parent::__initialize($request);
 
         if(!$this->handler instanceof Handler)
             throw new \Exception('Module requires a console handler before being initialised!');
@@ -81,6 +81,12 @@ abstract class Module extends \Hazaar\Controller\Action {
     public function url($action = null, $params = array()){
 
         return $this->application->url('hazaar/console', $action, $params);
+
+    }
+
+    public function active(){
+
+        return call_user_func_array(array($this->application, 'active'), array_merge(array('hazaar', 'console'), func_get_args()));
 
     }
 

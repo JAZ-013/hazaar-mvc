@@ -68,7 +68,7 @@ class Http extends \Hazaar\Application\Request {
 
         $this->method = is_string($method) ? $method : $_SERVER['REQUEST_METHOD'];
 
-        $this->headers = hazaar_request_headers();
+        $this->headers = getallheaders();
 
         if($process_request_body === true)
             $this->body = @file_get_contents('php://input');
@@ -132,7 +132,7 @@ class Http extends \Hazaar\Application\Request {
 
         }
 
-        if(\Hazaar\Application\Url::$rewrite === false && array_key_exists(Http::$pathParam, $this->params))
+        if(array_key_exists(Http::$pathParam, $this->params))
             return trim($this->params[Http::$pathParam], '/');
 
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
