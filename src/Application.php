@@ -166,7 +166,8 @@ class Application {
                     'route' => 'route.php',
                     'media' => 'media.php'
                 ),
-                'responseImageCache' => false
+                'responseImageCache' => false,
+                'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
             ),
             'paths' => array(
                 'model' => 'models',
@@ -337,7 +338,7 @@ class Application {
      */
     public function runtimePath($suffix = NULL, $create_dir = FALSE) {
 
-        $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . ($this->config->app->has('runtimepath') ? $this->config->app->runtimepath : '.runtime');
+        $path = $this->config->app->get('runtimepath');
 
         if(!file_exists($path)) {
 
