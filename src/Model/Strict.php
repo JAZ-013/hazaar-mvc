@@ -246,8 +246,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @return array
      */
-    public function getDefinition($key){
+    public function getDefinition($key = null){
 
+        if($key === null)
+            return $this->fields;
+            
         $def = ake($this->fields, $key);
 
         if(is_string($def))
