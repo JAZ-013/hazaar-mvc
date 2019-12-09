@@ -46,7 +46,7 @@ class View implements \ArrayAccess {
 
         }
 
-        if ($this->application->config->has('view')) {
+        if (substr($view, 0, 1) !== '@' && $this->application->config->has('view')) {
 
             if ($this->application->config->view->has('helper')) {
 
