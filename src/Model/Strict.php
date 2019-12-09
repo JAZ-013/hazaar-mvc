@@ -885,9 +885,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    private function jsonFixDate($object){
+
+        if($object instanceof \stdClass || is_array($object)) foreach($object as $key => &$value) $value = $this->jsonFixDate($value);
+        elseif ($object instanceof \Hazaar\Date) $object = $object->getTimestamp();
+
+        return $object;
+
+    }
+
     public function jsonSerialize(){
 
-        return $this->resolveArray($this);
+        return $this->jsonFixDate($this->resolveArray($this));
 
     }
 
