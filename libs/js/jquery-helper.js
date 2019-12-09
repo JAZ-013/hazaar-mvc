@@ -442,8 +442,8 @@ dataBinder.prototype.keys = function () {
 dataBinder.prototype.populate = function (items) {
     this._attributes = {};
     for (let x in items) {
-        if (key in this._attributes) continue;
-        this.add(items[x]);
+        if (x in this._attributes) continue;
+        this.add(x, items[x]);
     }
 };
 
