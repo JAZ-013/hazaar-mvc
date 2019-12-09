@@ -340,6 +340,8 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
+        } else if (o.is("img")) {
+            o.attr('src', attr_item.value);
         } else {
             if (o.attr('data-bind-label') === 'false')
                 o.html(attr_item ? attr_item.value : null);
