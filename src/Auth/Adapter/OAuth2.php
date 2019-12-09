@@ -115,7 +115,6 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     public function authenticated() {
 
         if(parent::authenticated() 
-            && $this->session->has('oauth2_identity') 
             && $this->session->has('oauth2_data')
             && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
             return (ake($this->session->oauth2_data, 'access_token', '') !== '');
@@ -199,12 +198,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         if($this->authorize($data) !== false){
 
             //Set the standard hazaar auth session details for compatibility
-            $this->session->hazaar_auth_identity = $identity;
+            $this->session->hazaar_auth_identity = $data->access_token;
 
-            $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
+            $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity));
 
-            $this->session->oauth2_identity = $identity;
-            
             if($uri = $this->session->redirect_uri){
 
                 header('Location: ' . $uri);
@@ -373,8 +370,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
             if($this->authorize($data) !== false){
 
-                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
-                
+                $this->session->hazaar_auth_identity = $data->access_token;
+
+                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity));
+
                 return true;
     
             }
