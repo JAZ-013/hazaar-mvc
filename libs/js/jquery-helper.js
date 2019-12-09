@@ -280,7 +280,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
-            this._jquery.trigger(trigger_name, [this, attr_name, value]);
+            this._update(key, true)
             this._trigger(key, value);
             if (attr instanceof dataBinder && value instanceof dataBinder) {
                 value._parent = this;
