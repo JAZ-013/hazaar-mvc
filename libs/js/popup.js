@@ -6,6 +6,7 @@ $.fn.popup = function () {
                 title: "Popup Window",
                 buttons: [],
                 icon: null,
+                iconSize: 45,
                 modal: false,
                 hideOnClose: false,
                 soft: true
@@ -66,8 +67,8 @@ $.fn.popup = function () {
             host.__setIcon = function (name, color) {
                 var icon = 'font-awesome';
                 if (typeof color === 'undefined') color = '#000';
-                if (!this.__icon)
-                    this.__icon = $('<div class="popup-window-icon">').appendTo(this.__container);
+                this.__icon.css({ "padding": "0 15px" }).appendTo(this.__container);
+                $(this).css({ "margin-left": (this.props.iconSize + 30) + "px" });
                 switch (name) {
                     case 'working':
                         icon = 'circle-o-notch fa-spin';
@@ -106,17 +107,20 @@ $.fn.popup = function () {
                     this.__icon.css({ color: color });
             };
             host.render = function () {
-                this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
-                this.__window = $('<div class="popup-window">').appendTo(this.__overlay);
-                this.__title = $('<div class="popup-window-title">').html(this.props.title).appendTo(this.__window);
-                this.__container = $('<div class="popup-container">').appendTo(this.__window);
-                this.__close = $('<div class="popup-window-close">').html('X').appendTo(this.__title);
-                if (this.props.icon)
-                    this.__setIcon(this.props.icon, this.props.iconColor);
+                this.__overlay = $('<div class="modal-overlay">')
+                    .css({ position: "fixed", "z-index": 100 }).appendTo(document.body).toggleClass('modal', this.props.modal);
+                this.__window = $('<div class="modal-dialog">')
+                    .hide().css({ position: "fixed" }).appendTo(this.__overlay);
+                this.__content = $('<div class="modal-content">').appendTo(this.__window);
+                this.__header = $('<div class="modal-header">').html($('<h5 class="modal-title">').html(this.props.title)).css({ "user-select": "none" }).appendTo(this.__content);
+                this.__container = $('<div class="modal-body">').appendTo(this.__content);
+                this.__close = $('<button type="button" class="close" aria-label="Close">').html($('<span aria-hidden="true">').html('&times;')).appendTo(this.__header);
+                this.__icon = $('<div>').css({ "font-size": this.props.iconSize + "px", "float": "left" }).appendTo(this.__container);
+                if (this.props.icon) this.__setIcon(this.props.icon, this.props.iconColor);
                 this.props.hideOnClose = ($(this).parent().length > 0);
                 this.__container.append(this);
                 if (this.props.buttons.length > 0) {
-                    this.__buttons = $('<div class="popup-buttons">').appendTo(this.__window);
+                    this.__buttons = $('<div class="modal-footer">').appendTo(this.__content);
                     for (x in this.props.buttons) {
                         if (typeof this.props.buttons[x] === 'string')
                             this.props.buttons[x] = { label: this.props.buttons[x], action: 'close' };
@@ -126,33 +130,38 @@ $.fn.popup = function () {
                         this.__buttons.append(btn.addClass(args.class));
                     }
                 }
-                $(this).addClass('popup-content');
                 if (this.props.id)
                     $(this).attr('id', this.props.id);
                 if (this.props.width)
                     this.__window.addClass('static').css({ width: this.props.width });
                 if (this.props.height)
                     this.__window.addClass('static').css({ height: this.props.height });
-                if (this.props['max-width'])
-                    this.__window.css({ 'max-width': this.props['max-width'] });
-                if (this.props['max-height'])
-                    this.__window.css({ 'max-height': this.props['max-height'] });
+                if (this.props.minWidth)
+                    this.__window.css({ 'min-width': this.props.minWidth });
+                if (this.props.minHeight)
+                    this.__window.css({ 'min-height': this.props.minHeight });
+                if (this.props.maxWidth)
+                    this.__window.css({ 'max-width': this.props.maxWidth });
+                if (this.props.maxHeight)
+                    this.__window.css({ 'max-height': this.props.maxHeight });
                 if (this.props.soft)
-                    this.__container.addClass('soft');
+                    this.__content.addClass('soft');
                 if (this.props.zindex)
                     this.__overlay.css('z-index', this.props.zindex);
             };
             host.__move = function () {
-                host.__window.css({ left: event.pageX - host.__offset[0], top: event.pageY - host.__offset[1] });
+                host.__window.css({
+                    left: event.clientX - host.__offset[0] - parseInt(host.__window.css('marginLeft')),
+                    top: event.clientY - host.__offset[1] - parseInt(host.__window.css('marginTop'))
+                });
             };
             host.registerEvents = function () {
                 this.__close.click(function () {
                     host.close();
                     return false;
                 });
-                this.__title.on('mousedown', function (event) {
-                    if (host.__close.is(event.target))
-                        return false;
+                this.__header.on('mousedown', function (event) {
+                    if (host.__close.is(event.target)) return false;
                     host.__offset = [event.offsetX, event.offsetY];
                     $(window).on('mousemove', host.__move);
                 }).on('mouseup', function (event) {
