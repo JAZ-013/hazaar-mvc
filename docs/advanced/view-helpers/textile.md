@@ -1,4 +1,4 @@
-# Using Textile
+# Using the Textile View Helper
 
 Textile is a simple text markup. Simple symbols mark words' emphasis. Blocks of text can be easily tagged as headers, quotes, or lists. A Textile document can then be converted to HTML for viewing on the web.
 
