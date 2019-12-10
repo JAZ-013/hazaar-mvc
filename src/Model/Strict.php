@@ -907,13 +907,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = false) {
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = false, $ignore_nulls = false) {
 
-        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder);
+        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder, $ignore_nulls);
 
     }
 
-    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = true) {
+    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = true, $ignore_nulls = false) {
 
         $result = array();
 
@@ -992,6 +992,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
+            if($ignore_nulls === true && $value === null)
+                continue;
+                
             $result[$key] = $value;
 
         }
