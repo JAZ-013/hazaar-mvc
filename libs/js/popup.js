@@ -108,7 +108,7 @@ $.fn.popup = function () {
             };
             host.render = function () {
                 this.__overlay = $('<div class="modal-overlay">')
-                    .css({ position: "fixed", "z-index": 100 }).appendTo(document.body).toggleClass('modal', this.props.modal);
+                    .css({ position: "fixed", "z-index": 9999 }).appendTo(document.body).toggleClass('modal', this.props.modal);
                 this.__window = $('<div class="modal-dialog">')
                     .hide().css({ position: "fixed" }).appendTo(this.__overlay);
                 this.__content = $('<div class="modal-content">').appendTo(this.__window);
