@@ -173,7 +173,8 @@ class Application {
                 'model' => 'models',
                 'view' => 'views',
                 'controller' => 'controllers',
-                'service' => 'services'
+                'service' => 'services',
+                'helper' => 'helpers'
             ),
             'view' => array(
                 'prepare' => false

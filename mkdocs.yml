@@ -40,7 +40,9 @@ pages:
     - Strict Models: advanced/model.md
     - The Logger: advanced/logger.md
     - View Helpers:
-        - Using Textile: advanced/view-helpers/textile.md
+        - Overview: advanced/view-helpers/overview.md
+        - Textile: advanced/view-helpers/textile.md
+        - Custom: advanced/view-helpers/custom.md
     - WebDAV & CalDAV: advanced/dav.md
     - XMLRPC: advanced/xmlrpc.md
     - AJAX Streaming: advanced/ajax-streaming.md
