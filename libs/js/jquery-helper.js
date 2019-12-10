@@ -341,7 +341,9 @@ dataBinder.prototype._update = function (attr_name, do_update) {
             } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else if (o.is("img")) {
-            o.attr('src', attr_item.value);
+            let value = attr_item ? attr_item.value : null;
+            if (o.is('[data-prefix]')) value = o.attr('data-prefix') + value;
+            o.attr('src', value);
         } else {
             if (o.attr('data-bind-label') === 'false')
                 o.html(attr_item ? attr_item.value : null);
