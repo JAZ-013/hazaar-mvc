@@ -413,7 +413,8 @@ class View implements \ArrayAccess {
 
             if(! array_key_exists($alias, $this->_helpers)) {
 
-                $class = '\\Hazaar\\View\\Helper\\' . ucfirst($helper);
+                if(!($class = $this->findHelper($helper)))
+                    throw new \Exception("View helper '$helper' does not exist");
 
                 $obj = new $class($this, $args);
 
@@ -427,6 +428,33 @@ class View implements \ArrayAccess {
             }
 
         }
+
+    }
+
+    private function findHelper($name){
+
+        /**
+         * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
+         */
+        $search_paths = array(
+            '\\Application\\Helper\\View' => \Hazaar\Loader::getFilePath(FILE_PATH_HELPER, 'view'),
+            '\\Hazaar\\View\\Helper' => dirname(__FILE__) . DIRECTORY_SEPARATOR . 'View' . DIRECTORY_SEPARATOR . 'Helper'
+        );
+
+        $class = null;
+
+        foreach($search_paths as $prefix => $path){
+
+            $file = $path . DIRECTORY_SEPARATOR . ucfirst($name) . '.php';
+
+            if(!file_exists($file))
+                continue;
+
+            return $prefix . '\\' . ucfirst($name);
+
+        }
+
+        return null;
 
     }
 
