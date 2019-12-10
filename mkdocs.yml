@@ -24,6 +24,10 @@ pages:
     - Bootstrap: basics/bootstrap.md
     - Generating URLs: basics/urls.md
     - Routing: basics/routing.md
+    - View Helpers:
+        - Overview: basics/view-helpers/overview.md
+        - Textile: basics/view-helpers/textile.md
+        - Custom: basics/view-helpers/custom.md
   - Advanced:
     - Authentication: advanced/authentication.md
     - Caching:
@@ -39,10 +43,6 @@ pages:
     - Routing Aliases: advanced/routing-aliases.md
     - Strict Models: advanced/model.md
     - The Logger: advanced/logger.md
-    - View Helpers:
-        - Overview: advanced/view-helpers/overview.md
-        - Textile: advanced/view-helpers/textile.md
-        - Custom: advanced/view-helpers/custom.md
     - WebDAV & CalDAV: advanced/dav.md
     - XMLRPC: advanced/xmlrpc.md
     - AJAX Streaming: advanced/ajax-streaming.md
