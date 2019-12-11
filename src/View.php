@@ -436,21 +436,16 @@ class View implements \ArrayAccess {
         /**
          * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
          */
-        $search_paths = array(
-            '\\Application\\Helper\\View' => \Hazaar\Loader::getFilePath(FILE_PATH_HELPER, 'view'),
-            '\\Hazaar\\View\\Helper' => dirname(__FILE__) . DIRECTORY_SEPARATOR . 'View' . DIRECTORY_SEPARATOR . 'Helper'
-        );
+        $search_prefixes = array('\\Application\\Helper\\View', '\\Hazaar\\View\\Helper');
 
-        $class = null;
+        $name = \ucfirst($name);
 
-        foreach($search_paths as $prefix => $path){
+        foreach($search_prefixes as $prefix){
 
-            $file = $path . DIRECTORY_SEPARATOR . ucfirst($name) . '.php';
+            $class = $prefix . '\\' . $name;
 
-            if(!file_exists($file))
-                continue;
-
-            return $prefix . '\\' . ucfirst($name);
+            if(\class_exists($class))
+                return $class;
 
         }
 
