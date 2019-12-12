@@ -1701,8 +1701,9 @@ function array_remove_empty(&$array){
 /**
  * Generate a truly random string of characters.
  *
- * @param mixed $length The length of the random string being created.
- * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
+ * @param mixed $length             The length of the random string being created.
+ * @param mixed $include_special    Whether or not special characters.  Normally only Aa-Zz, 0-9 are used.  If TRUE will include
+ *                                  characters such as #, $, etc.  This can also be a string of characters to use.  
  *
  * @return string A totally random string of characters.
  */
@@ -1712,6 +1713,8 @@ function str_random($length, $include_special = false){
 
     if($include_special === true)
         $characters .= ' ~!@#$%^&*()-_=+[{]}\|;:\'",<.>/?';
+    elseif(is_string($include_special))
+        $characters .= $include_special;
 
     $count = strlen($characters);
 
