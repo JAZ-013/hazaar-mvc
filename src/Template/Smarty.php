@@ -690,7 +690,9 @@ class Smarty {
         if(!(array_key_exists('var', $params) && array_key_exists('value', $params)))
             return null;
 
-        return "<?php $" . trim($params['var'], "'") . "={$params['value']};?>";
+        $value = preg_match('/"`(.+)`"/', $params['value'], $matches) ? $matches[1] : null;
+
+        return "<?php $" . trim($params['var'], '"') . "=$value;?>";
 
     }
 
