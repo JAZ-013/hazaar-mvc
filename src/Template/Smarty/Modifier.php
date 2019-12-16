@@ -87,10 +87,12 @@ class Modifier {
 
     }
 
-    public function date_format($item, $format){
+    public function date_format($item, $format = null){
 
         if(!$item instanceof \Hazaar\Date)
             $item = new \Hazaar\Date($item);
+
+        if(!$format) $format = '%c';
 
         return strftime($format, $item->getTimestamp());
 
