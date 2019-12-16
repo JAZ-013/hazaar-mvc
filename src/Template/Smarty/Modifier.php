@@ -139,7 +139,7 @@ class Modifier {
 
     public function number_format($string, $decimals = 0, $dec_point = '.', $thousands_sep = ','){
 
-        return number_format($string, $decimals, $dec_point, $thousands_sep);
+        return number_format(floatval($string), $decimals, $dec_point, $thousands_sep);
 
     }
 
