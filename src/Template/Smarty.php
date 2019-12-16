@@ -683,14 +683,27 @@ class Smarty {
 
     protected function compileASSIGN($params){
 
-        $params = $this->parsePARAMS($params);
+        if(substr($params, 0, 3) === 'var'){
+
+            $params = $this->parsePARAMS($params);
+
+        }else{
+
+            $parts = $this->parsePARAMS($params);
+
+            $params = array(
+                'var' => $parts[0],
+                'value' => $parts[1]
+            );
+
+        }
 
         if(!(array_key_exists('var', $params) && array_key_exists('value', $params)))
             return null;
 
-        $value = preg_match('/"`(.+)`"/', $params['value'], $matches) ? $matches[1] : null;
+        $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
 
-        return "<?php $" . trim($params['var'], '"') . "=$value;?>";
+        return "<?php @$" . trim($params['var'], '"') . "=$value;?>";
 
     }
 
