@@ -237,7 +237,7 @@ class Smarty {
 
     protected function parsePARAMS($params){
 
-        $parts = preg_split('/\s+/', $params);
+        $parts = preg_split('/\s(?=([^"]*"[^"]*")*[^"]*$)/', $params);
 
         $params = array();
 
@@ -278,17 +278,17 @@ class Smarty {
 
                 return $matches[0];
 
-                //It matched a variable
+            //It matched a variable
             }elseif(substr($matches[1], 0, 1) === '$'){
 
                 $replacement = $this->replaceVAR($matches[1]);
 
-                //Matched a config variable
+            //Matched a config variable
             }elseif(substr($matches[1], 0, 1) === '#' && substr($matches[1], -1) === '#'){
 
                 $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
 
-                //Must be a function so we exec the internal function handler
+            //Must be a function so we exec the internal function handler
             }elseif((substr($matches[2], 0, 1) == '/'
                 && in_array(substr($matches[2], 1), Smarty::$tags))
                 || in_array($matches[2], Smarty::$tags)){
@@ -391,8 +391,6 @@ class Smarty {
 
         }
 
-        $name = "(isset($name)?$name:null)";
-
         if(count($modifiers) > 0){
 
             foreach($modifiers as $modifier){
@@ -429,7 +427,7 @@ class Smarty {
 
         $var = $this->compileVAR($name);
 
-        return "<?php echo (is_array($var)?print_r($var, true):$var);?>";
+        return "<?php echo @$var;?>";
 
     }
 
@@ -477,13 +475,13 @@ class Smarty {
 
     protected function compileIF($params){
 
-        return '<?php if(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php if(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
     protected function compileELSEIF($params){
 
-        return '<?php elseif(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php elseif(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
@@ -596,9 +594,9 @@ class Smarty {
 
             $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => (is_array($var)?count($var):0)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
-            $code .= "if(is_array($var) && count($var)>0): ";
+            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 
@@ -612,9 +610,9 @@ class Smarty {
 
             $this->__foreach_stack[] = array('name' => $name, 'else' => false);
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => (is_array($var)?count($var):0)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
-            $code .= "if(is_array($var) && count($var)>0): ";
+            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 
