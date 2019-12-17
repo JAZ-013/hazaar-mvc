@@ -166,13 +166,15 @@ class Application {
                     'route' => 'route.php',
                     'media' => 'media.php'
                 ),
-                'responseImageCache' => false
+                'responseImageCache' => false,
+                'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
             ),
             'paths' => array(
                 'model' => 'models',
                 'view' => 'views',
                 'controller' => 'controllers',
-                'service' => 'services'
+                'service' => 'services',
+                'helper' => 'helpers'
             ),
             'view' => array(
                 'prepare' => false
@@ -191,6 +193,14 @@ class Application {
         Application\Url::$base = $this->config->app->get('base');
 
         Application\Url::$rewrite = $this->config->app->get('rewrite');
+
+        if(!defined('RUNTIME_PATH')){
+
+            define('RUNTIME_PATH', $this->runtimePath(null, true));
+
+            $this->GLOBALS['runtime'] = RUNTIME_PATH;
+
+        }
 
         //Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config->app->addInputFilter(function($value){
@@ -227,14 +237,6 @@ class Application {
          * Use the config to add search paths to the loader
          */
         $this->loader->addSearchPaths($this->config->get('paths'));
-
-        if(!defined('RUNTIME_PATH')){
-
-            define('RUNTIME_PATH', $this->runtimePath(null, true));
-
-            $this->GLOBALS['runtime'] = RUNTIME_PATH;
-
-        }
 
         /*
          * Create a new router object for evaluating routes
@@ -337,7 +339,7 @@ class Application {
      */
     public function runtimePath($suffix = NULL, $create_dir = FALSE) {
 
-        $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . ($this->config->app->has('runtimepath') ? $this->config->app->runtimepath : '.runtime');
+        $path = $this->config->app->get('runtimepath');
 
         if(!file_exists($path)) {
 

@@ -22,7 +22,7 @@ The idea behind the Model-View-Controller architectural pattern is simple: we mu
 
 The application is divided into these three main components, each one in charge of different tasks. Let's see a detailed explanation and an example.
 
-<img alt="mvc diagram" src="images/mvc_diagram.png" title="MVC Diagram" style="float: right;" />
+![MVC Diagram](images/mvc_diagram.png)
 
 ### Controller
 

@@ -111,10 +111,9 @@ var dataBinderValue = function (name, value, label, parent) {
         "value": {
             set: function (value) {
                 if (value !== null && typeof value === 'object' || value === this._value) return;
-                var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
-                this._parent._update(attr_name, true);
+                this._parent._update(this._name, true);
                 this._parent._trigger(this._name, this);
             },
             get: function () {
@@ -125,7 +124,7 @@ var dataBinderValue = function (name, value, label, parent) {
             set: function (value) {
                 if (typeof value !== 'string' || value === this._label) return;
                 this._label = value;
-                this._parent._update(this._parent._attr_name(this._name), false);
+                this._parent._update(this._name, false);
             },
             get: function () {
                 return this._label;
@@ -135,7 +134,7 @@ var dataBinderValue = function (name, value, label, parent) {
             set: function (value) {
                 if (value === this._other) return;
                 this._other = value;
-                this._parent._update(this._parent._attr_name(this._name), false);
+                this._parent._update(this._name, false);
             },
             get: function () {
                 return this._other;
@@ -167,12 +166,11 @@ dataBinderValue.prototype.set = function (value, label, other, update) {
     if (value !== null && typeof value === 'object'
         || (value === this._value && update !== true) && label === this._label
         && (typeof other === 'undefined' || other === this._other)) return;
-    var attr_name = this._parent._attr_name(this._name);
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     if (update !== false) {
-        this._parent._update(attr_name, true);
+        this._parent._update(this._name, true);
         this._parent._trigger(this._name, this);
     }
     return this;
@@ -189,8 +187,7 @@ dataBinderValue.prototype.empty = function (update) {
 };
 
 dataBinderValue.prototype.update = function () {
-    var attr_name = this._parent._attr_name(this._name);
-    this._parent._update(attr_name, true);
+    this._parent._update(this._name, true);
     this._parent._trigger(this._name, this);
 };
 
@@ -255,18 +252,12 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
 };
 
 dataBinder.prototype.add = function (key, value) {
-    var attr_name = this._attr_name(key);
-    var trigger_name = this._trigger_name(attr_name);
     this._attributes[key] = this.__convert_type(key, value);
-    this._update(attr_name, false);
-    this._defineProperty(trigger_name, key);
+    this._update(key, false);
+    this._defineProperty(key);
 };
 
-dataBinder.prototype._trigger_name = function (attr_name) {
-    return attr_name.replace(/[\[\]]/g, '_') + ':change';
-};
-
-dataBinder.prototype._defineProperty = function (trigger_name, key) {
+dataBinder.prototype._defineProperty = function (key) {
     var attr_name = this._attr_name(key);
     Object.defineProperty(this, key, {
         configurable: true,
@@ -280,7 +271,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
-            this._jquery.trigger(trigger_name, [this, attr_name, value]);
+            this._update(key, true)
             this._trigger(key, value);
             if (attr instanceof dataBinder && value instanceof dataBinder) {
                 value._parent = this;
@@ -322,10 +313,8 @@ dataBinder.prototype._attr_name = function (attr_name) {
     return this._parent._attr_name(this._name) + (typeof attr_name === 'undefined' ? '' : '.' + attr_name);
 };
 
-dataBinder.prototype._update = function (attr_name, do_update) {
-    var attr_item = null;
-    if ((pos = attr_name.lastIndexOf('.')) > 0) attr_item = this._attributes[attr_name.substr(pos + 1)];
-    else attr_item = this._attributes[attr_name];
+dataBinder.prototype._update = function (key, do_update) {
+    var attr_item = this._attributes[key], attr_name = this._attr_name(key);
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
         if (o.is("input, textarea, select")) {
@@ -340,6 +329,8 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
+        } else if (o.is("img")) {
+            o.attr('src', attr_item ? attr_item.value : null);
         } else {
             if (o.attr('data-bind-label') === 'false')
                 o.html(attr_item ? attr_item.value : null);
@@ -351,10 +342,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
 };
 
 dataBinder.prototype._trigger = function (key, value) {
-    if (key in this._watchers) {
-        for (let x in this._watchers[key])
-            this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
-    }
+    if (key in this._watchers) for (let x in this._watchers[key]) this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
 };
 
 dataBinder.prototype._trigger_diff = function (source) {
@@ -367,26 +355,20 @@ dataBinder.prototype._trigger_diff = function (source) {
         if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
         else if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
             !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
-            this._update(this._attr_name(x), true);
+            this._update(x, true);
             this._trigger(x, this._attributes[x]);
         }
     }
 };
 
 dataBinder.prototype.resync = function (name) {
-    for (let x in this._attributes)
-        this._jquery.off(this._trigger_name(this._attr_name(x)));
     if (typeof name !== 'undefined') this._name = name;
     for (let x in this._attributes) {
-        var trigger_name = this._trigger_name(this._attr_name(x));
-        this._jquery.on(trigger_name, function (event, binder, attr_name, attr_value) {
-            binder._update(attr_name, true);
-        });
-        this._defineProperty(trigger_name, x);
+        this._defineProperty(x);
         if (x in this._attributes) {
             if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray)
                 this._attributes[x].resync();
-            else this._update(this._attr_name(x), false);
+            else this._update(x, false);
         }
     }
     return this;
@@ -442,8 +424,8 @@ dataBinder.prototype.keys = function () {
 dataBinder.prototype.populate = function (items) {
     this._attributes = {};
     for (let x in items) {
-        if (key in this._attributes) continue;
-        this.add(items[x]);
+        if (x in this._attributes) continue;
+        this.add(x, items[x]);
     }
 };
 
@@ -521,8 +503,6 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     });
 };
 
-dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
-
 dataBinderArray.prototype._attr_name = function (attr_name) {
     if (!this._parent) return attr_name;
     return this._parent._attr_name(this._name) + (typeof attr_name === 'undefined' ? '' : '[' + attr_name + ']');
@@ -572,7 +552,6 @@ dataBinderArray.prototype._trigger = function (name, obj) {
 dataBinderArray.prototype.push = function (element, no_update) {
     var key = this._elements.length;
     if (!Object.getOwnPropertyDescriptor(this, key)) {
-        var trigger_name = this._trigger_name(this._attr_name(key));
         Object.defineProperty(this, key, {
             set: function (value) {
                 this._elements[key] = this.__convert_type(key, value);
