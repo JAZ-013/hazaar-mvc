@@ -160,6 +160,14 @@ class Application {
 
         Application\Url::$rewrite = $this->config->app->get('rewrite');
 
+        if(!defined('RUNTIME_PATH')){
+
+            define('RUNTIME_PATH', $this->runtimePath(null, true));
+
+            $this->GLOBALS['runtime'] = RUNTIME_PATH;
+
+        }
+
         //Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config->app->addInputFilter(function($value){
             Application::setRoot($value);
@@ -320,7 +328,8 @@ class Application {
                 'model' => 'models',
                 'view' => 'views',
                 'controller' => 'controllers',
-                'service' => 'services'
+                'service' => 'services',
+                'helper' => 'helpers'
             ),
             'view' => array(
                 'prepare' => false

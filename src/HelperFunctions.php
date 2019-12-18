@@ -16,16 +16,20 @@
  *
  * This helps prevent array key not found errors in the PHP interpreter.
  *
- * Keys may also be specified using dot-notation.  This allows ake to called only once instead of for each
+ * Keys may be specified using dot-notation.  This allows ake to called only once instead of for each
  * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
  * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if
  * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
  * if the child is not an array or object.
+ * 
+ * The `$key` parameter can also be an array of keys.  In this case, the array will be searched for each key
+ * and the first value found will be returned.  This is handy if you need a value that could be stored under
+ * multiple possible key names.
  *
  * @since 1.0.0
  *
  * @param mixed   $array     The array to search.  Objects with public properties are also supported.
- * @param mixed   $key       The array key or object property name to look for.
+ * @param mixed   $key       The array key or object property name to look for.  This can now also be an array of keys and the first one found will be returned.
  * @param mixed   $default   An optional default value to return if the key or property does not exist.
  * @param boolean $non_empty Indicates that empty values, such as empty arrays and strings should be treated as NULL, even if they exist as elements in the array/object.
  *
@@ -60,6 +64,15 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
             foreach($parts as $part) if(($array = ake($array, $part, null, $non_empty)) === null) break;
 
             if(!is_null($array)) return $array;
+
+        }
+
+    }elseif(is_array($key)){
+
+        foreach($key as $k){
+
+            if($value = ake($array, $k, null, $non_empty))
+                return $value;
 
         }
 
@@ -1683,8 +1696,9 @@ function array_remove_empty(&$array){
 /**
  * Generate a truly random string of characters.
  *
- * @param mixed $length The length of the random string being created.
- * @param mixed $include_special Whether or not special characters such as #, $, etc should be included.   Normally only Aa-Zz, 0-9 are used.
+ * @param mixed $length             The length of the random string being created.
+ * @param mixed $include_special    Whether or not special characters.  Normally only Aa-Zz, 0-9 are used.  If TRUE will include
+ *                                  characters such as #, $, etc.  This can also be a string of characters to use.  
  *
  * @return string A totally random string of characters.
  */
@@ -1694,6 +1708,8 @@ function str_random($length, $include_special = false){
 
     if($include_special === true)
         $characters .= ' ~!@#$%^&*()-_=+[{]}\|;:\'",<.>/?';
+    elseif(is_string($include_special))
+        $characters .= $include_special;
 
     $count = strlen($characters);
 
