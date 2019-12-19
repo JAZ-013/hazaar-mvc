@@ -315,6 +315,7 @@ dataBinder.prototype._attr_name = function (attr_name) {
 
 dataBinder.prototype._update = function (key, do_update) {
     var attr_item = this._attributes[key], attr_name = this._attr_name(key);
+    if (attr_item instanceof dataBinder || attr_item instanceof dataBinderArray) return;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
         if (o.is("input, textarea, select")) {
@@ -534,16 +535,16 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
     return this._parent.__convert_type(key, value, this);
 };
 
-dataBinderArray.prototype._update = function (attr_name, attr_element, do_update) {
-    var remove = this.indexOf(attr_element) < 0, attr_value = this;
+dataBinderArray.prototype._update = function (key, attr_element, do_update) {
+    var remove = this.indexOf(attr_element) < 0, attr_name = this._attr_name(key);
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = $(item);
         if (o.is('[data-toggle]')) {
             o.find('[data-bind-value="' + attr_element.value + '"]')
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
-        }
-        if (do_update === true) o.trigger('update', [attr_name, attr_value]);
+        } o.html(attr_element.toString())
+        if (do_update === true) o.trigger('update', [attr_name, attr_element]);
     });
 };
 
@@ -566,7 +567,7 @@ dataBinderArray.prototype.push = function (element, no_update) {
     element = this.__convert_type(key, element);
     this._elements[key] = element;
     jQuery('[data-bind="' + this._attr_name() + '"]').trigger('push', [this._attr_name(), element, key]);
-    if (no_update !== true && this._elements[key] instanceof dataBinder) {
+    if (no_update !== true && (this._elements[key] instanceof dataBinder || this._elements[key] instanceof dataBinderValue)) {
         let newitem = this._newitem(key, this._elements[key]);
         jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
         if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
@@ -625,7 +626,7 @@ dataBinderArray.prototype.resync = function () {
             if (this._template.length > 0) this._template.detach();
         }
     }
-    if (this._template && this._template.length > 0) {
+    if (this._template && this._template.length > 0 && this._elements.length > 0) {
         var parent = jQuery('[data-bind="' + this._attr_name() + '"]');
         for (let x in this._elements) {
             var attr_name = this._attr_name(x);
@@ -635,8 +636,8 @@ dataBinderArray.prototype.resync = function () {
                 parent.append(newitem);
                 if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
             }
-            if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
-                this._elements[x].resync();
+            if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray) this._elements[x].resync();
+            else if (this._elements[x] instanceof dataBinderValue) this._update(x, this._elements[x], true);
         }
     }
 };
