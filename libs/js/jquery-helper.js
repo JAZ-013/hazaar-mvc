@@ -317,7 +317,7 @@ dataBinder.prototype._update = function (key, do_update) {
     var attr_item = this._attributes[key], attr_name = this._attr_name(key);
     if (attr_item instanceof dataBinder || attr_item instanceof dataBinderArray) return;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
-        var o = jQuery(item);
+        var o = jQuery(item), func = null;
         if (o.is("input, textarea, select")) {
             var attr_value = attr_item ? attr_item.value : null;
             if (o.attr('type') === 'checkbox')
@@ -341,6 +341,16 @@ dataBinder.prototype._update = function (key, do_update) {
                 o.html(attr_item ? attr_item.other : null);
             else o.html(attr_item ? attr_item.toString() : '');
         }
+        if ((func = $(item).attr('data-bind-update')) !== undefined) {
+            let e = new Function('value', 'item', func);
+            return e.call(item, attr_item.value, attr_item);
+        }
+    });
+    jQuery('[data-bind-watch="' + attr_name + '"]').each(function (index, item) {
+        let func = $(item).attr('data-bind-onwatch');
+        if (!func) return;
+        let e = new Function('value', 'item', func);
+        return e.call(item, attr_item.value, attr_item);
     });
 };
 
