@@ -82,6 +82,12 @@ class Image extends \Hazaar\File {
 
     }
 
+    public function has_contents(){
+
+        return $this->renderer->width() > 0;
+
+    }
+
     public function __call($func, $params) {
 
         if(! $this->has_contents())
