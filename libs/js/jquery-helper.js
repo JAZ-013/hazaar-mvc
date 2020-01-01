@@ -478,6 +478,10 @@ dataBinder.prototype.compare = function (value) {
     return true;
 };
 
+dataBinder.prototype.each = function (callback) {
+    for (x in this._attributes) callback(x, this._attributes[x]);
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
