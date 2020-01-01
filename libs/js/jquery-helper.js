@@ -196,6 +196,11 @@ dataBinderValue.prototype.enabled = function (value) {
     return this._enabled = value;
 };
 
+dataBinderValue.prototype.find = function (selector) {
+    var o = jQuery('[data-bind="' + this._parent._attr_name(this._name) + '"]');
+    return selector ? o.filter(selector) : o;
+};
+
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
