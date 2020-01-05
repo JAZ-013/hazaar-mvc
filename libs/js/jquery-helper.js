@@ -101,6 +101,7 @@ var dataBinderArray = function (data, name, parent) {
 };
 
 var dataBinderValue = function (name, value, label, parent) {
+    if (!parent) throw "dataBinderValue requires a parent!";
     this._name = name;
     this._value = parent.__nullify(value);
     this._label = label;
@@ -479,7 +480,7 @@ dataBinder.prototype.compare = function (value) {
 };
 
 dataBinder.prototype.each = function (callback) {
-    for (x in this._attributes) callback(x, this._attributes[x]);
+    for (x in this._attributes) callback(x, this._attributes[x] ? this._attributes[x] : new dataBinderValue(x, null, null, this));
 };
 
 dataBinderArray.prototype._init = function (data, name, parent) {
@@ -710,12 +711,15 @@ dataBinderArray.prototype.enabled = function (value) {
 };
 
 dataBinderArray.prototype.each = function (callback) {
-    for (x in this._elements) callback(this._elements[x]);
+    for (x in this._elements) callback(x, this._elements[x]);
 };
 
-dataBinderArray.prototype.find = function (callback) {
+dataBinderArray.prototype.search = function (callback) {
+    if (typeof callback !== 'function') return false;
     var elements = [];
     for (x in this._elements)
         if (callback(this._elements[x]) === true) elements.push(this._elements[x]);
     return elements;
 };
+
+dataBinderArray.prototype.find = dataBinderValue.prototype.find;
