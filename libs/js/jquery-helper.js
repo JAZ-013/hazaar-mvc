@@ -629,7 +629,7 @@ dataBinderArray.prototype.resync = function () {
             this._template = host.data('template');
         } else {
             this._template = host.children('template');
-            if (this._template.length > 0) this._template.detach();
+            if (this._template.length > 0 && this._template.is('[data-bind-nodetach]') === false) this._template.detach();
         }
     }
     if (this._template && this._template.length > 0) {
