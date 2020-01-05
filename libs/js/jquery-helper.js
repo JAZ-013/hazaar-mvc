@@ -101,6 +101,7 @@ var dataBinderArray = function (data, name, parent) {
 };
 
 var dataBinderValue = function (name, value, label, parent) {
+    if (!parent) throw "dataBinderValue requires a parent!";
     this._name = name;
     this._value = parent.__nullify(value);
     this._label = label;
@@ -194,6 +195,11 @@ dataBinderValue.prototype.update = function () {
 dataBinderValue.prototype.enabled = function (value) {
     if (typeof value !== 'boolean') return this._enabled;
     return this._enabled = value;
+};
+
+dataBinderValue.prototype.find = function (selector) {
+    var o = jQuery('[data-bind="' + this._parent._attr_name(this._name) + '"]');
+    return selector ? o.filter(selector) : o;
 };
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -486,6 +492,10 @@ dataBinder.prototype.compare = function (value) {
     return true;
 };
 
+dataBinder.prototype.each = function (callback) {
+    for (x in this._attributes) callback(x, this._attributes[x] ? this._attributes[x] : new dataBinderValue(x, null, null, this));
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -633,7 +643,7 @@ dataBinderArray.prototype.resync = function () {
             this._template = host.data('template');
         } else {
             this._template = host.children('template');
-            if (this._template.length > 0) this._template.detach();
+            if (this._template.length > 0 && this._template.is('[data-bind-nodetach]') === false) this._template.detach();
         }
     }
     if (this._template && this._template.length > 0 && this._elements.length > 0) {
@@ -714,12 +724,15 @@ dataBinderArray.prototype.enabled = function (value) {
 };
 
 dataBinderArray.prototype.each = function (callback) {
-    for (x in this._elements) callback(this._elements[x]);
+    for (x in this._elements) callback(x, this._elements[x]);
 };
 
-dataBinderArray.prototype.find = function (callback) {
+dataBinderArray.prototype.search = function (callback) {
+    if (typeof callback !== 'function') return false;
     var elements = [];
     for (x in this._elements)
         if (callback(this._elements[x]) === true) elements.push(this._elements[x]);
     return elements;
 };
+
+dataBinderArray.prototype.find = dataBinderValue.prototype.find;
