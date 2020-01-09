@@ -63,9 +63,9 @@ class Btree {
     /**
      * Use static method open() to get instance
      */
-    public function __construct($file) {
+    public function __construct($file, $ready_only = false) {
 
-        if(!$this->open($file))
+        if(!$this->open($file, $ready_only))
             throw new \Hazaar\Exception('Unable to open file: ' . $file);
 
     }
@@ -79,7 +79,7 @@ class Btree {
      *
      * @return boolean
      */
-    public function open($file = null) {
+    public function open($file = null, $read_only) {
 
         if($file === null){
 
@@ -108,7 +108,7 @@ class Btree {
         if($this->file->exists() && $this->file->size() < 0)
             throw new \Hazaar\Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
 
-        $this->file->open('a+b');
+        $this->file->open((($read_only === true) ? 'rb' : 'a+b'));
 
         // write default node if neccessary
         if ($this->file->seek(0, SEEK_END) === -1) {
