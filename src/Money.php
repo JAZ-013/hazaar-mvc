@@ -103,7 +103,7 @@ class Money {
 
             $file = new \Hazaar\File(\Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
 
-            Money::$db = new Btree($file);
+            Money::$db = new Btree($file, true);
 
         }
 
