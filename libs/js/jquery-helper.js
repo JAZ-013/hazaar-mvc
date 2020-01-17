@@ -91,7 +91,7 @@ jQuery.stream = function (url, options) {
  * @return {object} A new dataBinder object.
  */
 let dataBinder = function (data, name, parent, namespace) {
-    if (this === window) return new dataBinder(data);
+    if (this === window) return new dataBinder(data, name, parent, namespace);
     this._init(data, name, parent, namespace);
 };
 
@@ -252,7 +252,7 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (value !== null && typeof value === 'object' && value.constructor.name === 'Object') value = new dataBinder(value, key, parent);
+        if (value !== null && typeof value === 'object' && value.constructor.name === 'Object') value = new dataBinder(value, key, parent, this._namespace);
         else if (typeof value !== 'object') value = new dataBinderValue(key, value, null, parent);
     }
     return value;
