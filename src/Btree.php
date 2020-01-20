@@ -79,7 +79,7 @@ class Btree {
      *
      * @return boolean
      */
-    public function open($file = null, $read_only) {
+    public function open($file = null, $read_only = false) {
 
         if($file === null){
 
