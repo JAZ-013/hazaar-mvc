@@ -60,8 +60,6 @@ class Money {
 
     static private  $db;
 
-    static private  $geo;
-
     static private  $exchange_rates = array();
 
     static private  $cache;
@@ -103,29 +101,9 @@ class Money {
 
         if(!Money::$db instanceof Btree){
 
-            $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('currency.db'));
+            $file = new \Hazaar\File(\Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
 
-            Money::$db = new Btree($file);
-
-            if(Money::$db->get('__version__') !== Money::$version){
-
-                Money::$db->reset_btree_file();
-
-                if(!Money::$geo instanceof GeoData)
-                    Money::$geo = new GeoData();
-
-                $countries = Money::$geo->country_info_all();
-
-                foreach($countries as $country){
-
-                    if($code = ake($country['currency'], 'code'))
-                        Money::$db->set($code, $country['currency']);
-
-                }
-
-                Money::$db->set('__version__', Money::$version);
-
-            }
+            Money::$db = new Btree($file, true);
 
         }
 
@@ -210,19 +188,30 @@ class Money {
 
         if($country) {
 
-            if(!Money::$geo instanceof GeoData)
-                Money::$geo = new GeoData();
+            if(strlen($country) < 3){
 
-            if(strlen($country) > 3)
-                $country = Money::$geo->country_code($country);
+                $countries = Money::$db->range("\x00", "\xff");
 
-            $info = Money::$geo->country_currency_info($country);
+                foreach($countries as $c){
 
-            return ake($info, 'code');
+                    if(strcasecmp($c['iso'], $country) !== 0)
+                        continue;
+
+                    $country = $c['currencycode'];
+
+                    break;
+
+                }
+
+            }
+
+            $info = Money::$db->get($country);
+
+            return ake($info, 'currencycode');
 
         }
 
-        return ake($this->local_currency, 'code');
+        return ake($this->local_currency, 'currencycode');
 
     }
 
@@ -256,16 +245,16 @@ class Money {
         if(strlen($foreign_currency) == 2)
             $foreign_currency = $this->getCode($foreign_currency);
 
-        if(strcasecmp($this->local_currency['code'], $foreign_currency) == 0)
+        if(strcasecmp($this->local_currency['currencycode'], $foreign_currency) == 0)
             return 1;
 
-        $base = strtoupper(trim($this->local_currency['code']));
+        $base = strtoupper(trim($this->local_currency['currencycode']));
 
         $foreign_currency = strtoupper(trim($foreign_currency));
 
         if(!ake(Money::$exchange_rates, $base)){
 
-            if(!Money::$cache && class_exists('Hazaar\Cache'))
+            if(!Money::$cache && class_exists('\Hazaar\Cache'))
                 Money::$cache = new \Hazaar\Cache();
 
             $key = 'exchange_rate_' . $base;
@@ -397,13 +386,13 @@ class Money {
 
             } elseif($arg instanceof Money) {
 
-                $total += $arg->convertTo($this->local_currency['code'])->toFloat();
+                $total += $arg->convertTo($this->local_currency['currencycode'])->toFloat();
 
             }
 
         }
 
-        return new Money($total, $this->local_currency['code']);
+        return new Money($total, $this->local_currency['currencycode']);
 
     }
 
@@ -426,13 +415,13 @@ class Money {
 
             } elseif($arg instanceof Money) {
 
-                $total -= $arg->convertTo($this->local_currency['code'])->toFloat();
+                $total -= $arg->convertTo($this->local_currency['currencycode'])->toFloat();
 
             }
 
         }
 
-        return new Money($total, $this->local_currency['code']);
+        return new Money($total, $this->local_currency['currencycode']);
 
     }
 
@@ -465,4 +454,3 @@ class Money {
     }
 
 }
-

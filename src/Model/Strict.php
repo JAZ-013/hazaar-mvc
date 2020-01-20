@@ -895,13 +895,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false) {
+    public function toArray($disable_callbacks = false, $depth = null, $filter = null, $export_data_binder = false, $ignore_nulls = false) {
 
-        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder);
+        return $this->resolveArray($this, $disable_callbacks, $depth, $filter, $export_data_binder, $ignore_nulls);
 
     }
 
-    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = true) {
+    private function resolveArray($array, $disable_callbacks = false, $depth = null, $filter = false, $export_data_binder = true, $ignore_nulls = false) {
 
         $result = array();
 
@@ -926,23 +926,35 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 $value = $def['value'];
 
             /*
+             * Legacy 'hide' filter
+             * 
+             * If the filter is just a boolean, then we are trying to do the old `$show_hidden` style so we need to convert that.  Here if
+             * `show_hidden=false` (the default) we want to filter out hidden fields so the filter becomes `array('hide' => true)`, otherwise
+             * we want to show hidden so we don't need a filter, hence we set it null.
+             */
+            if (is_boolean($filter)) $filter = ($filter === false) ? array('hide' => true) : null;
+
+            /*
              * Hiding fields
              *
              * If the definition for this field has the 'hide' attribute, we check if the value matches and if so we skip
              * this value.
              */
-            if ($show_hidden === false
+            if(is_array($filter) 
+                && count($filter) > 0 
                 && array_key_exists($key, $this->fields)
-                && is_array($this->fields[$key])
-                && array_key_exists('hide', $this->fields[$key])) {
+                && is_array($this->fields[$key])){
 
-                $hide = $this->fields[$key]['hide'];
+                foreach($filter as $filter_name => $filter_value){
 
-                if ($hide instanceof \Closure)
-                    $hide = $hide($value);
+                    if(!array_key_exists($filter_name, $this->fields[$key]))
+                        continue;
 
-                if ($hide === true)
-                    continue;
+                    if(($this->fields[$key][$filter_name] instanceof \Closure) ? $hide($value) : ($this->fields[$key][$filter_name] === $filter_value))
+                        continue 2;
+
+                }
+
             }
 
             /*
@@ -957,7 +969,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if ($value instanceof Strict) {
 
-                    $value = $value->toArray($disable_callbacks, $next, $show_hidden, $export_data_binder);
+                    $value = $value->toArray($disable_callbacks, $next, $filter, $export_data_binder);
 
                 } elseif ($value instanceof DataBinderValue) {
 
@@ -965,7 +977,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 } elseif (is_array($value) || $value instanceof ChildArray) {
 
-                    $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden, $export_data_binder);
+                    $value = $this->resolveArray($value, $disable_callbacks, $next, $filter, $export_data_binder);
 
                 }
 
