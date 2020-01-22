@@ -31,17 +31,8 @@ class GeoData {
      * @var array
      */
     static private $sources = array(
-        'city' => array(
-            'url' => 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip',
-            'md5' => 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5',
-            'csv' => 'GeoLite2-City-Locations-en.csv'
-        ),
-        'code' => array(
-            'url' => 'https://countrycode.org/customer/countryCode/downloadCountryCodes'
-        ),
-        'currency' => array(
-            'url' => 'https://restcountries.eu/rest/v2/all'
-        )
+        'url' => 'https://api.hazaarmvc.com/databases/geodata.zip',
+        'md5' => 'https://api.hazaarmvc.com/databases/geodata.zip.md5'
     );
 
     /**
@@ -78,229 +69,32 @@ class GeoData {
      */
     private function __initialise(){
 
-        $extra = array(
-            'E164' => array('type' => 'int', 'key' => 'phone_code'),
-            'Language Codes' => array('type' => 'array', 'delimiter' => ',', 'key' => 'languages'),
-            'Capital' => 'capital',
-            'Time Zone in Capital' => 'capital_timezone',
-            'Area KM2' => array('type' => 'int', 'key' => 'area'),
-            'Internet Hosts' => array('type' => 'int', 'key' => 'hosts'),
-            'Internet Users' => array('type' => 'int', 'key' => 'users')
-        );
-
         $data = array();
 
         GeoData::$db->reset_btree_file();
 
-        $tmpdir = new \Hazaar\File\Dir(Application::getInstance()->runtimePath('geodata', true));
+        $tmpdir = new \Hazaar\File\Dir(Application::getInstance()->runtimePath());
 
-        $city_zipfile = $tmpdir->get('geodata.zip');
-
-        /*
-         * Download the city database ZIP file and check it's MD5 signature
-         */
-        $city_zipfile->put_contents(file_get_contents(GeoData::$sources['city']['url']));
-
-        if(!$city_zipfile->size() > 0)
-            throw new \Hazaar\Exception('Unable to download city info source file!');
-
-        $md5 = file_get_contents(GeoData::$sources['city']['md5']);
-
-        if($city_zipfile->md5() !== $md5)
-            throw new \Hazaar\Exception('City info source file MD5 signature does not match!');
-
-        $files = $city_zipfile->unzip(GeoData::$sources['city']['csv'], $tmpdir);
-
-        $city_zipfile->unlink(); //Cleanup now
+        $geodata_file = $tmpdir->get(basename(GeoData::$sources['url']));
 
         /*
-         * Download extra country code data
+         * Download the Hazaar GeoData file and check it's MD5 signature
          */
-        $codes = $this->parseCSV(GeoData::$sources['code']['url'], 'ISO2');
+        $geodata_file->put_contents(file_get_contents(GeoData::$sources['url']));
 
-        $currency = $this->parseJSON(GeoData::$sources['currency']['url'], 'alpha2Code');
+        if(!$geodata_file->size() > 0)
+            throw new \Hazaar\Exception('Unable to download GeoData source file!');
 
-        /*
-         * Process the contents of the CSV and store in our Btree database
-         */
-        foreach($files as $file){
+        $md5 = trim(file_get_contents(GeoData::$sources['md5']));
 
-            $file->open();
+        if($geodata_file->md5() !== $md5)
+            throw new \Hazaar\Exception('GeoData source file MD5 signature does not match!');
 
-            $columns = $file->getCSV();
+        $files = $geodata_file->unzip('geodata.db', $tmpdir);
 
-            while($line = $file->getCSV()){
+        $geodata_file->unlink(); //Cleanup now
 
-                if(count($columns) !== count($line))
-                    continue;
-
-                $entry = array_combine($columns, $line);
-
-                if(!($country_code = $entry['country_iso_code']))
-                    continue;
-
-                if(!array_key_exists($country_code, $data)){
-
-                    $data[$country_code] = array(
-                        'id' => 'geoname_id',
-                        'code' => $country_code,
-                        'name' => $entry['country_name'],
-                        'continent' => array(
-                            'code' => $entry['continent_code'],
-                            'name' => $entry['continent_name']
-                        ),
-                        'states' => array(),
-                        'cities' => array()
-                    );
-
-                    if(array_key_exists($country_code, $codes)){
-
-                        foreach($extra as $source_key => $target_key){
-
-                            $value = $codes[$country_code][$source_key];
-
-                            if(is_array($target_key)){
-
-                                if(!($key = ake($target_key, 'key')))
-                                    continue;
-
-                                $type = ake($target_key, 'type', 'string');
-
-                                if($type === 'array'){
-
-                                    if(!($delim = ake($target_key, 'delimiter')))
-                                        continue;
-
-                                    $value = explode($delim, $value);
-
-                                }else{
-
-                                    settype($value, $type);
-
-                                }
-
-                                $data[$country_code][$key] = $value;
-
-                            }else{
-
-                                $data[$country_code][$target_key] = $value;
-
-                            }
-
-                        }
-
-                    }
-
-                    if($c = ake(ake($currency, $country_code), 'currencies')){
-
-                        if(is_array($c)) $c = ake($c, 0);
-
-                        $data[$country_code]['currency'] = array(
-                            'code' => $c->code,
-                            'name' => $c->name,
-                            //'precision' => intval($currency[$country_code]['ISO4217-currency_minor_unit']),
-                            'symbol' => $c->symbol,
-                            'symbol_entity' => '&#' . dechex(ord($c->symbol)) . ';'
-                        );
-
-                    }
-
-                }
-
-                if(!($state_code = $entry['subdivision_1_iso_code']))
-                    continue;
-
-                if(!array_key_exists($state_code, $data[$country_code]['states'])){
-
-                    $data[$country_code]['states'][$state_code] = array(
-                        'code' => $state_code,
-                        'name' => $entry['subdivision_1_name'],
-                        'cities' => array()  //City index
-                    );
-
-                }
-
-
-                if(!($city_name = $entry['city_name']))
-                    continue;
-
-                $city_id = uniqid();
-
-                $data[$country_code]['cities'][$city_id] = array(
-                    'name' => $city_name,
-                    'timezone' => $entry['time_zone'],
-                    'state' => $state_code
-                );
-
-                $data[$country_code]['states'][$state_code]['cities'][] = $city_id;
-
-            }
-
-            $file->close();
-
-            $file->unlink();
-
-        }
-
-        foreach($data as $key => $country)
-            GeoData::$db->set($key, $country);
-
-        GeoData::$db->set('__version__', GeoData::$version);
-
-        $tmpdir->delete(true);
-
-        return true;
-
-    }
-
-    private function parseCSV($file, $key_name){
-
-        $items = array();
-
-        $lines = explode("\n", file_get_contents($file));
-
-        $headers = str_getcsv(array_shift($lines));
-
-        foreach($lines as $line){
-
-            $line = str_getcsv($line);
-
-            if(count($line) !== count($headers))
-                continue;
-
-            $item = array();
-
-            foreach($line as $col => $value)
-                $item[$headers[$col]] = $value;
-
-            if($key = ake($item, $key_name, null, true))
-                $items[$key] = $item;
-
-        }
-
-        ksort($items);
-
-        return $items;
-
-    }
-
-    private function parseJSON($file, $key_name){
-
-        $items = array();
-
-        $data = json_decode(file_get_contents($file));
-
-        foreach($data as $item){
-
-            if($key = ake($item, $key_name, null, true))
-                $items[$key] = $item;
-
-        }
-
-        ksort($items);
-
-        return $items;
-
+        return count($files) === 1;
     }
 
     /**
