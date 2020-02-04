@@ -421,7 +421,8 @@ dataBinder.prototype.unwatch = function (key, id) {
 dataBinder.prototype.unwatchAll = function () {
     this._watchers = {};
     for (let x in this._attributes) {
-        if (this._attributes[x] instanceof dataBinder)
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray)
             this._attributes[x].unwatchAll();
     }
 };
@@ -732,3 +733,12 @@ dataBinderArray.prototype.search = function (callback) {
 };
 
 dataBinderArray.prototype.find = dataBinderValue.prototype.find;
+
+dataBinderArray.prototype.unwatchAll = function () {
+    this._watchers = [];
+    for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray)
+            this._attributes[x].unwatchAll();
+    }
+};
