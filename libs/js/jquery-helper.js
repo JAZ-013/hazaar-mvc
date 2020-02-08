@@ -330,7 +330,9 @@ dataBinder.prototype._update = function (key, do_update) {
             let attr_value = attr_item ? attr_item.value : null;
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
-            else if (o.attr('data-bind-label') === 'true')
+            else if (o.attr('type') === 'radio') {
+                o.prop('checked', do_update = (o.attr('value') === attr_value));
+            } else if (o.attr('data-bind-label') === 'true')
                 o.val(attr_item ? attr_item.label : null);
             else if (o.attr('data-bind-other') === 'true')
                 o.val(attr_item ? attr_item.other : null);
@@ -433,7 +435,8 @@ dataBinder.prototype.unwatch = function (key, id) {
 dataBinder.prototype.unwatchAll = function () {
     this._watchers = {};
     for (let x in this._attributes) {
-        if (this._attributes[x] instanceof dataBinder)
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray)
             this._attributes[x].unwatchAll();
     }
 };
@@ -744,3 +747,12 @@ dataBinderArray.prototype.search = function (callback) {
 };
 
 dataBinderArray.prototype.find = dataBinderValue.prototype.find;
+
+dataBinderArray.prototype.unwatchAll = function () {
+    this._watchers = [];
+    for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray)
+            this._attributes[x].unwatchAll();
+    }
+};
