@@ -425,9 +425,11 @@ class Config extends \Hazaar\Map {
             '_COOKIE' => &$_COOKIE,
             '_SESSION' => &$_SESSION,
             '_REQUEST' => &$_REQUEST,
-            '_ENV' => &$_ENV,
-            '_APP' => &\Hazaar\Application::getInstance()->GLOBALS,
+            '_ENV' => &$_ENV
         );
+
+        if($app = \Hazaar\Application::getInstance())
+            $allowed_values['_APP'] = &$app->GLOBALS;
 
         if(is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)){
 
