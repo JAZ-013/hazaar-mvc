@@ -39,7 +39,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             'username'      => null,
             'password'      => null,
             'root'          => 'Shared Documents',
-            'cache_backend' => 'file'
+            'cache_backend' => 'file',
+            'direct'        => false
         ), $options);
 
         if($this->options->webURL === null || $this->options->username === null || $this->options->password === null)
@@ -262,10 +263,11 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             }elseif($response->status === 500)
                 return false;
 
-            $error = ake($response->body(), 'error');
+            $exception_message =  ($error = ake($response->body(), 'error')) 
+                ? 'Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value
+                : 'Unknown response: ' . $response->body();
 
-            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code='
-                . $error->code . ' message=' . $error->message->value);
+            throw new \Hazaar\Exception($exception_message);
 
         }
 
@@ -813,7 +815,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function direct_uri($path) {
 
-        if(!($info = $this->info($path)))
+        if($this->options->direct !== true || !($info = $this->info($path)))
             return false;
 
         if($info->__metadata->type === 'SP.Folder')
