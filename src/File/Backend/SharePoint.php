@@ -39,7 +39,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             'username'      => null,
             'password'      => null,
             'root'          => 'Shared Documents',
-            'cache_backend' => 'file'
+            'cache_backend' => 'file',
+            'direct'        => false
         ), $options);
 
         if($this->options->webURL === null || $this->options->username === null || $this->options->password === null)
@@ -813,7 +814,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     public function direct_uri($path) {
 
-        if(!($info = $this->info($path)))
+        if($this->options->direct !== true || !($info = $this->info($path)))
             return false;
 
         if($info->__metadata->type === 'SP.Folder')
