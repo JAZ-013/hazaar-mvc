@@ -263,10 +263,11 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             }elseif($response->status === 500)
                 return false;
 
-            $error = ake($response->body(), 'error');
+            $exception_message =  ($error = ake($response->body(), 'error')) 
+                ? 'Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value
+                : 'Unknown response: ' . $response->body();
 
-            throw new \Hazaar\Exception('Invalid response (' . $response->status . ') from SharePoint: code='
-                . $error->code . ' message=' . $error->message->value);
+            throw new \Hazaar\Exception($exception_message);
 
         }
 
