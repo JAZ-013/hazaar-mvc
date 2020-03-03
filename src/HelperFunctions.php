@@ -52,7 +52,7 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
             if(property_exists($array, $key) && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
                 return $array->$key;
-            elseif($array instanceof \ArrayAccess && array_key_exists($key, $array))
+            elseif($array instanceof \ArrayAccess && isset($array[$key]))
                 return $array[$key];
 
         }
