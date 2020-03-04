@@ -31,14 +31,21 @@ class Adapter {
      *
      * If a transport is not provided then the [[Hazaar\Mail\Transport\Local]] transport will be used.
      *
-     * @param \Hazaar\Mail\Transport\Local $transport The transport backend to use.
+     * @param string $transport The name of the transport backend to use.
      */
-    function __construct(Transport $transport = NULL) {
+    function __construct($transport = 'local') {
 
-        if(! $transport)
-            $transport = (Adapter::$default_transport ? Adapter::$default_transport : new Transport\Local());
+        $config = \Hazaar\Application::getInstance()->config->get('mail');
 
-        $this->transport = $transport;
+        $this->transport = $this->getTransportObject($transport, $config);
+
+    }
+
+    public function getTransportObject($transport = 'local', $config = array()){
+
+        $transportClass = 'Hazaar\\Mail\\Transport\\' . ucfirst($transport);
+
+        dump($transportClass);
 
     }
 
