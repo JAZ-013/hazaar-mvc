@@ -74,6 +74,11 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     public function send($to, $subject = null, $message = null, $extra_headers = array()){
         
+        $from = ake($extra_headers, 'From');
+
+        if(preg_match('/\<(\w+@.+)\>/', $from, $matches))
+            $from = $matches[1];
+
         $this->connect($this->server, $this->port);
 
         if(!$this->read(220, 1024, $result))
@@ -84,7 +89,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->read(250, 65535, $result))
             throw new \Exception('Bad response on mail from: ' . $result);
         
-        $this->write('MAIL FROM: <' . ake($extra_headers, 'From') . '>');
+        $this->write("MAIL FROM: $from");
 
         if(!$this->read(250, 1024, $result))
             throw new \Exception('Bad response on mail from: ' . $result);
