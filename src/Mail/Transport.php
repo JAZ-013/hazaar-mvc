@@ -13,6 +13,9 @@ abstract class Transport implements Transport\_Interface {
             
         $this->options = $options;
 
+        if(\method_exists($this, 'init'))
+            $this->init($options);
+
     }
 
 }
