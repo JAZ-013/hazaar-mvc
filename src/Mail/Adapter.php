@@ -12,8 +12,6 @@ namespace Hazaar\Mail;
  */
 class Adapter {
 
-    static private $default_transport;
-
     private        $transport;
 
     private        $headers = array();
@@ -35,17 +33,24 @@ class Adapter {
      */
     function __construct($transport = 'local') {
 
-        $config = \Hazaar\Application::getInstance()->config->get('mail');
+        $config = new \Hazaar\Map(array(
+            'transport' => 'local'
+        ), \Hazaar\Application::getInstance()->config->get('mail'));
 
-        $this->transport = $this->getTransportObject($transport, $config);
+        $this->transport = $this->getTransportObject($config->transport, $config);
 
     }
 
     public function getTransportObject($transport = 'local', $config = array()){
 
-        $transportClass = 'Hazaar\\Mail\\Transport\\' . ucfirst($transport);
+        $transportClass = '\\Hazaar\\Mail\\Transport\\' . ucfirst($transport);
 
-        dump($transportClass);
+        if(!class_exists($transportClass))
+            throw new \Exception("The configured mail transport class '$transport' does not exist!");
+
+        $transportObject = new $transportClass($config);
+
+        return $transportObject;
 
     }
 
@@ -217,7 +222,7 @@ class Adapter {
             $message = '';
 
             foreach($this->body as $part)
-                $message .= $part->parse($params);
+                $message .= $part->render($params);
 
         }
 
