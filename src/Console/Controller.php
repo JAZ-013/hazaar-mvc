@@ -27,7 +27,7 @@ class Controller extends \Hazaar\Controller\Action {
         if($this->request->isPOST()){
 
             if($this->handler->authenticate($this->request->username, $this->request->password))
-                $this->redirect($this->application->url('hazaar', 'console'));
+                return $this->redirect($this->application->url('hazaar', 'console'));
 
             $this->view->msg = 'Login failed';
 
@@ -45,7 +45,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler->deauth();
 
-        $this->redirect($this->application->url('hazaar'));
+        return $this->redirect($this->application->url('hazaar'));
 
     }
 

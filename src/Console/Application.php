@@ -250,7 +250,7 @@ class Application extends Module {
             if($config->fromJSON($this->request->config)){
 
                 if($config->write())
-                    $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
+                    return $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
 
                 $this->notice('An error ocurred writing the config file.', 'exclamation-triangle', 'danger');
 

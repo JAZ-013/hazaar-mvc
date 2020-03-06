@@ -16,7 +16,7 @@
                 <?=$item->name();?>
             </td>
             <td>
-                <?=$item->relativepath();?>
+                <?=$item instanceof \Hazaar\File ? $item->relativepath() : '';?>
             </td>
             <td>
                 <?=str_bytes($item->size());?>
