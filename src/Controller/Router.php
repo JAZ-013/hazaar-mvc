@@ -15,7 +15,7 @@ class Router extends \Hazaar\Controller {
         parent::__initialize($request);
         
         if(!($path = trim($request->getPath(), '/')))
-            $this->redirect($this->url('console'));
+            return $this->redirect($this->url('console'));
 
         $parts = explode('/', $path);
 
@@ -66,7 +66,7 @@ class Router extends \Hazaar\Controller {
 
         $this->module->base_path ='hazaar';
 
-        $this->module->__initialize($request);
+        return $this->module->__initialize($request);
 
     }
 

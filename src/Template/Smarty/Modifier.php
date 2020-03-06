@@ -87,9 +87,14 @@ class Modifier {
 
     }
 
-    public function date_format($item, $format){
+    public function date_format($item, $format = null){
 
-        return strftime($format, (($item instanceof \Hazaar\Date) ? $item->getTimestamp() : $item));
+        if(!$item instanceof \Hazaar\Date)
+            $item = new \Hazaar\Date($item);
+
+        if(!$format) $format = '%c';
+
+        return strftime($format, $item->getTimestamp());
 
     }
 
@@ -134,7 +139,7 @@ class Modifier {
 
     public function number_format($string, $decimals = 0, $dec_point = '.', $thousands_sep = ','){
 
-        return number_format($string, $decimals, $dec_point, $thousands_sep);
+        return number_format(floatval($string), $decimals, $dec_point, $thousands_sep);
 
     }
 

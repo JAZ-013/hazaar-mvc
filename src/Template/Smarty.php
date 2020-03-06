@@ -237,7 +237,7 @@ class Smarty {
 
     protected function parsePARAMS($params){
 
-        $parts = preg_split('/\s+/', $params);
+        $parts = preg_split('/\s(?=([^"]*"[^"]*")*[^"]*$)/', $params);
 
         $params = array();
 
@@ -278,17 +278,17 @@ class Smarty {
 
                 return $matches[0];
 
-                //It matched a variable
+            //It matched a variable
             }elseif(substr($matches[1], 0, 1) === '$'){
 
                 $replacement = $this->replaceVAR($matches[1]);
 
-                //Matched a config variable
+            //Matched a config variable
             }elseif(substr($matches[1], 0, 1) === '#' && substr($matches[1], -1) === '#'){
 
                 $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
 
-                //Must be a function so we exec the internal function handler
+            //Must be a function so we exec the internal function handler
             }elseif((substr($matches[2], 0, 1) == '/'
                 && in_array(substr($matches[2], 1), Smarty::$tags))
                 || in_array($matches[2], Smarty::$tags)){
@@ -427,7 +427,7 @@ class Smarty {
 
         $var = $this->compileVAR($name);
 
-        return '<?php echo @(is_array(' . $var . ') ? print_r(' . $var . ', true) : ' . $var . ');?>';
+        return "<?php echo @$var;?>";
 
     }
 
@@ -518,7 +518,7 @@ class Smarty {
 
         $count = '$__count_' . $name;
 
-        $code = "<?php \$smarty['section']['$name'] = []; if(isset($var) && is_array($var) && count($var)>0): ";
+        $code = "<?php \$smarty['section']['$name'] = []; if(is_array($var) && count($var)>0): ";
 
         $code .= "for($count=1, $index=" . ake($params, 'start', 0) . '; ';
 
@@ -573,7 +573,7 @@ class Smarty {
 
         }else $vars = "'" . trim($tag, "'") . "'";
 
-        return '<?php echo @$this->url(' . $vars . ');?>';
+        return '<?php echo $this->url(' . $vars . ');?>';
 
     }
 
@@ -594,9 +594,9 @@ class Smarty {
 
             $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
-            $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
+            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 
@@ -610,9 +610,9 @@ class Smarty {
 
             $this->__foreach_stack[] = array('name' => $name, 'else' => false);
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
-            $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
+            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 
@@ -683,12 +683,27 @@ class Smarty {
 
     protected function compileASSIGN($params){
 
-        $params = $this->parsePARAMS($params);
+        if(substr($params, 0, 3) === 'var'){
+
+            $params = $this->parsePARAMS($params);
+
+        }else{
+
+            $parts = $this->parsePARAMS($params);
+
+            $params = array(
+                'var' => $parts[0],
+                'value' => $parts[1]
+            );
+
+        }
 
         if(!(array_key_exists('var', $params) && array_key_exists('value', $params)))
             return null;
 
-        return "<?php $" . trim($params['var'], "'") . "={$params['value']};?>";
+        $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
+
+        return "<?php @$" . trim($params['var'], '"') . "=$value;?>";
 
     }
 

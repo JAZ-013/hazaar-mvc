@@ -33,7 +33,9 @@ abstract class DataTypeConverter  {
         'bool' => 'boolean',
         'number' => 'float',
         'text' => 'string',
-        'date' => 'Hazaar\Date'
+        'date' => 'Hazaar\Date',
+        'time' => 'Hazaar\Date',
+        'timestamp' => 'Hazaar\Date'
     );
 
     /**

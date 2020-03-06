@@ -2,6 +2,6 @@
 
 namespace Hazaar\Mail;
 
-class Template extends \Hazaar\View\Template {
+class Template extends \Hazaar\Template\Smarty {
 
 }

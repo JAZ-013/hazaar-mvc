@@ -45,6 +45,11 @@ define('FILE_PATH_SERVICE', 'service');
 define('FILE_PATH_SUPPORT', 'support');
 
 /**
+ * @brief Constant to indicate a path contains Helper files
+ */
+define('FILE_PATH_HELPER', 'helper');
+
+/**
  * @brief Constant to indicate a path in the library path
  */
 define('FILE_PATH_LIB', 'library');

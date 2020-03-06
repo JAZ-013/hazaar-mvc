@@ -123,6 +123,12 @@ class Date extends \DateTime {
             if (is_numeric($datetime))
                 $datetime = '@' . $datetime;
 
+        } elseif( is_string($datetime) && preg_match('/^(\w{2})([\d\.]+)$/', $datetime, $matches)){
+
+            //Convert MS "serial date" to epoch timestamp
+            if($matches[1] === 'SD')
+                $datetime = '@' . intval((floatval($matches[2]) - 25569) * 86400);
+
         }
 
         if (preg_match('/@(\d+)\.(\d+)/', $datetime, $matches)) {

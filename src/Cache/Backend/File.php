@@ -222,8 +222,6 @@ class File extends \Hazaar\Cache\Backend {
 
     public function set($key, $value, $timeout = NULL) {
 
-        $this->local[$key] = $value;
-
         if($this->zlib && $this->options->use_zlib)
             $value = gzcompress($value, 9);
 
@@ -233,6 +231,8 @@ class File extends \Hazaar\Cache\Backend {
             $data['expire'] = time() + $timeout;
 
         $this->keepalive();
+
+        $this->local[$key] = $data;
 
         return $this->store->set($key, $data);
 

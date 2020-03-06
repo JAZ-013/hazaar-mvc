@@ -46,7 +46,7 @@ class View implements \ArrayAccess {
 
         }
 
-        if ($this->application->config->has('view')) {
+        if (substr($view, 0, 1) !== '@' && $this->application->config->has('view')) {
 
             if ($this->application->config->view->has('helper')) {
 
@@ -413,7 +413,8 @@ class View implements \ArrayAccess {
 
             if(! array_key_exists($alias, $this->_helpers)) {
 
-                $class = '\\Hazaar\\View\\Helper\\' . ucfirst($helper);
+                if(!($class = $this->findHelper($helper)))
+                    throw new \Exception("View helper '$helper' does not exist");
 
                 $obj = new $class($this, $args);
 
@@ -427,6 +428,28 @@ class View implements \ArrayAccess {
             }
 
         }
+
+    }
+
+    private function findHelper($name){
+
+        /**
+         * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
+         */
+        $search_prefixes = array('\\Application\\Helper\\View', '\\Hazaar\\View\\Helper');
+
+        $name = \ucfirst($name);
+
+        foreach($search_prefixes as $prefix){
+
+            $class = $prefix . '\\' . $name;
+
+            if(\class_exists($class))
+                return $class;
+
+        }
+
+        return null;
 
     }
 

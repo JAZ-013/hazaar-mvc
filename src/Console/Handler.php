@@ -172,7 +172,7 @@ class Handler {
 
     public function getUser(){
 
-        return $_SESSION[$this->session_key];
+        return ake($_SESSION, $this->session_key);
 
     }
 

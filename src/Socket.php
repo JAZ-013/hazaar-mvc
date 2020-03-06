@@ -370,7 +370,7 @@ class Socket {
      *         the error.
      *        
      */
-    public function recv(&$buf, $len, $flags) {
+    public function recv(&$buf, $len, $flags = NULL) {
 
         if (! is_resource($this->resource))
             return false;
@@ -531,7 +531,7 @@ class Socket {
      *       
      * @return mixed Socket::send() returns the number of bytes sent, or FALSE on error.
      */
-    public function send($buf, $len, $flags) {
+    public function send($buf, $len, $flags = NULL) {
 
         if (! is_resource($this->resource))
             return false;
