@@ -587,6 +587,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.leftDIV = $('<div class="fb-left">');
             host.controlDIV = $('<div class="fb-tree-control">').appendTo(host.leftDIV);
             host.treeDIV = $('<div class="fb-tree">').appendTo(host.leftDIV);
+            host.dropZone = $('<div class="fb-dropzone">').hide().appendTo(host.mainDIV);
+            host.dropMsg = $('<div class="fb-dropmsg">').appendTo(host.dropZone);
+            host.dropTarget = $('<div class="fb-droptarget">').appendTo(host.dropZone);
             if (host.settings.upload) {
                 host.newBUTTON = $('<button class="fb-btn-new">').html('New').appendTo(host.controlDIV);
                 host.uploadDIV = $('<div class="fb-upload">').appendTo(host.leftDIV);
@@ -697,6 +700,24 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     }
                     return host._contextMenu(event, options);
                 }
+            }).on('dragenter', function (e) {
+                e.preventDefault();
+                var c = e.originalEvent.dataTransfer.items.length;
+                var msg = c + ' file' + (c > 1 ? 's' : '');
+                host.dropMsg.html('Release to upload ' + msg);
+                host.dropZone.show();
+            });
+            host.dropTarget.on('dragover', function (e) {
+                e.preventDefault();
+            }).on('dragleave', function (e) {
+                e.preventDefault();
+                host.dropZone.hide();
+            }).on('drop', function (e) {
+                e.preventDefault();
+                $.each(e.originalEvent.dataTransfer.files, function (index, jsFile) {
+                    host.conn.upload(host.conn.cwd.id, jsFile);
+                });
+                host.dropZone.hide();
             });
             if (host.settings.showinfo || host.settings.userpanel) {
                 host.rightDIV = $('<div class="fb-right">');
