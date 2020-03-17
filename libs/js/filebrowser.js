@@ -702,7 +702,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
             }).on('dragenter', function (e) {
                 e.preventDefault();
-                var c = e.originalEvent.dataTransfer.items.length;
+                var c = 0;
+                for (item of e.originalEvent.dataTransfer.items) if (item.kind === 'file') c++;
+                if (c === 0) return;
                 var msg = c + ' file' + (c > 1 ? 's' : '');
                 host.dropMsg.html('Release to upload ' + msg);
                 host.dropZone.show();
@@ -870,28 +872,33 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         return false;
                     event.originalEvent.dataTransfer.setData('text', $(event.target).attr('id'));
                 }).children('.fb-tree-item-content')
-                    .on('dragover', function (event) {
+                    .on('dragenter', function (event) {
                         event.preventDefault();
-                        event.stopPropagation();
                         $(this).addClass('highlight');
+                    }).on('dragover', function (event) {
+                        event.preventDefault();
                     }).on('dragleave', function (event) {
                         event.preventDefault();
-                        event.stopPropagation();
                         $(this).removeClass('highlight');
                     }).on('drop', function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        $(this).removeClass('highlight');
-                        var selected = event.originalEvent.dataTransfer.getData('text').split(',');
                         var to = $(this).parent().attr('id');
-                        $.each(selected, function (index, from) {
-                            if (!from || !to || from === to)
-                                return;
-                            if (event.originalEvent.dataTransfer.dropEffect === 'copy')
-                                host.conn.copy(from, to);
-                            else
-                                host.conn.move(from, to);
-                        });
+                        event.preventDefault();
+                        if (event.originalEvent.dataTransfer.files.length > 0) {
+                            $.each(event.originalEvent.dataTransfer.files, function (index, jsFile) {
+                                host.conn.upload(to, jsFile);
+                            });
+                        } else {
+                            var selected = event.originalEvent.dataTransfer.getData('text').split(',');
+                            $.each(selected, function (index, from) {
+                                if (!from || !to || from === to)
+                                    return;
+                                if (event.originalEvent.dataTransfer.dropEffect === 'copy')
+                                    host.conn.copy(from, to);
+                                else
+                                    host.conn.move(from, to);
+                            });
+                        }
+                        $(this).removeClass('highlight');
                     });
             }
             if (host.cwd && item.id === host.cwd.id)
