@@ -660,3 +660,30 @@
         border: 1px solid rgba(0, 0, 0, 0.1);
         border-radius: 3px;
     }
+
+.fb-container .fb-main .fb-dropzone {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.3);
+    color: #666666;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.fb-container .fb-main .fb-dropzone > .fb-dropmsg {
+    text-align: center;
+    font-size: 4em;
+}
+
+.fb-container .fb-main .fb-dropzone > .fb-droptarget {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border: 3px dashed #666666;
+}

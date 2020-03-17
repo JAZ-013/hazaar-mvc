@@ -439,8 +439,11 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $response = $method->invokeArgs($connector, $args);
 
-        if(strtolower($this->request->getHeader('X-Request-Type')) == 'stream')
+        if(strtolower($this->request->getHeader('X-Request-Type')) === 'stream')
             return $this->stream($response);
+
+        if(!$response instanceof \Hazaar\Controller\Response)
+            $response = new \Hazaar\Controller\Response\Json($response);
 
         return $response;
 
