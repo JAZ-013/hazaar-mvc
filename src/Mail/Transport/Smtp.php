@@ -58,14 +58,14 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     }
 
-    private function read($code, $len = 1024, &$message = null){
+    private function read($code, $len = 1024, &$message = null, &$response = null){
 
         if(!$this->socket->readSelect($this->read_timeout))
             throw new \Exception('SMTP data receive timeout');
 
-        $this->socket->recv($buf, $len);
+        $this->socket->recv($response, $len);
 
-        if($this->getMessageCode($buf, $message) !== $code)
+        if($this->getMessageCode($response, $message) !== $code)
             return false;
 
         return true;
@@ -84,11 +84,60 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->read(220, 1024, $result))
             throw new \Exception('Invalid response on connection: ' . $result);
 
-        $this->write('EHLO x1');
+        $this->write('EHLO ' . gethostname());
 
-        if(!$this->read(250, 65535, $result))
+        if(!$this->read(250, 65535, $result, $response))
             throw new \Exception('Bad response on mail from: ' . $result);
         
+        $auth_methods = array_reduce(explode("\r\n", $response), function($carry, $item){
+            if(substr($item, 0, 8) === '250-AUTH') return array_merge($carry, explode(' ', substr($item, 9)));
+            return $carry;
+        }, array());
+
+        if($this->options->has('username')){
+
+            if(in_array('CRAM-MD5', $auth_methods)){
+
+                $this->write('AUTH CRAM-MD5');
+
+                if(!$this->read(334, 128, $result))
+                    throw new \Exception('Server does not want to CRAM-MD5 authenticate!');
+
+                $this->write(base64_encode($this->options['username'] . ' ' . hash_hmac('MD5', base64_decode($result), $this->options['password'])));
+
+            }elseif(in_array('LOGIN', $auth_methods)){
+
+                $this->write('AUTH LOGIN');
+
+                if(!$this->read(334, 128, $result))
+                    throw new \Exception('Server does not want to LOGIN authenticate!');
+
+                if(($prompt = base64_decode($result)) !== 'Username:')
+                    throw new \Exception('Server is broken.  Sent weird username prompt \'' . $prompt . '\'');
+
+                $this->write(base64_encode($this->options['username']));
+
+                if(!$this->read(334, 128, $result))
+                    throw new \Exception('Server did not request password: ' . $result);
+
+                $this->write(base64_encode($this->options['password']));
+                
+            }elseif(in_array('PLAIN', $auth_methods)){
+
+                $this->write('AUTH PLAIN');
+
+                if(!$this->read(334, 128, $result))
+                    throw new \Exception('Server does not want to PLAIN authenticate!');
+
+                $this->write(base64_encode("\0" . $this->options['username'] . "\0" . $this->options['password']));
+
+            }
+
+            if(!$this->read(235, 1024, $result, $response))
+                throw new \Exception('SMTP Auth failed: ' . $result);
+
+        }
+
         $this->write("MAIL FROM: $from");
 
         if(!$this->read(250, 1024, $result))
