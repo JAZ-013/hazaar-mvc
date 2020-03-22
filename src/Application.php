@@ -147,6 +147,7 @@ class Application {
 
         //Store the search paths in the GLOBALS container so they can be used in config includes.
         $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
+        
         Application\Config::$override_paths = array('host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'), 'local');
 
         /*

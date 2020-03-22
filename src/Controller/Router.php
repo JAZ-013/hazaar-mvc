@@ -50,6 +50,9 @@ class Router extends \Hazaar\Controller {
             //Reset the application configuration to defaults so that we don't use any loaded options
             $this->application->config->reset(true);
 
+            if(defined('RUNTIME_PATH'))
+                $this->application->config->app['runtimepath'] = RUNTIME_PATH;
+
             $this->application->config['app']->extend(array('locale' => $locale, 'timezone' => $timezone));
 
             $this->module = new $this->className($this->moduleName, $this->application, false);
