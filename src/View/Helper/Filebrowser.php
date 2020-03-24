@@ -28,12 +28,10 @@ class Filebrowser extends \Hazaar\View\Helper {
 
         $this->requires('jQuery', array('ui' => TRUE));
 
-        $this->requires('fontawesome', array('version' => '4.7.0'));
-
         $this->options = new \Hazaar\Map(array(
-                                             'connect'    => $this->application->url('media'),
-                                             'stylesheet' => TRUE
-                                         ));
+            'connect'    => $this->application->url('media'),
+            'stylesheet' => TRUE
+        ));
 
     }
 
@@ -48,7 +46,7 @@ class Filebrowser extends \Hazaar\View\Helper {
 
         $this->options->extend($args);
 
-        if($this->options->stylesheet === TRUE)
+        if($this->options->stylesheet === true)
             $view->link($this->application->url('hazaar', 'file/css/filebrowser.css'));
 
     }

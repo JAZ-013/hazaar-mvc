@@ -458,7 +458,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host._snatch = function (url) {
             var statusDIV = $('<div>').append([
-                $('<i class="fa fa-spinner fa-spin">').css({ 'font-size': '32px', 'float': 'left' }),
+                $('<i class="im im-spinner im-spin">').css({ 'font-size': '32px', 'float': 'left' }),
                 $('<div>').html('Downloading ' + url)
             ]).browserDialog({
                 title: 'Status',
@@ -484,7 +484,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     itemDIV.addClass('spacer');
                 } else {
                     itemDIV.append([
-                        $('<div class="fb-menu-item-icon fa">').addClass('fa-' + item.icon),
+                        $('<div class="fb-menu-item-icon im">').addClass('im-' + item.icon),
                         $('<div class="fb-menu-item-content">').html(item.label)
                     ]);
                     if (item.action)
@@ -577,7 +577,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.topbarToolsDIV = $('<div class="fb-topbar-tools">');
                     for (x in host.settings.tools) {
                         var toolDIV = $('<div class="fb-topbar-tool">');
-                        toolDIV.append($('<i class="fa">').addClass('fa-' + host.settings.tools[x].icon));
+                        toolDIV.append($('<i class="im">').addClass('im-' + host.settings.tools[x].icon));
                         toolDIV.click(host.settings.tools[x].click);
                         host.topbarToolsDIV.append(toolDIV);
                     }
@@ -587,6 +587,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.leftDIV = $('<div class="fb-left">');
             host.controlDIV = $('<div class="fb-tree-control">').appendTo(host.leftDIV);
             host.treeDIV = $('<div class="fb-tree">').appendTo(host.leftDIV);
+            host.dropZone = $('<div class="fb-dropzone">').hide().appendTo(host.mainDIV);
+            host.dropMsg = $('<div class="fb-dropmsg">').appendTo(host.dropZone);
+            host.dropTarget = $('<div class="fb-droptarget">').appendTo(host.dropZone);
             if (host.settings.upload) {
                 host.newBUTTON = $('<button class="fb-btn-new">').html('New').appendTo(host.controlDIV);
                 host.uploadDIV = $('<div class="fb-upload">').appendTo(host.leftDIV);
@@ -613,7 +616,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                             action: host._upload
                         },
                         {
-                            icon: 'upload',
+                            icon: 'export',
                             label: 'Folder Upload',
                             action: function () {
                                 host._upload(true);
@@ -644,11 +647,11 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         },
                         'spacer',
                         {
-                            icon: 'image',
+                            icon: 'picture',
                             label: 'Image'
                         },
                         {
-                            icon: 'file-text',
+                            icon: 'note-o',
                             label: 'Document'
                         }
                     ];
@@ -679,7 +682,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         });
                     }
                     options.push({
-                        icon: 'refresh',
+                        icon: 'sync',
                         label: 'Refresh',
                         action: function () {
                             host.conn.open(host.itemsDIV.attr('data-id'));
@@ -697,6 +700,26 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     }
                     return host._contextMenu(event, options);
                 }
+            }).on('dragenter', function (e) {
+                e.preventDefault();
+                var c = 0;
+                for (item of e.originalEvent.dataTransfer.items) if (item.kind === 'file') c++;
+                if (c === 0) return;
+                var msg = c + ' file' + (c > 1 ? 's' : '');
+                host.dropMsg.html('Release to upload ' + msg);
+                host.dropZone.show();
+            });
+            host.dropTarget.on('dragover', function (e) {
+                e.preventDefault();
+            }).on('dragleave', function (e) {
+                e.preventDefault();
+                host.dropZone.hide();
+            }).on('drop', function (e) {
+                e.preventDefault();
+                $.each(e.originalEvent.dataTransfer.files, function (index, jsFile) {
+                    host.conn.upload(host.conn.cwd.id, jsFile);
+                });
+                host.dropZone.hide();
             });
             if (host.settings.showinfo || host.settings.userpanel) {
                 host.rightDIV = $('<div class="fb-right">');
@@ -724,7 +747,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             if ($('#' + item.id).length === 0) {
                 var chevronDIV = $('<div class="fb-tree-item-chevron">');
                 var itemChildrenDIV = $('<div class="fb-tree-item-children">');
-                var itemIconI = $('<i class="fa fa-folder">');
+                var itemIconI = $('<i class="im im-folder">');
                 var itemDIV = $('<div class="fb-tree-item">').append([
                     chevronDIV,
                     $('<div class="fb-tree-item-content">').append([
@@ -828,7 +851,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         }
                         options.push('spacer');
                         options.push({
-                            icon: 'font',
+                            icon: 'edit',
                             label: 'Rename',
                             action: function () {
                                 host.rename($('#' + file.id));
@@ -836,7 +859,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         });
                         options.push('spacer');
                         options.push({
-                            icon: 'trash',
+                            icon: 'trash-can',
                             label: 'Remove',
                             action: function () {
                                 host._delete(file);
@@ -849,28 +872,33 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         return false;
                     event.originalEvent.dataTransfer.setData('text', $(event.target).attr('id'));
                 }).children('.fb-tree-item-content')
-                    .on('dragover', function (event) {
+                    .on('dragenter', function (event) {
                         event.preventDefault();
-                        event.stopPropagation();
                         $(this).addClass('highlight');
+                    }).on('dragover', function (event) {
+                        event.preventDefault();
                     }).on('dragleave', function (event) {
                         event.preventDefault();
-                        event.stopPropagation();
                         $(this).removeClass('highlight');
                     }).on('drop', function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        $(this).removeClass('highlight');
-                        var selected = event.originalEvent.dataTransfer.getData('text').split(',');
                         var to = $(this).parent().attr('id');
-                        $.each(selected, function (index, from) {
-                            if (!from || !to || from === to)
-                                return;
-                            if (event.originalEvent.dataTransfer.dropEffect === 'copy')
-                                host.conn.copy(from, to);
-                            else
-                                host.conn.move(from, to);
-                        });
+                        event.preventDefault();
+                        if (event.originalEvent.dataTransfer.files.length > 0) {
+                            $.each(event.originalEvent.dataTransfer.files, function (index, jsFile) {
+                                host.conn.upload(to, jsFile);
+                            });
+                        } else {
+                            var selected = event.originalEvent.dataTransfer.getData('text').split(',');
+                            $.each(selected, function (index, from) {
+                                if (!from || !to || from === to)
+                                    return;
+                                if (event.originalEvent.dataTransfer.dropEffect === 'copy')
+                                    host.conn.copy(from, to);
+                                else
+                                    host.conn.move(from, to);
+                            });
+                        }
+                        $(this).removeClass('highlight');
                     });
             }
             if (host.cwd && item.id === host.cwd.id)
@@ -1015,7 +1043,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                             previewDIV.html($('<img>').attr('src', url));
                         }
                         if (info.write === false)
-                            nameDIV.append($('<i class="fa fa-lock">'));
+                            nameDIV.append($('<i class="im im-lock">'));
                     }
                 }
                 $(host).trigger('selection', [selected]);
@@ -1056,7 +1084,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     });
                     options.push('spacer');
                     options.push({
-                        icon: 'font',
+                        icon: 'edit',
                         label: 'Rename',
                         action: function () {
                             host.rename($('#' + file.id));
@@ -1096,7 +1124,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     });
                     options.push('spacer');
                     options.push({
-                        icon: 'trash',
+                        icon: 'trash-can',
                         label: 'Remove',
                         action: host.delete
                     });
@@ -1273,16 +1301,16 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host.settings.mode = host._mode(host.settings.mode);
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
-                icon: host.settings.mode === 'grid' ? 'th-large' : 'th-list',
+                icon: host.settings.mode === 'grid' ? 'grid' : 'list',
                 click: function () {
                     if (host.settings.mode === 'list') {
                         host.settings.mode = 'grid';
                         host.mainDIV.removeClass('list').addClass('grid');
-                        $(this).children().removeClass('fa-th-list').addClass('fa-th-large');
+                        $(this).children().removeClass('im-list').addClass('im-grid');
                     } else {
                         host.settings.mode = 'list';
                         host.mainDIV.removeClass('grid').addClass('list');
-                        $(this).children().removeClass('fa-th-large').addClass('fa-th-list');
+                        $(this).children().removeClass('im-grid').addClass('im-list');
                     }
                     document.cookie = 'filebrowser.' + host.id + '.mode=' + host.settings.mode;
                 }
