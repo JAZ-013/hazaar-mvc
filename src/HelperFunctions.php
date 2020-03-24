@@ -50,7 +50,7 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
         if(is_object($array)){
 
-            if(property_exists($array, $key) && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
+            if(property_exists($array, $key) && (!$non_empty || !is_string($array->$key) || ($non_empty && trim($array->$key) !== NULL)))
                 return $array->$key;
             elseif($array instanceof \ArrayAccess && isset($array[$key]))
                 return $array[$key];
