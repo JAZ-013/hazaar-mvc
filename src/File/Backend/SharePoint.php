@@ -490,9 +490,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 $value = $response;
             });
 
-            $folders = ake($responses[0]->body(), 'd.results');
+            $folders = ake($responses[0]->body(), 'd.results', array(), true);
 
-            $files = ake($responses[1]->body(), 'd.results');
+            $files = ake($responses[1]->body(), 'd.results', array(), true);
 
             $sort = function($a, $b){
                 if ($a->Name === $b->Name) return 0;
