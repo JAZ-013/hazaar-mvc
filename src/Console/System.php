@@ -4,9 +4,9 @@ namespace Hazaar\Console;
 
 class System extends Module {
 
-    public function load(){
+    public function menu(){
 
-        $this->addMenuItem('System', 'wrench');
+        return $this->addMenuItem('System', 'wrench');
 
     }
 

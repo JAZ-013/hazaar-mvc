@@ -109,7 +109,7 @@ $.fn.popup = function () {
             host.render = function () {
                 this.__overlay = $('<div class="modal-overlay">')
                     .css({ position: "fixed", "z-index": 9999 }).appendTo(document.body).toggleClass('modal', this.props.modal);
-                this.__window = $('<div class="modal-dialog">')
+                this.__window = $('<div class="modal-dialog modal-lg">')
                     .hide().css({ position: "fixed" }).appendTo(this.__overlay);
                 this.__content = $('<div class="modal-content">').appendTo(this.__window);
                 this.__header = $('<div class="modal-header">').html($('<h5 class="modal-title">').html(this.props.title)).css({ "user-select": "none" }).appendTo(this.__content);

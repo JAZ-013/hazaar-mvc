@@ -63,6 +63,12 @@ abstract class Basic extends \Hazaar\Controller {
 
     }
 
+    public function isAction(){
+
+        return in_array($this->__action, \func_get_args());
+
+    }
+
     public function __initialize(\Hazaar\Application\Request $request) {
 
         parent::__initialize($request);

@@ -14,11 +14,19 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->handler = new Handler($this->application);
 
-        if($this->getAction() === 'login')
+        if($this->isAction('login', 'logout') === true)
             return;
 
-        if(!$this->handler->authenticated())
+        if($this->handler->authenticated() !== true)
             return $this->redirect($this->application->url('hazaar', 'console', 'login'));
+
+        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
+
+        $this->handler->load(new Application('app', $path, $this->application));
+
+        $this->handler->load(new System('sys', $path, $this->application));
+
+        $this->handler->loadComposerModules($this->application);
 
     }
 
@@ -55,15 +63,23 @@ class Controller extends \Hazaar\Controller\Action {
      */
     public function __default($controller, $action){
 
-        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
-
-        $this->handler->load(new Application('app', $path, $this->application));
-
-        $this->handler->load(new System('sys', $path, $this->application));
-
-        $this->handler->loadComposerModules($this->application);
-
         return $this->handler->exec($this, $action, $this->request);
+
+    }
+
+    public function menu(){
+
+        $modules = $this->handler->getModules();
+
+        $menuItems = [
+            'url' => (string)$this->url(),
+            'items' => []
+        ];
+
+        foreach($modules as $module_name => $module)
+            $menuItems['items'][$module_name] = $module->menu();
+
+        return $menuItems;
 
     }
 

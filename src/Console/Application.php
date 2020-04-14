@@ -12,6 +12,10 @@ class Application extends Module {
 
         $this->config = new \Hazaar\Application\Config('application', null, $this->application->getDefaultConfig());
 
+    }
+
+    public function menu(){
+
         $group = $this->addMenuItem('Application', 'bars');
 
         $group->addMenuItem('Models', 'models', 'cubes');
@@ -33,6 +37,8 @@ class Application extends Module {
         $group->addMenuItem('File Encryption', 'encrypt', 'key');
 
         $group->addMenuItem('Cache Settings', 'cache', 'bolt');
+
+        return $group;
 
     }
 
