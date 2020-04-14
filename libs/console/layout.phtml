@@ -40,8 +40,14 @@
             </div>
         </div>
         <div class="ide-content">
-            <div class="content-menu" id="consoleTreeMenu"></div>
-            <div class="content-main" id="consoleTabs"><div class="content-float">What would you like to do today?</div></div> 
+            <div data-view="home">
+                <div class="content-menu" id="consoleHomeMenu"></div>
+                <div class="content-main" id="consoleHomeTabs"><div class="content-float">What would you like to do today?</div></div> 
+            </div>
+            <div data-view="code">
+                <div class="content-menu" id="consoleFileMenu"></div>
+                <div class="content-main" id="consoleFileTabs"><div class="content-float">What would you like to edit today?</div></div> 
+            </div>
         </div>
     </div>
     <?=$this->post();?>

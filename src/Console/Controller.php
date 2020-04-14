@@ -110,6 +110,12 @@ class Controller extends \Hazaar\Controller\Action {
 
     }
 
+    public function files(){
+
+        return [];
+        
+    }
+
     public function doc(){
 
         dump('yay!');

@@ -76,8 +76,12 @@ $(document).ready(function () {
     $('#mainMenu li').click(function (e) {
         $('#ide').attr('data-view', $(e.currentTarget).attr('data-toggle'));
     });
-    $('#consoleTreeMenu').treeMenu({
+    $('#consoleHomeMenu').treeMenu({
         'url': hazaar.url('menu'),
-        'tabs': $('#consoleTabs').tabs()
+        'tabs': $('#consoleHomeTabs').tabs()
+    });
+    $('#consoleFileMenu').treeMenu({
+        'url': hazaar.url('files'),
+        'tabs': $('#consoleFileTabs').tabs()
     });
 });
