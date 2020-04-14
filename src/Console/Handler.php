@@ -280,9 +280,6 @@ class Handler {
 
         $module = $this->modules[$module_name];
 
-        if($module->view_path)
-            $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
-
         $module->setBasePath('hazaar/console');
 
         $module->__initialize($request);

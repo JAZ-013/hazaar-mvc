@@ -28,38 +28,12 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function __initialize(\Hazaar\Application\Request $request){
+    final public function view($file){
 
-        if(!$this->handler instanceof Handler)
-            throw new \Exception('Module requires a console handler before being initialised!');
+        if($this->view_path)
+            $file = $this->view_path . DIRECTORY_SEPARATOR . $file . '.phtml';
 
-        $this->view->layout('@console/layout');
-
-        $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
-
-        $this->view->link($this->application->url('hazaar/file/css/bootstrap.min.css'));
-
-        $this->view->addHelper('hazaar', array('base_url' => $this->application->url('hazaar/console')));
-
-        $this->view->addHelper('fontawesome');
-
-        $this->view->requires($this->application->url('hazaar/file/console/js/jquery.min.js'));
-
-        $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
-
-        $this->view->requires($this->application->url('hazaar/file/js/popup.js'));
-
-        $this->view->navitems = $this->handler->getNavItems();
-
-        $this->view->notices = array();
-
-        $this->view->user = array(
-            'fullname' => $this->handler->getUser(),
-            'group' => 'Administrator'
-        );
-
-        parent::__initialize($request);
-
+        return new \Hazaar\Controller\Response\View($file);
     }
 
     public function load(){

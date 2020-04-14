@@ -57,6 +57,33 @@ class Controller extends \Hazaar\Controller\Action {
 
     }
 
+    public function index(){
+
+        if(!$this->handler instanceof Handler)
+            throw new \Exception('Module requires a console handler before being initialised!');
+
+        $this->view->layout('@console/layout');
+
+        $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
+
+        $this->view->link($this->application->url('hazaar/file/css/bootstrap.min.css'));
+
+        $this->view->addHelper('hazaar', array('base_url' => $this->application->url('hazaar/console')));
+
+        $this->view->addHelper('fontawesome');
+
+        $this->view->requires($this->application->url('hazaar/file/console/js/jquery.min.js'));
+
+        $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
+
+        $this->view->requires($this->application->url('hazaar/file/js/popup.js'));
+
+        $this->view->user = array(
+            'fullname' => $this->handler->getUser(),
+            'group' => 'Administrator'
+        );
+
+    }
 
     /**
      * Launch the Hazaar MVC Management Console
@@ -72,7 +99,7 @@ class Controller extends \Hazaar\Controller\Action {
         $modules = $this->handler->getModules();
 
         $menuItems = [
-            'url' => (string)$this->url(),
+            'url' => (string)$this->application->url('hazaar/console'),
             'items' => []
         ];
 
