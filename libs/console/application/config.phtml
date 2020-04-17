@@ -1,22 +1,18 @@
 
-<form class="row fullscreen" method="post">
-    <div class="col col-12">
-        <div class="panel flex-grow-1">
-            <div class="panel-header">
-                Application Configuration
-                <?php
-                echo $this->html->select('env', array_combine($this->envs, $this->envs), $this->env)
-                    ->id('selectEnv');
-                ?>
-            </div>
-            <div class="panel-content flex flex-col flex-grow-1">
-                <?=$this->html->textarea('config', $this->config)
-                ->class('flex-grow-1')
-                ->prop('disabled', !$this->writable);?>
-            </div>
-            <div class="panel-footer">
-                <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
-            </div>
-        </div>
+<form method="post">
+    <div class="panel-header">
+        Application Configuration
+        <?php
+        echo $this->html->select('env', array_combine($this->envs, $this->envs), $this->env)
+            ->id('selectEnv');
+        ?>
+    </div>
+    <div class="panel-content flex flex-col flex-grow-1">
+        <?=$this->html->textarea('config', $this->config)
+        ->class('flex-grow-1')
+        ->prop('disabled', !$this->writable);?>
+    </div>
+    <div class="panel-footer">
+        <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
     </div>
 </form>

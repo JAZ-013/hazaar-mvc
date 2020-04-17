@@ -26,6 +26,7 @@
 body, html {
     .absolute(0,0,0,0);
     font-family: "Proxima",Arial,Helvetica;
+    font-size: 12px;
 }
 
 .ide {
@@ -168,3 +169,93 @@ body, html {
 .clickable:hover {
     color: @color-hazaar;
 }
+
+/*
+ * TREE
+ */
+.tree {
+    border-color: @color-panel;
+}
+
+.tree .tree-item {
+    padding: 5px;
+}
+.tree .tree-item span{
+    cursor: pointer;
+}
+.tree .tree-item span:hover{
+    color: red;
+}
+
+/*
+ * TABS
+ */
+
+.tabs {
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs .tabs-list {
+    padding: 5px 5px 0 5px;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+
+.tabs .tabs-list .tabs-item {
+    background: #121417;
+    color: #fff;
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    z-index: 1;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.tabs .tabs-list .tabs-item:hover{
+    background-color: #282c34;
+}
+
+.tabs .tabs-list .tabs-item.selected {
+    background-color: #fff;
+    color: #000;
+}
+
+.tabs .tabs-list .tabs-item .tabs-close {
+    float: right;
+    border-radius: 50%;
+    color: #fff;
+    background-color: #ff0000;
+    font-size: 14px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: lighter;
+    margin-left: 25px;
+    cursor: pointer;
+}
+
+.tabs .tabs-container {
+    border: 1px solid #21252b;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.tabs .tabs-container .tabs-wrapper {
+    overflow-y: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    color: #333;
+    padding: 5px;
+    box-sizing: border-box;
+}
+

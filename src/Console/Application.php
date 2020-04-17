@@ -46,11 +46,11 @@ class Application extends Module {
 
     public function index(){
 
-        $view = $this->view('application/index');
+        $this->view('application/index');
 
-        $view->config = $this->config;
+        $this->view->config = $this->config;
 
-        $view->libraries = $this->handler->getLibraries();
+        $this->view->libraries = $this->handler->getLibraries();
 
         $date_start = strtotime('now - 1 month');
 
@@ -70,8 +70,6 @@ class Application extends Module {
 
         }
 
-        return $view;
-
     }
 
     public function metrics(){
@@ -79,13 +77,11 @@ class Application extends Module {
         if(!$this->metrics instanceof \Hazaar\File\Metric)
             throw new \Exception('Metrics are not enabled!', 501);
 
-        $view = new View('application/metrics');
+        $this->view = new View('application/metrics');
 
-        $view->requires('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js');
+        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js');
 
-        $view->requires('js/metrics.js');
-
-        return $view;
+        $this->view->requires('js/metrics.js');
 
     }
 
@@ -195,7 +191,7 @@ class Application extends Module {
 
     public function models(){
 
-        $view = $this->view('application/models');
+        $this->view('application/models');
 
         $models = array();
 
@@ -208,15 +204,13 @@ class Application extends Module {
 
         }
 
-        $view->models = $models;
-
-        return $view;
+        $this->view->models = $models;
 
     }
 
     public function views(){
 
-        $view = $this->view('application/views');
+        $this->view('application/views');
 
         $views = array();
 
@@ -228,15 +222,13 @@ class Application extends Module {
 
         }
 
-        $view->views = $views;
-
-        return $view;
+        $this->view->views = $views;
 
     }
 
     public function controllers(){
 
-        $view = $this->view('application/controllers');
+        $this->view('application/controllers');
 
         $controllers = array();
 
@@ -249,9 +241,7 @@ class Application extends Module {
 
         }
 
-        $view->controllers = $controllers;
-
-        return $view;
+        $this->view->controllers = $controllers;
 
     }
 
@@ -278,24 +268,22 @@ class Application extends Module {
         }else
             $data = json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT);
 
-        $view = $this->view('application/config');
+        $this->view('application/config');
 
-        $view->requires('js/config.js');
+        //$this->view->requires('js/config.js');
 
-        $view->extend(array(
+        $this->view->extend(array(
             'config' => $data,
             'env' => $config->getEnv(),
             'envs' => $config->getEnvironments(),
             'writable' => $config->isWritable()
         ));
 
-        return $view;
-
     }
 
     public function encrypt(){
 
-        if($this->request->isXMLHTTPRequest()){
+        if($this->request->isPOST()){
 
             if($this->request->has('encrypt')){
 
@@ -343,22 +331,18 @@ class Application extends Module {
 
         }
 
-        $view = $this->view('application/encrypt');
+        $this->view('application/encrypt');
 
-        $view->requires('js/encrypt.js');
+        //$this->view->requires('js/encrypt.js');
 
         if(!(\Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
             $this->notice('There is no application .key file.  Encrypting files will use the defaut key which is definitely NOT RECOMMENDED!', 'key', 'danger');
-
-        return $view;
 
     }
 
     public function cache(){
 
-        $view = $this->view('cache/settings');
-
-        return $view;
+        $this->view('cache/settings');
         
     }
 

@@ -33,6 +33,8 @@ class View implements \ArrayAccess {
 
     protected $_methodHandler;
 
+    private $_requires_param = array();
+
     public function __construct($view, $init_helpers = array()) {
 
         $this->load($view);

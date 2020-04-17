@@ -103,8 +103,12 @@ class Controller extends \Hazaar\Controller\Action {
             'items' => []
         ];
 
-        foreach($modules as $module_name => $module)
-            $menuItems['items'][$module_name] = $module->menu();
+        foreach($modules as $module_name => $module){
+
+            if($menus = $module->menu())
+                $menuItems['items'][$module_name] = $menus;
+
+        }
 
         return $menuItems;
 
