@@ -1,6 +1,7 @@
 ﻿@color-hazaar: #554d7c;
 @color-panel: #121417;
 @color-inner: #282c34;
+@color-inner2: #1d1f24;
 
 @panel-width: 60px;
 @panel-height: 45px;
@@ -32,7 +33,6 @@ body, html {
 .ide {
     .absolute(0,0,0,0);
     background: #21252b;
-    color: #fafafa;
     display: flex;
     flex-direction: row;
 }
@@ -196,52 +196,54 @@ body, html {
     flex-direction: column;
 
     .tabs-list {
-        padding: 5px 5px 0 5px;
         width: 100%;
         display: flex;
         flex-direction: row;
 
         .tabs-item {
-            background: #121417;
-            color: #fff;
+            background: @color-panel;
+            color: #999;
             padding: 5px 10px;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
             z-index: 1;
             cursor: pointer;
-            min-width: 150px;
+            user-select: none;
 
             .tabs-close {
+                visibility: hidden;
                 float: right;
-                border-radius: 50%;
                 color: #fff;
-                background-color: #ff0000;
-                font-size: 14px;
+                font-size: 16px;
                 width: 16px;
                 height: 16px;
                 line-height: 16px;
                 text-align: center;
                 vertical-align: middle;
-                font-weight: lighter;
-                margin-left: 25px;
+                margin-left: 5px;
                 cursor: pointer;
             }
+
+            .tabs-close:active {
+                font-size: 22px;
+            }
+                
         }
 
         .tabs-item:hover{
             background-color: #282c34;
+            .tabs-close {
+                visibility: visible;
+            }
         }
 
         .tabs-item.selected {
-            background-color: #fff;
-            color: #000;
+            background-color: @color-inner2;
+            color: #fff;
         }
 
     }
 
     .tabs-container {
         background-color: transparent;
-        border: 1px solid #21252b;
         height: 100%;
         position: relative;
         overflow: hidden;
@@ -253,10 +255,15 @@ body, html {
             left: 0;
             width: 100%;
             height: 100%;
-            background: #fff;
-            color: #333;
             padding: 5px;
             box-sizing: border-box;
+            background-color: @color-inner2;
+            color: #fff;
+
+            .tabs-cutout {
+                width: 100%;
+                height: 100%;
+            }
         }
 
     }

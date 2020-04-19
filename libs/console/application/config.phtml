@@ -1,18 +1,29 @@
+<div class="container-fluid text-dark h-100">
+    <div class="card h-100">
+        <div class="card-header">Application Configuration</div>
+        <div class="card-body d-flex flex-column">
+            <div class="form-group">
+                <label>Environment</label>
+                <?=$this->html->select('env', array_combine($this->envs, $this->envs), $this->env)->id('selectEnv')->class('form-control');?>
+            </div>
+            <div class="form-group flex-grow-1 h-100">
+                <label>Configuration</label>
+                <textarea id="app_config_content" class="form-control h-100"></textarea>
+            </div>
+        </div>
+        <div class="card-footer">
+            <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
+        </div>
+    </div>
+</div>
 
-<form method="post">
-    <div class="panel-header">
-        Application Configuration
-        <?php
-        echo $this->html->select('env', array_combine($this->envs, $this->envs), $this->env)
-            ->id('selectEnv');
-        ?>
-    </div>
-    <div class="panel-content flex flex-col flex-grow-1">
-        <?=$this->html->textarea('config', $this->config)
-        ->class('flex-grow-1')
-        ->prop('disabled', !$this->writable);?>
-    </div>
-    <div class="panel-footer">
-        <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
-    </div>
-</form>
+<script>
+    $('#selectEnv').change(function () {
+        $.get(hazaar.url('app/config?env=' + $(this).val())).done(function(r){
+            $('#app_config_content').val(r.config).prop('disabled', !r.writable);
+        });
+    });
+    $console.ready(function(){
+        $('#selectEnv').change();
+    });
+</script>

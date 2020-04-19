@@ -299,7 +299,7 @@ class Handler {
         array_remove_empty($requires);
 
         array_walk_recursive($requires, function(&$item) {
-            $item = (string)new \Hazaar\Application\Url('hazaar/file/console/js/' . $item);
+            $item = (string)new \Hazaar\Application\Url('hazaar/file/console/' . $item);
         });
 
         $out->requires = $requires;

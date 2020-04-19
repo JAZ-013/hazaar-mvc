@@ -74,6 +74,8 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->view->requires($this->application->url('hazaar/file/console/js/jquery.min.js'));
 
+        $this->view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));
+
         $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
 
         $this->view->requires($this->application->url('hazaar/file/js/popup.js'));

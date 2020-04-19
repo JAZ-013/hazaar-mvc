@@ -50,7 +50,6 @@ $.fn.tabs = function (cfg) {
                 if (Array.isArray(script_url)) for (x of script_url) this.load(x);
                 else {
                     if (this.scripts.indexOf(script_url) >= 0) return false;
-                    console.log('Loading: ' + script_url);
                     this.scripts.push(script_url);
                     jQuery.ajax({ url: script_url, dataType: 'script', async: true });
                     return true;
@@ -58,7 +57,7 @@ $.fn.tabs = function (cfg) {
             };
         });
         host._select = function (name) {
-            if (!(name in this.tabs)) return false;
+            if (!(name in this.tabs) || (this.s && this.s.name === name)) return false;
             if (host.s) {
                 host.s.a.removeClass('selected');
                 host.s.b.hide();
@@ -66,7 +65,7 @@ $.fn.tabs = function (cfg) {
             this.tabs[name].b.show();
             this.tabs[name].a.addClass('selected');
             host.s = this.tabs[name];
-            $(host).trigger('select', [host.s]);
+            $(host).trigger('selected', [host.s]);
         };
         host._add = function (item) {
             if (!('name' in item)) item.name = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
@@ -103,7 +102,7 @@ $.fn.tabs = function (cfg) {
             this.tabs[name].a.remove();
             this.tabs[name].b.remove();
             delete this.tabs[name];
-            this._select(sel);
+            if (!this.s || this.s.name === name) this._select(sel);
         };
         host._init = function (cfg) {
             host.o = {};
@@ -165,7 +164,7 @@ $(document).ready(function () {
             $console.cur = tab.name;
         }).on('load', function (e, tab) {
             $console.exec_ready(tab.name);
-        }).on('select', function (e, tab) {
+        }).on('selected', function (e, tab) {
             $console.exec_focus(tab.name);
         });
     $('#mainMenu li').click(function (e) {

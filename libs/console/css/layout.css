@@ -25,7 +25,6 @@ html {
   margin: 0;
   padding: 0;
   background: #21252b;
-  color: #fafafa;
   display: flex;
   flex-direction: row;
 }
@@ -151,46 +150,46 @@ html {
   flex-direction: column;
 }
 .tabs .tabs-list {
-  padding: 5px 5px 0 5px;
   width: 100%;
   display: flex;
   flex-direction: row;
 }
 .tabs .tabs-list .tabs-item {
   background: #121417;
-  color: #fff;
+  color: #999;
   padding: 5px 10px;
-  margin-right: 5px;
-  border-radius: 5px 5px 0 0;
   z-index: 1;
   cursor: pointer;
-  min-width: 150px;
+  user-select: none;
 }
 .tabs .tabs-list .tabs-item .tabs-close {
+  visibility: hidden;
   float: right;
-  border-radius: 50%;
   color: #fff;
-  background-color: #ff0000;
-  font-size: 14px;
+  font-size: 16px;
   width: 16px;
   height: 16px;
   line-height: 16px;
   text-align: center;
   vertical-align: middle;
-  font-weight: lighter;
-  margin-left: 25px;
+  margin-left: 5px;
   cursor: pointer;
+}
+.tabs .tabs-list .tabs-item .tabs-close:active {
+  font-size: 22px;
 }
 .tabs .tabs-list .tabs-item:hover {
   background-color: #282c34;
 }
+.tabs .tabs-list .tabs-item:hover .tabs-close {
+  visibility: visible;
+}
 .tabs .tabs-list .tabs-item.selected {
-  background-color: #fff;
-  color: #000;
+  background-color: #1d1f24;
+  color: #fff;
 }
 .tabs .tabs-container {
   background-color: transparent;
-  border: 1px solid #21252b;
   height: 100%;
   position: relative;
   overflow: hidden;
@@ -202,10 +201,14 @@ html {
   left: 0;
   width: 100%;
   height: 100%;
-  background: #fff;
-  color: #333;
   padding: 5px;
   box-sizing: border-box;
+  background-color: #1d1f24;
+  color: #fff;
+}
+.tabs .tabs-container .tabs-wrapper .tabs-cutout {
+  width: 100%;
+  height: 100%;
 }
 .tabs .tabs-placeholder {
   position: absolute;

@@ -193,7 +193,7 @@ class Application extends Module {
 
         $this->view('application/models');
 
-        $this->view->requires('application.js');
+        $this->view->requires('js/application.js');
 
         $models = array();
 
@@ -253,6 +253,17 @@ class Application extends Module {
 
         $config = new \Hazaar\Application\Config('application', $this->request->get('env', APPLICATION_ENV));
 
+        if($this->request->has('env')){
+
+            return array(
+                'config' => json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT),
+                'env' => $config->getEnv(),
+                'envs' => $config->getEnvironments(),
+                'writable' => $config->isWritable()
+            );
+
+        }
+
         if($this->request->isPost()){
 
             if($config->fromJSON($this->request->config)){
@@ -265,18 +276,11 @@ class Application extends Module {
             }else
                 $this->notice('Invalid JSON.  Please fix and try again!', 'exclamation-triangle', 'warning');
 
-            $data = $this->request->config;
-
-        }else
-            $data = json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT);
+        }
 
         $this->view('application/config');
 
-        //$this->view->requires('js/config.js');
-
-        $this->view->extend(array(
-            'config' => $data,
-            'env' => $config->getEnv(),
+        $this->view->populate(array(
             'envs' => $config->getEnvironments(),
             'writable' => $config->isWritable()
         ));
@@ -293,6 +297,9 @@ class Application extends Module {
                     throw new \Hazaar\Exception('Config file not found!', 404);
 
                 $file = new \Hazaar\File($filename);
+
+                if(!$file->is_writable())
+                    throw new \Exception('Permission denied writing ' . $file);
 
                 if($file->isEncrypted())
                     $file->decrypt();
@@ -334,8 +341,6 @@ class Application extends Module {
         }
 
         $this->view('application/encrypt');
-
-        //$this->view->requires('js/encrypt.js');
 
         if(!(\Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
             $this->notice('There is no application .key file.  Encrypting files will use the defaut key which is definitely NOT RECOMMENDED!', 'key', 'danger');

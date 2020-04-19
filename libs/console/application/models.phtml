@@ -1,10 +1,15 @@
 
-<div class="panel-header">Models</div>
-<div class="panel-content">
-    <?=$this->partial('mvc_items', array('items' => $this->models));?>
+<div class="container-fluid text-dark">
+    <div class="card">
+        <div class="card-header">Models</div>
+        <div class="card-body">
+            <?=$this->partial('mvc_items', array('items' => $this->models));?>
+        </div>
+        <div class="card-footer">
+            <button onclick="doIt()">Do the thing!</button>
+        </div>
+    </div>
 </div>
-
-<button onclick="doIt()">Do the thing!</button>
 
 <script>
     $console.ready(function(){

@@ -12,12 +12,10 @@ class System extends Module {
 
     public function index(){
 
-        $view = $this->view('system/phpinfo');
+        $this->view('system/phpinfo');
 
-        $view->link('css/phpinfo.css');
+        $this->view->link('css/phpinfo.css');
 
-        return $view;
-        
     }
 
 }
