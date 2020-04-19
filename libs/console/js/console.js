@@ -14,7 +14,17 @@
     });
 });
 
-$.fn.tabs = function () {
+var scriptLoader = function () {
+    this.scripts = [];
+    this.load = function (script_url) {
+        if (this.scripts.indexOf(script_url) >= 0) return false;
+        this.scripts.push(script_url);
+        return true;
+    };
+};
+
+$.fn.tabs = function (cfg) {
+    if (this.length === 0) return this;
     let host = this.get(0), args = arguments;
     if (!host._init) {
         host._select = function (name) {
@@ -55,7 +65,7 @@ $.fn.tabs = function () {
             delete this.tabs[name];
             this._select(sel);
         };
-        host._init = function () {
+        host._init = function (cfg) {
             host.o = {};
             host.tabs = {};
             host.s = null;
@@ -63,8 +73,9 @@ $.fn.tabs = function () {
                 host.o.list = $('<div class="tabs-list">'),
                 host.o.container = $('<div class="tabs-container">')
             ]);
+            if ('placeholder' in cfg) host.o.container.append($('<div class="tabs-placeholder">').html(cfg.placeholder));
         };
-        host._init();
+        host._init(typeof cfg === 'object' ? cfg : null);
     } else if (args.length > 0) {
         switch (args[0]) {
             case 'add':
@@ -76,6 +87,7 @@ $.fn.tabs = function () {
 };
 
 $.fn.treeMenu = function (cfg) {
+    if (this.length === 0) return this;
     let host = this.get(0);
     if (!host._init) {
         host.cfg = cfg;
@@ -108,15 +120,16 @@ $.fn.treeMenu = function (cfg) {
 };
 
 $(document).ready(function () {
+    let tabs = $('#consoleTabs').tabs({ placeholder: "What would you like to do today?" });
     $('#mainMenu li').click(function (e) {
         $('#ide').attr('data-view', $(e.currentTarget).attr('data-toggle'));
     });
-    $('#consoleHomeMenu').treeMenu({
+    $('#menuHome').treeMenu({
         'url': hazaar.url('menu'),
-        'tabs': $('#consoleHomeTabs').tabs()
+        'tabs': tabs
     });
-    $('#consoleFileMenu').treeMenu({
+    $('#menuCode').treeMenu({
         'url': hazaar.url('files'),
-        'tabs': $('#consoleFileTabs').tabs()
+        'tabs': tabs
     });
 });

@@ -26,15 +26,12 @@ html {
   padding: 0;
   background: #21252b;
   color: #fafafa;
+  display: flex;
+  flex-direction: row;
 }
 .ide-nav-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: auto;
-  margin: 0;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
   width: 60px;
   background-color: #121417;
 }
@@ -44,8 +41,7 @@ html {
   width: 70%;
 }
 .ide-nav-panel .ide-icon {
-  margin: auto;
-  width: 100%;
+  height: 60px;
   padding: 10px;
 }
 .ide-nav-panel ul.ide-nav {
@@ -58,13 +54,7 @@ html {
   padding: 5px;
 }
 .ide-nav-panel .ide-settings {
-  position: absolute;
-  top: auto;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
+  margin-top: auto;
   text-align: center;
   padding: 10px;
 }
@@ -75,14 +65,12 @@ html {
 .ide-nav-panel .clickable {
   color: rgba(255, 255, 255, 0.1);
 }
+.ide-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
 .ide-toolbar {
-  position: absolute;
-  top: 0;
-  right: 60px;
-  bottom: auto;
-  left: 0;
-  margin: 0;
-  padding: 0;
   height: 45px;
   background: #121417;
 }
@@ -107,41 +95,16 @@ html {
   color: #fff;
 }
 .ide-content {
-  position: absolute;
-  top: 45px;
-  right: 60px;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
+  display: flex;
+  flex-direction: row;
+  flex: 1;
 }
 .ide-content .content-menu {
-  position: absolute;
-  top: 0;
-  right: auto;
-  bottom: 0;
-  left: 0;
-  margin: 0;
-  padding: 0;
   width: 200px;
   background: #282c34;
 }
 .ide-content .content-main {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 200px;
-  margin: 0;
-  padding: 0;
-}
-.ide-content .content-float {
-  text-align: center;
-  top: 50%;
-  position: relative;
-  transform: translateY(-50%);
-  font-size: 2em;
-  color: rgba(255, 255, 255, 0.3);
+  flex: 1;
 }
 .ide div[data-view] {
   display: none;
@@ -203,13 +166,6 @@ html {
   cursor: pointer;
   min-width: 150px;
 }
-.tabs .tabs-list .tabs-item:hover {
-  background-color: #282c34;
-}
-.tabs .tabs-list .tabs-item.selected {
-  background-color: #fff;
-  color: #000;
-}
 .tabs .tabs-list .tabs-item .tabs-close {
   float: right;
   border-radius: 50%;
@@ -225,7 +181,15 @@ html {
   margin-left: 25px;
   cursor: pointer;
 }
+.tabs .tabs-list .tabs-item:hover {
+  background-color: #282c34;
+}
+.tabs .tabs-list .tabs-item.selected {
+  background-color: #fff;
+  color: #000;
+}
 .tabs .tabs-container {
+  background-color: transparent;
   border: 1px solid #21252b;
   height: 100%;
   position: relative;
@@ -242,4 +206,19 @@ html {
   color: #333;
   padding: 5px;
   box-sizing: border-box;
+}
+.tabs .tabs-placeholder {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  top: 50%;
+  position: relative;
+  transform: translateY(-50%);
+  font-size: 2em;
+  color: rgba(255, 255, 255, 0.3);
 }
