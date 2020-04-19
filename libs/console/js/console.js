@@ -14,19 +14,49 @@
     });
 });
 
-var scriptLoader = function () {
-    this.scripts = [];
-    this.load = function (script_url) {
-        if (this.scripts.indexOf(script_url) >= 0) return false;
-        this.scripts.push(script_url);
-        return true;
+var $console = new (function () {
+    this.cb = { ready: {}, focus: {} };
+    this.cur = 'default';
+    this.ready = function (cb) {
+        if (!(this.cur in this.cb.ready)) this.cb.ready[this.cur] = [];
+        this.cb.ready[this.cur].push(cb);
+        return this;
     };
-};
+    this.focus = function (cb) {
+        if (!(this.cur in this.cb.focus)) this.cb.focus[this.cur] = [];
+        this.cb.focus[this.cur].push(cb);
+        return this;
+    };
+    this.exec_ready = function (name) {
+        if (!(name in this.cb.ready)) return;
+        for (c of this.cb.ready[name]) c();
+        delete this.cb.ready[name];
+    };
+    this.exec_focus = function (name) {
+        if (!(name in this.cb.focus)) return;
+        for (c of this.cb.focus[name]) c();
+    };
+});
+
+
 
 $.fn.tabs = function (cfg) {
     if (this.length === 0) return this;
     let host = this.get(0), args = arguments;
     if (!host._init) {
+        host.scriptLoader = new (function () {
+            this.scripts = [];
+            this.load = function (script_url) {
+                if (Array.isArray(script_url)) for (x of script_url) this.load(x);
+                else {
+                    if (this.scripts.indexOf(script_url) >= 0) return false;
+                    console.log('Loading: ' + script_url);
+                    this.scripts.push(script_url);
+                    jQuery.ajax({ url: script_url, dataType: 'script', async: true });
+                    return true;
+                }
+            };
+        });
         host._select = function (name) {
             if (!(name in this.tabs)) return false;
             if (host.s) {
@@ -36,9 +66,11 @@ $.fn.tabs = function (cfg) {
             this.tabs[name].b.show();
             this.tabs[name].a.addClass('selected');
             host.s = this.tabs[name];
+            $(host).trigger('select', [host.s]);
         };
         host._add = function (item) {
             if (!('name' in item)) item.name = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+            $(host).trigger('add', [item]);
             if (item.name in this.tabs) {
                 this._select(item.name);
             } else {
@@ -49,12 +81,20 @@ $.fn.tabs = function (cfg) {
                     item.label,
                     close
                 ]).data('name', item.name).appendTo(this.o.list);
-                item.b = $('<div class="tabs-wrapper">').load(item.url).appendTo(this.o.container);
+                item.b = $('<div class="tabs-wrapper">').appendTo(this.o.container);
                 item.a.click(function (e) {
                     host._select($(e.target).data('name'));
                 });
                 this.tabs[item.name] = item;
-                this._select(item.name);
+                $.get(item.url).done(function (r) {
+                    if ('requires' in r) host.scriptLoader.load(r.requires);
+                    if ('html' in r) {
+                        let c = $().add(r.html, host);
+                        item.b.append(c);
+                        $(host).trigger('load', [item]);
+                        host._select(item.name);
+                    }
+                });
             }
         };
         host._close = function (name) {
@@ -120,7 +160,14 @@ $.fn.treeMenu = function (cfg) {
 };
 
 $(document).ready(function () {
-    let tabs = $('#consoleTabs').tabs({ placeholder: "What would you like to do today?" });
+    let tabs = $('#consoleTabs').tabs({ placeholder: "What would you like to do today?" })
+        .on('add', function (e, tab) {
+            $console.cur = tab.name;
+        }).on('load', function (e, tab) {
+            $console.exec_ready(tab.name);
+        }).on('select', function (e, tab) {
+            $console.exec_focus(tab.name);
+        });
     $('#mainMenu li').click(function (e) {
         $('#ide').attr('data-view', $(e.currentTarget).attr('data-toggle'));
     });

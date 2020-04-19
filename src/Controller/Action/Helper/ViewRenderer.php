@@ -68,6 +68,30 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     }
 
+    public function getData(){
+
+        return $this->_data;
+        
+    }
+
+    public function getRequires(){
+
+        return $this->_requires;
+        
+    }
+
+    public function getLinks(){
+
+        return $this->_links;
+
+    }
+
+    public function getScripts(){
+
+        return $this->_scripts;
+
+    }
+
     public function __set($key, $value) {
 
         $this->_data[$key] = $value;

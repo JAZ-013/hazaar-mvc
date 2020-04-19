@@ -3,3 +3,13 @@
 <div class="panel-content">
     <?=$this->partial('mvc_items', array('items' => $this->models));?>
 </div>
+
+<button onclick="doIt()">Do the thing!</button>
+
+<script>
+    $console.ready(function(){
+        console.log('Ready');
+    }).focus(function(){
+        console.log('Model Focus');
+    });
+</script>

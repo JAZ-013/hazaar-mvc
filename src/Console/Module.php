@@ -20,8 +20,6 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         parent::__construct($name, $application, false);
 
-        $this->view('index');
-
     }
 
     final public function __configure(Handler $handler){
@@ -46,6 +44,8 @@ abstract class Module extends \Hazaar\Controller\Action {
     }
 
     public function init(){
+
+        $this->layout($this->view_path . DIRECTORY_SEPARATOR . 'index.phtml');
 
         return true;
 

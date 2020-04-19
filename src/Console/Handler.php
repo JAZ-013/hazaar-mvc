@@ -286,23 +286,27 @@ class Handler {
 
         $response = $module->__run();
 
-        if(!$response instanceof \Hazaar\Controller\Response){
+        if(!$response instanceof \Hazaar\Controller\Response)
+            $response = new \Hazaar\Controller\Response\Json($response);
 
-            if(is_array($response)){
+        if(!$response instanceof \Hazaar\Controller\Response\Html)
+            return $response;
 
-                $response = new \Hazaar\Controller\Response\Json($response);
+        $out = new \Hazaar\Controller\Response\Json();
 
-            }else{
+        $requires = $module->view->getRequires();
 
-                $response = new \Hazaar\Controller\Response\Html();
+        array_remove_empty($requires);
 
-                $module->_helper->execAllHelpers($module, $response);
+        array_walk_recursive($requires, function(&$item) {
+            $item = (string)new \Hazaar\Application\Url('hazaar/file/console/js/' . $item);
+        });
 
-            }
+        $out->requires = $requires;
 
-        }
+        $out->html = $response->getContent();
 
-        return $response;
+        return $out;
 
     }
 

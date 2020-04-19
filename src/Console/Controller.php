@@ -91,7 +91,7 @@ class Controller extends \Hazaar\Controller\Action {
     public function __default($controller, $action){
 
         return $this->handler->exec($this, $action, $this->request);
-
+        
     }
 
     public function menu(){

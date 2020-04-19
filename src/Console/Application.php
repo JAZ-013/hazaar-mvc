@@ -193,6 +193,8 @@ class Application extends Module {
 
         $this->view('application/models');
 
+        $this->view->requires('application.js');
+
         $models = array();
 
         foreach($this->application->loader->getSearchPaths(FILE_PATH_MODEL) as $path){
