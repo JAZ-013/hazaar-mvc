@@ -4,10 +4,6 @@ namespace Hazaar\Console;
 
 class Handler {
 
-    private $passwd;
-
-    private $session_key = 'hazaar-console-user';
-
     private $modules = array();
 
     private $libraries = array();
@@ -16,163 +12,17 @@ class Handler {
 
     private $application;
 
-    public function __construct(\Hazaar\Application $application){
-
-        $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
-
-        if(!file_exists($this->passwd))
-            die('Hazaar admin console is currently disabled!');
+    public function __construct(\Hazaar\Application $application, \Hazaar\Auth\Adapter $auth){
 
         $this->application = $application;
 
-        session_start(array(
-            'name' => 'HAZAAR_CONSOLE',
-            'cookie_path' => \Hazaar\Application::path('hazaar')
-        ));
-
-    }
-
-    public function authenticated(){
-
-        if(ake($_SESSION, $this->session_key))
-            return true;
-
-        $headers = hazaar_request_headers();
-
-        if(!($authorization = ake($headers, 'Authorization')))
-            return false;
-
-        list($method, $code) = explode(' ', $authorization);
-
-        if(strtolower($method) != 'basic')
-            throw new \Hazaar\Exception('Unsupported authorization method: ' . $method);
-
-        list($identity, $credential) = explode(':', base64_decode($code));
-
-        $this->user = $identity;
-
-        return $this->authenticate($identity, $credential);
-
-    }
-
-    public function authenticate($username, $password){
-
-        $users = array();
-
-        $lines = explode("\n", trim(file_get_contents($this->passwd)));
-
-        foreach($lines as $line){
-
-            if(!$line)
-                continue;
-
-            list($identity, $userhash) = explode(':', $line);
-
-            $users[$identity] = $userhash;
-
-        }
-
-        $credential = trim(ake($users, $username));
-
-        if(strlen($credential) > 0){
-
-            $hash = '';
-
-            if(substr($credential, 0, 6) == '$apr1$'){                      //APR1-MD5
-
-                $BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-                $APRMD5_ALPHABET = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-
-                $parts = explode('$', $credential);
-
-                $salt = substr($parts[2], 0, 8);
-
-                $max = strlen($password);
-
-                $context = $password . '$apr1$' . $salt;
-
-                $binary = pack('H32', md5($password . $salt . $password));
-
-                for($i=$max; $i>0; $i-=16)
-                    $context .= substr($binary, 0, min(16, $i));
-
-                for($i=$max; $i>0; $i>>=1)
-                    $context .= ($i & 1) ? chr(0) : $password[0];
-
-                $binary = pack('H32', md5($context));
-
-                for($i=0; $i<1000; $i++) {
-
-                    $new = ($i & 1) ? $password : $binary;
-
-                    if($i % 3) $new .= $salt;
-
-                    if($i % 7) $new .= $password;
-
-                    $new .= ($i & 1) ? $binary : $password;
-
-                    $binary = pack('H32', md5($new));
-
-                }
-
-                $hash = '';
-
-                for ($i = 0; $i < 5; $i++) {
-
-                    $k = $i + 6;
-
-                    $j = $i + 12;
-
-                    if($j == 16) $j = 5;
-
-                    $hash = $binary[$i] . $binary[$k] . $binary[$j] . $hash;
-
-                }
-
-                $hash = chr(0) . chr(0) . $binary[11] . $hash;
-
-                $hash = strtr(strrev(substr(base64_encode($hash), 2)), $BASE64_ALPHABET, $APRMD5_ALPHABET);
-
-                $hash = '$apr1$' . $salt . '$' . $hash;
-
-            }elseif(substr($credential, 0, 5) == '{SHA}'){                  //SHA1
-
-                $hash = '{SHA}' . base64_encode(sha1($password, TRUE));
-
-            }elseif(substr($credential, 0, 4) == '$2y$'){                   //Blowfish
-
-                $hash = crypt($password, substr($credential, 0, 29));       //Hash is $2y$ + two digit cost + $ + 22 character salt from stored credentail
-
-            }else{
-
-                throw new \Hazaar\Exception('Unsupported password encryption algorithm.');
-
-            }
-
-            if($hash == $credential){
-
-                $_SESSION[$this->session_key] = $username;
-
-                return true;
-
-            }
-
-        }
-
-        return false;
-
-    }
-
-    public function deauth(){
-
-        session_unset();
+        $this->auth = $auth;
 
     }
 
     public function getUser(){
 
-        return ake($_SESSION, $this->session_key);
+        return $this->auth->getIdentity();
 
     }
 
