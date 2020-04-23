@@ -6,19 +6,21 @@ define('APPLICATION_CONSOLE', true);
 
 class Controller extends \Hazaar\Controller\Action {
 
-    private $passwd = null;
+    private $auth;
 
     private $handler;
 
     public function init(){
 
-        $this->handler = new Handler($this->application);
+        $this->auth = new \Hazaar\Auth\Adapter\Htpasswd(array('session_name' => 'HAZAAR_CONSOLE'));
 
         if($this->isAction('login', 'logout') === true)
             return;
 
-        if($this->handler->authenticated() !== true)
+        if(!$this->auth->authenticated())
             return $this->redirect($this->application->url('hazaar', 'console', 'login'));
+
+        $this->handler = new Handler($this->application, $this->auth);
 
         $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
 
@@ -34,7 +36,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         if($this->request->isPOST()){
 
-            if($this->handler->authenticate($this->request->username, $this->request->password))
+            if($this->auth->authenticate($this->request->username, $this->request->password))
                 return $this->redirect($this->application->url('hazaar', 'console'));
 
             $this->view->msg = 'Login failed';
@@ -51,7 +53,7 @@ class Controller extends \Hazaar\Controller\Action {
 
     public function logout(){
 
-        $this->handler->deauth();
+        $this->auth->deauth();
 
         return $this->redirect($this->application->url('hazaar'));
 

@@ -94,12 +94,12 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     protected $options;
 
-    private $identity;
+    protected $identity;
 
-    private $credential;
+    protected $credential;
 
     // Extra data fields to store from the user record
-    private $extra = array();
+    protected $extra = array();
 
     function __construct($cache_config = array(), $cache_backend = null) {
 
