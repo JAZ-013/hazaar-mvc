@@ -441,7 +441,7 @@ abstract class REST extends \Hazaar\Controller {
         $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
             && ($endpoint['cache'] === true
             || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-            ? 'rest_endpoint_' . md5(serialize(array($method, $params, $args, (($endpoint['cache_ignore_params'] !== true) ? $this->request->getParams() : null)))) : null);
+            ? 'rest_endpoint_' . md5(serialize(array((array)$method, $params, $args, (($endpoint['cache_ignore_params'] !== true) ? $this->request->getParams() : null)))) : null);
 
         //Try extracting from cache first if caching is enabled
         if($cache_key !== null)
