@@ -296,13 +296,13 @@ function array_flatten($array, $delim = '=', $section_delim = ';') {
 function array_unflatten($items, $delim = '=', $section_delim = ';') {
 
     if (!is_array($items))
-        $items = explode($section_delim, $items);
+        $items = preg_split("/\s*\\$section_delim\s*/", trim($items));
 
     $result = array();
 
     foreach($items as $item) {
 
-        $parts = explode($delim, $item, 2);
+        $parts = preg_split("/\s*\\$delim\s*/", $item, 2);
 
         if (count($parts) > 1) {
 
