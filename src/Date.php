@@ -38,7 +38,7 @@ if (!ini_get('date.timezone'))
  * as a last ditch effort the Date class will default to UTC. This is because not having an ini setting in
  * date.timzone will cause a PHP runtime error.
  */
-class Date extends \DateTime {
+class Date extends \DateTime implements \JsonSerializable {
 
     public static $calendar = CAL_JULIAN;
 
@@ -759,6 +759,15 @@ class Date extends \DateTime {
         setlocale(LC_ALL, $local_locale);
 
         return $format;
+
+    }
+
+    /**
+     * Outputs the UTC timestamp (EPOCH) When an object is included in a json_encode call.
+     */
+    public function jsonSerialize(){
+
+        return $this->timestamp();
 
     }
 
