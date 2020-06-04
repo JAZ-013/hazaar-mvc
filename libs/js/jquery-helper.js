@@ -481,8 +481,8 @@ dataBinder.prototype.compare = function (value) {
     if (!(typeof value === 'object' || value instanceof dataBinder)) return false;
     for (x in value._attributes) {
         if (!(x in this._attributes)
-            || ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== (value._attributes[x] instanceof dataBinderValue ? value._attributes[x].value : value._attributes[x]))
-            || (this._attributes[x] instanceof dataBinder && this._attributes[x].compare(value._attributes[x]) !== true))
+            || (this._attributes[x] instanceof dataBinder && this._attributes[x].compare(value._attributes[x]) !== true)
+            || ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== (value._attributes[x] instanceof dataBinderValue ? value._attributes[x].value : value._attributes[x])))
             return false;
     }
     for (x in this._attributes) if (!(x in value._attributes)) return false;
