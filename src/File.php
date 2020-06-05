@@ -700,10 +700,12 @@ class File {
 
         }
 
-        if($dstBackend === $this->backend)
-            return $dstBackend->copy($this->source_file, $destination);
+        $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
-        return $dstBackend->write(rtrim($destination, '/') . '/' . $this->basename(), $this->get_contents(), $this->mime_content_type(), $overwrite);
+        if($dstBackend === $this->backend)
+            return $dstBackend->copy($this->source_file, $actual_destination);
+
+        return $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
     }
 
