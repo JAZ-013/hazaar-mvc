@@ -627,7 +627,9 @@ class File {
 
         $move = $this->exists();
 
-        if(!$this->copyTo($destination, $overwrite, $create_dest, $dstBackend))
+        $file = $this->copyTo($destination, $overwrite, $create_dest, $dstBackend);
+
+        if(!$file instanceof File)
             return false;
 
         if($move){
@@ -641,7 +643,7 @@ class File {
 
         }
 
-        return true;
+        return $file;
 
     }
 
@@ -703,9 +705,11 @@ class File {
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
         if($dstBackend === $this->backend)
-            return $dstBackend->copy($this->source_file, $actual_destination);
+            $result = $dstBackend->copy($this->source_file, $actual_destination);
+        else
+            $result = $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
-        return $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+        return new File($actual_destination, $dstBackend, $this->manager, $this->relative_path);
 
     }
 
@@ -1177,18 +1181,13 @@ class File {
      *
      * NOTE: This will not work if the file is currently opened by another process.
      *
-     * @param mixed $newname The new name.
+     * @param mixed $newname The new name.  Must not be an absolute/relative path.  If you want to move the file use File::moveTo().
      *
      * @return boolean
      */
     public function rename($newname){
 
-        if(!rename($this->source_file, $newname))
-            return false;
-
-        $this->source_file = $newname;
-
-        return true;
+        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname);
 
     }
 
