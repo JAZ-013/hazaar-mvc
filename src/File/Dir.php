@@ -79,7 +79,7 @@ class Dir {
 
     public function name(){
 
-        return pathinfo($this->fixPath($this->path), PATHINFO_FILENAME);
+        return pathinfo($this->fixPath($this->path), PATHINFO_BASENAME);
 
     }
 
