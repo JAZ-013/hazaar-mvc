@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller;
 
-abstract class Response implements Response\_Interface {
+class Response implements Response\_Interface {
 
     /*
      * Use text/html as the default type as it is the most widely accepted.
@@ -63,6 +63,21 @@ abstract class Response implements Response\_Interface {
 
         }
 
+    }
+
+    /**
+     * Add multiple headers
+     */
+    public function setHeaders($headers, $overwrite = true){
+
+        if(!is_array($headers))
+            return false;
+
+        foreach($headers as $key => $value)
+            $this->setHeader($key, $value, $overwrite);
+
+        return true;
+        
     }
 
     public function removeHeader($key) {
@@ -199,7 +214,7 @@ abstract class Response implements Response\_Interface {
 
     }
 
-    public function setHeaders($content_length = NULL) {
+    private function writeHeaders($content_length = NULL) {
 
         http_response_code($this->status_code);
 
@@ -291,7 +306,7 @@ abstract class Response implements Response\_Interface {
             if(headers_sent())
                 throw new Exception\HeadersSent();
 
-            $this->setHeaders(strlen($content));
+            $this->writeHeaders(strlen($content));
 
         }
 
