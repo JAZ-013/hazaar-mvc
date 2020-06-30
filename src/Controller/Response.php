@@ -50,6 +50,9 @@ class Response implements Response\_Interface {
      */
     public function setHeader($key, $value, $overwrite = TRUE) {
 
+        if(strtolower($key) === 'content-length')
+            return false;
+            
         if($overwrite) {
 
             $this->headers[$key] = $value;
@@ -62,6 +65,8 @@ class Response implements Response\_Interface {
             $this->headers[$key][] = $value;
 
         }
+
+        return true;
 
     }
 
