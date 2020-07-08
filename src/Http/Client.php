@@ -169,6 +169,8 @@ class Client {
         if(! $request instanceof Request)
             return FALSE;
 
+        $this->SetHeader('Connection', 'close');
+
         if(is_array($this->headers) && count($this->headers) > 0) {
 
             foreach($this->headers as $header => $value)
@@ -213,12 +215,8 @@ class Client {
                 if($response->bytes_remaining > 0 && $response->bytes_remaining < $buffer_size)
                     $buffer_size = $response->bytes_remaining;
 
-                /*
-                 * If the socket is now EOF then break out
-                 * Also, if there are no bytes remaining, but the socket is still open, assume the server is trying force
-                 * connection keep-alive, so close the damn thing cause we're done.
-                 */
-                if(feof($sck_fd) || $response->bytes_remaining <= 0)
+                //If the socket is now EOF then break out
+                if(feof($sck_fd))
                     break;
 
             }
