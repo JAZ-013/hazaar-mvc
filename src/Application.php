@@ -190,6 +190,9 @@ class Application {
          */
         $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
 
+        if(!$this->config->loaded())
+            die('Application is not configured!');
+
         Application\Url::$base = $this->config->app->get('base');
 
         Application\Url::$rewrite = $this->config->app->get('rewrite');
