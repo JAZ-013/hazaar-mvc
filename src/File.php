@@ -705,7 +705,7 @@ class File {
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
         if($dstBackend === $this->backend)
-            $result = $dstBackend->copy($this->source_file, $actual_destination);
+            $result = $dstBackend->copy($this->source_file, $actual_destination, $overwrite);
         else
             $result = $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
@@ -1185,9 +1185,9 @@ class File {
      *
      * @return boolean
      */
-    public function rename($newname){
+    public function rename($newname, $overwrite = false){
 
-        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname);
+        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname, $overwrite);
 
     }
 
