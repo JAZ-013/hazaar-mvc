@@ -39,6 +39,9 @@ class Adapter {
 
         $this->transport = $this->getTransportObject($config->transport, $config);
 
+        if($config->has('from'))
+            $this->from = $this->encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
+
     }
 
     public function getTransportObject($transport = 'local', $config = array()){
