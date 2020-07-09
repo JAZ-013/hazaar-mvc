@@ -145,6 +145,17 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         foreach($to as $x){
 
+            if(preg_match('/^(.*)<(.*)>$/', $x, $matches)){
+
+                if(!(array_key_exists('To', $extra_headers) && is_array($extra_headers['To'])))
+                    $extra_headers['To'] = (array_key_exists('To', $extra_headers) ? $extra_headers['To'] : array());
+
+                $extra_headers['To'][] = $x;
+
+                $x = $matches[2];
+
+            }
+
             $this->write("RCPT TO: <$x>");
 
             if(!$this->read(250, 1024, $result))
@@ -155,14 +166,14 @@ class Smtp extends \Hazaar\Mail\Transport {
         $this->write('DATA');
 
         if(!$this->read(354))
-            throw new \Exception('Server rejected out data!');
+            throw new \Exception('Server rejected our data!');
 
         $extra_headers['Subject'] = $subject;
 
         $out = '';
 
         foreach($extra_headers as $key => $value)
-            $out .= "$key: $value\r\n";
+            $out .= "$key: " . (is_array($value) ? implode(', ', $value) : $value) . "\r\n";
 
         $out .= "\r\n$message\r\n.";
 
