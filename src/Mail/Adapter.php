@@ -187,6 +187,36 @@ class Adapter {
     }
 
     /**
+     * Load load a template to use as the TEXT email body
+     * 
+     * @param string $filename The filename to load the template from
+     */
+    public function loadTemplate($filename){
+
+        $template = new Template();
+
+        $template->loadFromFile($filename);
+
+        $this->body['body'] = $template;
+
+    }
+
+    /**
+     * Load a template to use as the HTML email body
+     * 
+     * @param string $filename The filename to load the template from
+     */
+    public function loadHTMLTemplate($filename){
+
+        $template = new Template();
+
+        $template->loadFromFile($filename);
+
+        $this->body['body'] = new Html($template);
+
+    }
+
+    /**
      * Get the current body part of the email
      *
      * @return string The body of the email
@@ -218,7 +248,7 @@ class Adapter {
          */
         if($use_mime == TRUE) {
 
-            $message = new Mime\Message($this->body);
+            $message = new Mime\Message($this->body, $params);
 
         } else {
 
@@ -267,7 +297,7 @@ class Adapter {
 
             $headers = $message->getHeaders();
 
-            $body = $message->encode();
+            $body = $message->encode($params);
 
         } else {
 

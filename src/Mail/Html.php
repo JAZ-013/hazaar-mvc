@@ -20,11 +20,13 @@ class Html extends \Hazaar\Mail\Mime\Part {
 
     }
 
-    public function encode($width_limit = 998) {
+    public function encode($width_limit = 998, $params = null) {
 
-        $text = new \Hazaar\Mail\Mime\Part(str_replace('<br>', "\r\n", strip_tags($this->html, '<br>')), 'text/plain');
+        $html = $this->html instanceof \Hazaar\Mail\Template ? $this->html->render($params) : $this->html;
 
-        $html = new \Hazaar\Mail\Mime\Part($this->html, 'text/html');
+        $text = new \Hazaar\Mail\Mime\Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
+
+        $html = new \Hazaar\Mail\Mime\Part($html, 'text/html');
 
         $message = '--' . $this->boundary . $this->crlf . $text->encode($width_limit) . $this->crlf;
 

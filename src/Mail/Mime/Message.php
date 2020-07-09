@@ -50,7 +50,7 @@ class Message {
 
     }
 
-    public function encode() {
+    public function encode($params = null) {
 
         $message = $this->crlf . "This is a multipart message in MIME format" . $this->crlf . $this->crlf;
 
@@ -58,7 +58,7 @@ class Message {
 
             $message .= '--' . $this->boundary . $this->crlf;
 
-            $message .= $part->encode();
+            $message .= $part->encode(998, $params);
 
         }
 
