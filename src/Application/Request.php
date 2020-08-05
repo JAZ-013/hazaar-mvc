@@ -111,6 +111,12 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    public function pushPath($part){
+
+        $this->path .= ((strlen($this->path) > 0) ? '/' : '') . $part;
+        
+    }
+
     public function __get($key) {
 
         return $this->get($key);
