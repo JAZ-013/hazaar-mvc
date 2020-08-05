@@ -247,4 +247,45 @@ abstract class Basic extends \Hazaar\Controller {
 
     }
 
+    /**
+     * Forwards an action from the requested controller to another controller
+     * 
+     * This is some added magic to assist with poorly designed MVC applications where too much "common" code
+     * has been implemented in a controller action.  This allows the action request to be forwarded and the
+     * response returned.  The target action is executed as though it was called on the requested controller.
+     * This means that view data can be modified after the action has executed to modify the response.  
+     * 
+     * Note: If you don't need to modify any response data, then it would be more efficient to use an alias.
+     * 
+     * @param string $controller    The name of the controller to forward to.
+     * @param string $action        Optional. The name of the action to call on the target controller.  If ommitted, the 
+     *                              name of the requested action will be used.
+     * @param array  $actionArgs    Optional. An array of arguments to forward to the action.  If ommitted, the arguments
+     *                              sent to the calling action will be forwarded.
+     * @param Hazaar\Controller $target The target controller.  Allows direct access to the forward controller after it has
+     *                              been loaded.
+     * 
+     * @return mixed Retuns the same return value returned by the forward controller action.
+     */
+    public function forwardAction($controller, $action = null, $actionArgs = null, &$target = null){
+
+        $target = \Hazaar\Loader::getInstance()->loadController($controller, $this->name);
+
+        if(!($target instanceof Basic))
+            throw new \Exception("Unable to forward action to controller '$controller'.  Target controller must be an instance of \Hazaar\Controller\Basic.");
+
+        if($action === null)
+            $action = $this->getAction();
+
+        if($actionArgs === null)
+            $actionArgs = $this->getActionArgs();
+
+        $this->request->pushPath($action);
+
+        $target->__initialize($this->request);
+
+        return call_user_func_array(array($target, $action), $actionArgs);
+
+    }
+
 }
