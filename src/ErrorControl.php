@@ -90,6 +90,26 @@ function errorAndDie() {
 
             }
 
+            if(php_sapi_name() === 'cli'){
+
+                $die = "##############################\n# Hazaar MVC - Console Error #\n##############################\n\n";
+                
+                $die .= "$error[1]\n\n";
+
+                if(!is_array($error[5]))
+                    $error[5] = array();
+
+                $error[5][] = array('file' => $error[2], 'line' => $error[3], 'class' => '', 'function' => '');
+
+                $die .= "Call stack:\n\n";
+
+                for($x = count($error[5]) - 1; $x >= 0; $x--)
+                    $die .= count($error[5]) - $x . ". {$error[5][$x]['class']}->{$error[5][$x]['function']} {$error[5][$x]['file']}:{$error[5][$x]['line']}\n";
+
+                die($die);
+
+            }
+
         }
 
         include(realpath(__DIR__

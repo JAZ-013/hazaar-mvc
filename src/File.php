@@ -649,6 +649,8 @@ class File {
 
     /**
      * Copy the file to another folder
+     * 
+     * This differs to copy() which expects the target to be the full new file pathname.
      *
      * @param string  $destination The destination folder to copy the file into
      * @param boolean $overwrite   Overwrite the destination file if it exists.
@@ -663,7 +665,7 @@ class File {
      *
      * @return mixed
      */
-    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copyTo(string $destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
             $dstBackend = $this->backend;
@@ -705,11 +707,93 @@ class File {
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
         if($dstBackend === $this->backend)
-            $result = $dstBackend->copy($this->source_file, $actual_destination);
+            $result = $dstBackend->copy($this->source_file, $actual_destination, $overwrite);
         else
             $result = $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
-        return new File($actual_destination, $dstBackend, $this->manager, $this->relative_path);
+        if($result)
+            return new File($actual_destination, $dstBackend, $this->manager, $this->relative_path);
+
+        return false;
+
+    }
+
+    /**
+     * Copy the file to another folder and filename
+     * 
+     * This differs from copyTo which expects the target to be a folder
+     *
+     * @param string  $destination The destination folder and file name to copy the file into
+     * @param boolean $overwrite   Overwrite the destination file if it exists.
+     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                             destination does not exist an error will be thrown.
+     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
+     *
+     * @throws \Exception
+     *
+     * @throws File\Exception\SourceNotFound
+     * @throws File\Exception\TargetNotFound
+     *
+     * @return mixed
+     */
+    public function copy(string $destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+
+        if(! $dstBackend)
+            $dstBackend = $this->backend;
+
+        if($this->contents){
+
+            $this->backend = $dstBackend;
+
+            $dir = new File\Dir($destination, $dstBackend, $this->manager);
+
+            if(!$dir->exists()){
+
+                if(!$create_dest)
+                    throw new \Hazaar\Exception('Destination does not exist!');
+
+                $dir->create(true);
+
+            }
+
+            $this->source_file = $destination . '/' . $this->basename();
+
+            return $this->save();
+
+        }
+
+        if(!$this->exists())
+            throw new File\Exception\SourceNotFound($this->source_file, $destination);
+
+        if(!$dstBackend->exists(dirname($destination))) {
+
+            if(!$create_dest)
+                throw new \Hazaar\Exception('Destination does not exist!');
+
+            $parts = explode('/', dirname($destination));
+
+            $dir = '';
+
+            foreach($parts as $part){
+
+                if($part === '')
+                    continue;
+
+                $dir .= '/' . $part;
+
+                if(!$dstBackend->exists($dir))
+                    $dstBackend->mkdir($dir);
+
+            }
+
+        }
+
+        if($dstBackend === $this->backend)
+            $result = $dstBackend->copy($this->source_file, $destination, $overwrite);
+        else
+            $result = $dstBackend->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+
+        return new File($destination, $dstBackend, $this->manager, $this->relative_path);
 
     }
 
@@ -1206,9 +1290,9 @@ class File {
      *
      * @return boolean
      */
-    public function rename($newname){
+    public function rename($newname, $overwrite = false){
 
-        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname);
+        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname, $overwrite);
 
     }
 

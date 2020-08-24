@@ -72,7 +72,9 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function remove($criteria = array(), $multiple = false){
+    public function remove($criteria = array(), $multiple = false, $empty_only = false){
+
+        $result = false;
 
         foreach($this->values as $index => $value){
 
@@ -81,7 +83,12 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
             if($this->matchItem($value, $criteria)){
 
+                if($empty_only === true && $value->hasValues())
+                    break;
+
                 unset($this->values[$index]);
+
+                $result = true;
 
                 if($multiple !== true)
                     break;
@@ -92,7 +99,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
         $this->values = array_values($this->values);
 
-        return;
+        return $result;
 
     }
 

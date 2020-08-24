@@ -102,7 +102,7 @@ class Config extends \Hazaar\Map {
             $source_file = null;
 
             //If we have an extension, just use that file.
-            if(strrpos($source_info['name'], '.') !== false){
+            if(ake(pathinfo($source_info['name']), 'extension', false) !== false){
 
                 $source_file = \Hazaar\Loader::getFilePath($path_type, $source_info['name']);
 

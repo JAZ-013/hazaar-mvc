@@ -1688,7 +1688,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
     public function implode($glue = ' ') {
 
-        return implode($this->elements, $glue);
+        return implode($glue, $this->elements);
 
     }
 

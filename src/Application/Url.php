@@ -128,9 +128,7 @@ class Url {
 
         if(Url::$base){
 
-            $url = trim(Url::$base);
-
-            if(substr($url, -1, 1) == '/') $url = substr($url, 0, strlen($url) - 1);
+            $url = rtrim(trim(Url::$base), '/') . '/' . $path;
 
         } else {
 
@@ -147,11 +145,9 @@ class Url {
 
             $proto = ((ake($_SERVER, 'SERVER_PORT') == 443) ? 'https' : 'http');
 
-            $url = $proto . '://' . $host;
+            $url = $proto . '://' . $host . \Hazaar\Application::path($path);
 
         }
-
-        $url .= \Hazaar\Application::path($path);
 
         if(count($params) > 0){
 
