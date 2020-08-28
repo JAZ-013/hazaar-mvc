@@ -38,6 +38,15 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $this->client_secret = $client_secret;
 
+        if($config = \Hazaar\Application::getInstance()->config['auth']){
+
+            $this->metadata = $config;
+
+            if(isset($this->metadata['discover_endpoint']))
+                $this->discover($this->metadata['discover_endpoint']);
+
+        }
+
     }
 
     public function setAuthURI($uri){
@@ -298,6 +307,9 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             exit;
 
         }else{
+
+            if(!ake($this->metadata, 'authorization_endpoint'))
+                throw new \Exception('There is no authorization endpoint set for this auth adapter!');
 
             $this->session->state = hash('sha1', uniqid());
 
