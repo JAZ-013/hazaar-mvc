@@ -451,6 +451,9 @@ class File {
      */
     public function put_contents($data, $overwrite = true) {
 
+        if($data instanceof File)
+            $data = $data->get_contents();
+            
         $content_type = null;
 
         if(!is_resource($this->handle))
@@ -474,6 +477,9 @@ class File {
      * @param mixed $bytes The data to set as the content
      */
     public function set_contents($bytes) {
+
+        if($bytes instanceof File)
+            $bytes = $bytes->get_contents();
 
         if(array_key_exists(FILE_FILTER_SET, $this->filters)){
 
