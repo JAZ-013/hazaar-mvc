@@ -159,6 +159,9 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             
         }
 
+        if($this->options->has('data_fields'))
+            $this->setDataFields($this->options->data_fields->toArray());
+
     }
 
     public function setIdentity($identity) {
