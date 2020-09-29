@@ -44,7 +44,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         ), $options);
 
         if($this->options->webURL === null || $this->options->username === null || $this->options->password === null)
-            throw new Exception\DropboxError('SharePoint filesystem backend requires a webURL, username and password.');
+            throw new Exception\SharePointError('SharePoint filesystem backend requires a webURL, username and password.');
 
         $cache_options = array(
             'use_pragma' => FALSE,
@@ -88,7 +88,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             return true;
 
         if(!($token = $this->getSecurityToken($this->options['username'], $this->options['password'])))
-            throw new \Hazaar\Exception('Unable to get SharePoint security token!');
+            throw new Exception\SharePointError('Unable to get SharePoint security token!');
 
         return $this->getAuthenticationCookies($token);
 
@@ -99,7 +99,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $xmlFile = __DIR__ . DIRECTORY_SEPARATOR . 'XML' . DIRECTORY_SEPARATOR . 'SAML.xml';
 
         if(!file_exists($xmlFile))
-            throw new \Hazaar\Exception('SAML XML authorisation template is missing!');
+            throw new Exception\SharePointError('SAML XML authorisation template is missing!');
 
         $request = new Request(self::$STSAuthURL, 'POST');
 
@@ -118,14 +118,14 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $response = $this->send($request);
 
         if($response->status !== 200)
-            throw new \Hazaar\Exception('Invalid response requesting security token.');
+            throw new Exception\SharePointError('Invalid response requesting security token.', $response);
 
         $xml = new \DOMDocument();
 
         $xml->loadXML($response->body());
 
         if(!$xml instanceof \DOMDocument)
-            throw new \Hazaar\Exception('Invalid response authenticating SharePoint access.');
+            throw new Exception\SharePointError('Invalid response authenticating SharePoint access.', $response);
 
         $xpath = new \DOMXPath($xml);
 
@@ -139,7 +139,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         }
 
         if ($xpath->query("//S:Fault")->length > 0)
-            throw new \RuntimeException($xpath->query("//S:Fault")->item(0)->nodeValue);
+            throw new Exception\SharePointError($xpath->query("//S:Fault")->item(0)->nodeValue);
 
         return false;
 
@@ -158,7 +158,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $response = $this->send($request, false);
 
         if($response->status !== 302)
-            throw new \Hazaar\Exception('Invalid response requesting auth cookies: ' . $response->status);
+            throw new Exception\SharePointError('Invalid response requesting auth cookies: ' . $response->status);
 
         $this->deleteCookie('fpc');
 
@@ -267,11 +267,11 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 ? 'Invalid response (' . $response->status . ') from SharePoint: code=' . $error->code . ' message=' . $error->message->value
                 : 'Unknown response: ' . $response->body();
 
-            throw new \Hazaar\Exception($exception_message);
+            throw new Exception\SharePointError($exception_message, $response);
 
         }
 
-        throw new \Exception('Query failed after ' . $retries . ' retries with code ' . $response->status . '.  Giving up!');
+        throw new Exception\SharePointError('Query failed after ' . $retries . ' retries with code ' . $response->status . '.  Giving up!');
 
     }
 
@@ -332,7 +332,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             if(!($folder = ake($this->_query($this->_folder('/')), 'd'))){
 
                 if(!$this->mkdir('/', true))
-                    throw new \Exception('Root folder does not exist and could not be created automatically!');
+                    throw new Exception\SharePointError('Root folder does not exist and could not be created automatically!');
 
                 $folder =& $this->root;
 
@@ -480,7 +480,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
             $responses = $response->body();
 
             if(count($responses) !== 2)
-                throw new \Hazaar\Exception('Batch request error.  Requested 2 responses, got ' . count($responses));
+                throw new Exception\SharePointError('Batch request error.  Requested 2 responses, got ' . count($responses), $response);
 
             array_walk($responses, function(&$value){
                 $response = new \Hazaar\Http\Response();
@@ -512,7 +512,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         }
 
-        throw new \Exception('Unable to load folder info after ' . $retries . ' retried.  Giving up!');
+        throw new Exception\SharePointError('Unable to load folder info after ' . $retries . ' retried.  Giving up!');
 
     }
 
