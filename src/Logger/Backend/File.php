@@ -10,21 +10,33 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->addCapability('write_trace');
 
-        $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
-
-        $this->setDefaultOption('errfile', \Hazaar\Application::getInstance()->runtimePath('error.log'));
-
         $this->setDefaultOption('write_ip', TRUE);
 
         $this->setDefaultOption('write_timestamp', TRUE);
 
         $this->setDefaultOption('write_uri', TRUE);
 
-        if(($this->hLog = fopen($this->getOption('logfile'), 'a')) == FALSE)
-            throw new Exception\OpenLogFileFailed($this->getOption('logfile'));
+        $log_file = \Hazaar\Application::getInstance()->runtimePath('hazaar.log');
 
-        if(($this->hErr = fopen($this->getOption('errfile'), 'a')) == FALSE)
-            throw new Exception\OpenLogFileFailed($this->getOption('errfile'));
+        if(is_writable($log_file)){
+
+            $this->setDefaultOption('logfile', $log_file);
+
+            if(($this->hLog = fopen($this->getOption('logfile'), 'a')) == FALSE)
+                throw new Exception\OpenLogFileFailed($this->getOption('logfile'));
+
+        }
+        
+        $error_file = \Hazaar\Application::getInstance()->runtimePath('error.log');
+
+        if(is_writable($error_file)){
+
+            $this->setDefaultOption('errfile', $error_file);
+
+            if(($this->hErr = fopen($this->getOption('errfile'), 'a')) == FALSE)
+                throw new Exception\OpenLogFileFailed($this->getOption('errfile'));
+
+        }
 
     }
 
