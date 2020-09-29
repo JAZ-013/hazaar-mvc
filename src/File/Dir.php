@@ -2,6 +2,14 @@
 
 namespace Hazaar\File;
 
+define('HZ_SYNC_DIR', 1);
+
+define('HZ_SYNC_DIR_COMPLETE', 2);
+
+define('HZ_SYNC_FILE', 3);
+
+define('HZ_SYNC_FILE_COMPLETE', 4);
+
 class Dir {
 
     private $path;
@@ -518,10 +526,12 @@ class Dir {
 
     }
 
-    public function sync(Dir $source, $recursive = false){
+    public function sync(Dir $source, $recursive = false, $progress_callback = null){
 
         if(!$this->exists())
             $this->create();
+
+        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_DIR, ['source' => $source, 'target' => $this]);
 
         while($item = $source->read()){
 
@@ -541,9 +551,11 @@ class Dir {
                         if(!$dir->exists())
                             $dir->create();
 
-                        $dir->sync($item, $recursive);
+                        $dir->sync($item, $recursive, $progress_callback);
 
                     }elseif($item instanceof \Hazaar\File){
+
+                        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_FILE, ['source' => $item, 'target' => $this]);
 
                         if(!($sync = (!$this->exists($item->basename())))){
 
@@ -560,6 +572,8 @@ class Dir {
                             $this->put($item, true);
 
                         }
+
+                        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_FILE_COMPLETE, ['source' => $item, 'target' => $this]);
 
                     }
 
@@ -578,6 +592,8 @@ class Dir {
             throw (isset($e) ? $e : new \Exception('Unknown error!'));
 
         }
+
+        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_DIR_COMPLETE, ['source' => $source, 'target' => $this]);
 
         return true;
 
