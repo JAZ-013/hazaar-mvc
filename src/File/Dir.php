@@ -8,7 +8,11 @@ define('HZ_SYNC_DIR_COMPLETE', 2);
 
 define('HZ_SYNC_FILE', 3);
 
-define('HZ_SYNC_FILE_COMPLETE', 4);
+define('HZ_SYNC_FILE_UPDATE', 4);
+
+define('HZ_SYNC_FILE_COMPLETE', 5);
+
+define('HZ_SYNC_ERROR', 6);
 
 class Dir {
 
@@ -526,36 +530,50 @@ class Dir {
 
     }
 
-    public function sync(Dir $source, $recursive = false, $progress_callback = null){
+    private function callSyncCallback(){
+
+        $args = func_get_args();
+
+        $callback = array_shift($args);
+
+        if(!is_callable($callback))
+            return true;
+
+        return call_user_func_array($callback, $args) !== false ? true : false;
+
+    }
+
+    public function sync(Dir $source, $recursive = false, $progress_callback = null, $max_retries = 3){
+
+        if($this->callSyncCallback($progress_callback, HZ_SYNC_DIR, ['src' => $source, 'dst' => $this]) !== true)
+            return false;
 
         if(!$this->exists())
             $this->create();
 
-        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_DIR, ['source' => $source, 'target' => $this]);
-
         while($item = $source->read()){
 
-            $retries = 3;
+            $retries = $max_retries;
 
             for($i = 0; $i < $retries; $i++){
 
                 try{
 
+                    $result = true;
+
                     if($item instanceof Dir){
 
                         if($recursive === false)
-                            continue;
+                            continue 2;
 
-                        $dir = $this->get($item->basename(), true);
-
-                        if(!$dir->exists())
-                            $dir->create();
-
-                        $dir->sync($item, $recursive, $progress_callback);
+                        $this->get($item->basename(), true)->sync($item, $recursive, $progress_callback);
 
                     }elseif($item instanceof \Hazaar\File){
 
-                        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_FILE, ['source' => $item, 'target' => $this]);
+                        $target = null;
+
+                        if($this->callSyncCallback($progress_callback, HZ_SYNC_FILE, ['src' => $item, 'dst' => $this]) !== true)
+                            continue 2;
 
                         if(!($sync = (!$this->exists($item->basename())))){
 
@@ -565,15 +583,15 @@ class Dir {
 
                         }
 
-                        if($sync){
+                        if($sync && $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_UPDATE, ['src' => $item, 'dst' => $this]) === true){
 
                             $item->touch();
 
-                            $this->put($item, true);
+                            $target = $this->put($item, true);
 
                         }
 
-                        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_FILE_COMPLETE, ['source' => $item, 'target' => $this]);
+                        $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_COMPLETE, ['src' => $item, 'dst' => $this, 'target' => $target]);
 
                     }
 
@@ -582,8 +600,19 @@ class Dir {
                 }
                 catch(\Throwable $e){
 
-                    //If we get an exception, it could be due to a network issue, so hang back for sec and try again
-                    sleep(1);
+                    //If we get an exception, it could be due to a network issue, so notify any callbacks to handle the situation
+                    if(is_callable($progress_callback)){
+
+                        //Check the result of the callback.  False will retry the file a maximumu of 3 times.  Anything else will continue.
+                        if($this->callSyncCallback($progress_callback, HZ_SYNC_ERROR, ['src' => $source, 'dst' => $this, 'err' => $e]) !== true)
+                            continue 2;
+
+                    }else{
+
+                        //Otherwise maintain old behavior and hang back for sec to try again
+                        sleep(1);
+
+                    }
 
                 }
 
@@ -593,7 +622,7 @@ class Dir {
 
         }
 
-        if(is_callable($progress_callback)) $progress_callback(HZ_SYNC_DIR_COMPLETE, ['source' => $source, 'target' => $this]);
+        $this->callSyncCallback($progress_callback, HZ_SYNC_DIR_COMPLETE, ['src' => $source, 'dst' => $this]);
 
         return true;
 
