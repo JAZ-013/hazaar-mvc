@@ -583,13 +583,8 @@ class Dir {
 
                         }
 
-                        if($sync && $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_UPDATE, ['src' => $item, 'dst' => $this]) === true){
-
-                            $item->touch();
-
+                        if($sync && $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_UPDATE, ['src' => $item, 'dst' => $this]) === true)
                             $target = $this->put($item, true);
-
-                        }
 
                         $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_COMPLETE, ['src' => $item, 'dst' => $this, 'target' => $target]);
 
