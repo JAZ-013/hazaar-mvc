@@ -8,7 +8,7 @@ define('FILE_FILTER_OUT', 1);
 
 define('FILE_FILTER_SET', 2);
 
-class File {
+class File implements File\_Interface {
 
     protected $backend;
 
@@ -319,21 +319,21 @@ class File {
 
     }
 
+    public function is_file() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->is_file($this->source_file);
+
+    }
+
     public function is_dir() {
 
         if(!$this->exists())
             return false;
 
         return $this->backend->is_dir($this->source_file);
-
-    }
-
-    public function dir() {
-
-        if($this->is_dir())
-            return new File\Dir($this->source_file, $this->backend, $this->manager);
-
-        return FALSE;
 
     }
 
@@ -346,12 +346,12 @@ class File {
 
     }
 
-    public function is_file() {
+    public function dir($child = null) {
 
-        if(!$this->exists())
-            return false;
+        if($this->is_dir())
+            return new File\Dir($this->source_file, $this->backend, $this->manager);
 
-        return $this->backend->is_file($this->source_file);
+        return FALSE;
 
     }
 
@@ -671,7 +671,7 @@ class File {
      *
      * @return mixed
      */
-    public function copyTo(string $destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
             $dstBackend = $this->backend;
@@ -742,7 +742,7 @@ class File {
      *
      * @return mixed
      */
-    public function copy(string $destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
             $dstBackend = $this->backend;
@@ -1277,7 +1277,7 @@ class File {
      */
     public function rename($newname, $overwrite = false){
 
-        return $this->backend->move($this->source_file, dirname($this->source_file) . '/' . $newname, $overwrite);
+        return $this->backend->move($this->source_file, $this->dirname() . '/' . $newname, $overwrite);
 
     }
 

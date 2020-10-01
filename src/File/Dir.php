@@ -14,7 +14,7 @@ define('HZ_SYNC_FILE_COMPLETE', 5);
 
 define('HZ_SYNC_ERROR', 6);
 
-class Dir {
+class Dir implements _Interface {
 
     private $path;
 
@@ -45,6 +45,24 @@ class Dir {
 
     }
 
+    public function backend(){
+
+        return strtolower((new \ReflectionClass($this->backend))->getShortName());
+
+    }
+
+    public function getBackend(){
+
+        return $this->backend;
+
+    }
+
+    public function getManager(){
+
+        return $this->manager;
+
+    }
+
     public function fixPath($path, $file = NULL) {
 
         if($file)
@@ -56,9 +74,27 @@ class Dir {
 
     }
 
-    public function __toString(){
+    public function set_meta($values) {
+
+        return $this->backend->set_meta($this->path, $values);
+
+    }
+
+    public function get_meta($key = NULL) {
+
+        return $this->backend->get_meta($this->path, $key);
+
+    }
+
+    public function toString(){
 
         return $this->path();
+
+    }
+
+    public function __toString(){
+
+        return $this->toString();
 
     }
 
@@ -92,21 +128,15 @@ class Dir {
 
     }
 
+    public function extension() {
+
+        return pathinfo($this->path, PATHINFO_EXTENSION);
+
+    }
+
     public function basename(){
 
         return basename($this->fixPath($this->path));
-
-    }
-
-    public function ctime(){
-
-        return $this->backend->filectime($this->fixPath($this->path));
-
-    }
-
-    public function mtime(){
-
-        return $this->backend->filemtime($this->fixPath($this->path));
 
     }
 
@@ -130,6 +160,9 @@ class Dir {
 
     public function is_readable() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->is_readable($this->path);
 
     }
@@ -137,6 +170,75 @@ class Dir {
     public function is_writable() {
 
         return $this->backend->is_writable($this->path);
+
+    }
+
+    public function is_file() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->is_file($this->path);
+
+    }
+
+    public function is_dir() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->is_dir($this->path);
+
+    }
+
+    public function is_link() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->is_link($this->path);
+
+    }
+
+    public function parent() {
+
+        return new File\Dir($this->dirname(), $this->backend, $this->manager);
+
+    }
+
+    public function ctime() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->filectime($this->path);
+
+    }
+
+    public function mtime() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->filemtime($this->path);
+
+    }
+
+    public function touch(){
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->touch($this->path);
+
+    }
+
+    public function atime() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->backend->fileatime($this->path);
 
     }
 
@@ -178,6 +280,12 @@ class Dir {
 
     }
 
+    public function rename($newname, $overwrite = false){
+
+        return $this->backend->move($this->path, $this->dirname() . '/' . $newname, $overwrite);
+
+    }
+
     /**
      * Delete the directory, optionally removing all it's contents.
      *
@@ -194,6 +302,14 @@ class Dir {
 
     }
 
+    /**
+     * File::unlink() compatible delete that removes dir and all contents (ie: recursive).
+     */
+    public function unlink(){
+
+        return $this->delete(true);
+
+    }
 
     public function isEmpty(){
 
@@ -415,7 +531,7 @@ class Dir {
 
     }
 
-    public function dir($child) {
+    public function dir($child = null) {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
@@ -521,12 +637,6 @@ class Dir {
             return null;
 
         return $this->manager->uri($this->fullpath());
-
-    }
-
-    public function get_meta($key = NULL) {
-
-        return $this->backend->get_meta($this->path, $key);
 
     }
 
