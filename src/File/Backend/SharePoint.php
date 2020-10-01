@@ -186,11 +186,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     private function resolvePath($path){
 
-        $parts = explode('/', trim($this->options['root'] . '/' . ltrim($path, ' /'), '/'));
-
-        array_walk($parts, function(&$value){ $value = rawurlencode($value); });
-
-        return implode('/', $parts);
+        return implode('/', array_map('rawurlencode', explode('/', trim($this->options['root'] . '/' . ltrim($path, ' /'), '/'))));
 
     }
 
@@ -234,6 +230,8 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
             $request = new Request($url, $method, 'application/json; OData=verbose');
+
+            $request->setURIEncode(false);
 
             $request->setHeader('Accept', 'application/json; OData=verbose');
 

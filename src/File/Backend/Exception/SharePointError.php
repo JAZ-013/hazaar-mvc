@@ -10,7 +10,7 @@ class SharePointError extends \Hazaar\Exception {
 
         $this->response = $response;
 
-        return parent__construct($message, $code);
+        return parent::__construct($message, $code);
 
     }
 
