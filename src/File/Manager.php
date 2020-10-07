@@ -2,7 +2,7 @@
 
 namespace Hazaar\File;
 
-class Manager {
+class Manager implements Backend\_Interface {
 
     static private $backend_aliases = array(
         'googledrive' => 'GoogleDrive',
@@ -19,7 +19,8 @@ class Manager {
             'cmd'  => false,    //Default disallow file manager commands
             'dir' => true       //Allow directory listings
         ),
-        'userdef' => array()
+        'userdef' => array(),
+        'failover' => false
     );
 
     static private $default_backend;
@@ -34,9 +35,11 @@ class Manager {
 
     public         $name;
 
+    public         $failover = false;
+
     function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
 
-        if(! $backend) {
+        if(!$backend) {
 
             if(Manager::$default_backend) {
 
@@ -47,6 +50,8 @@ class Manager {
             } else {
 
                 $backend = 'local';
+
+                $backend_options = array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/'));
 
             }
 
@@ -148,6 +153,8 @@ class Manager {
 
         $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
 
+        $manager->failover = ($source->failover === true || $config->global->failover === true);
+
         return $manager;
 
     }
@@ -192,18 +199,18 @@ class Manager {
         return ake($this->options, $name);
 
     }
-
+    
     public function fixPath($path, $file = NULL) {
 
-        $path = '/' . trim($path, '/');
-
         if($file)
-            $path .= ((substr($path, -1, 1) !== '/') ? '/' : NULL) . $file;
+            $path .= ((strlen($path) > 1) ? $this->backend->separator : NULL) . $file;
 
-        return $path;
+        $sep = (($this->backend->separator === '/') ? '\\' : '/');
+
+        return str_replace($sep, $this->backend->separator, $path);
 
     }
-
+    
     /*
      * Authorisation Methods
      *
@@ -282,9 +289,9 @@ class Manager {
         $path = $this->fixPath($path);
 
         if($this->backend->is_dir($path))
-            return new Dir($path, $this->backend, $this);
+            return new Dir($path, $this);
 
-        return new \Hazaar\File($path, $this->backend, $this);
+        return new \Hazaar\File($path, $this);
 
     }
 
@@ -297,7 +304,7 @@ class Manager {
      */
     public function dir($path = '/') {
 
-        return new Dir($this->fixPath($path), $this->backend, $this);
+        return new Dir($this->fixPath($path), $this);
 
     }
 
@@ -358,11 +365,39 @@ class Manager {
 
         return $this->backend->read($this->fixPath($file), $offset, $maxlen);
 
+        dump($result);
+
+        var_dump($content);
+
+        $len = ake(unpack('S', $content), 1);
+
+        var_dump($len);
+
+        $filename = substr($content, 2, $len);
+
+        var_dump($filename);
+
+        $data = substr($content, 2 + $len);
+
+        var_dump($data);
+
+        exit;
+
+        die('Ready to write temp file!');
+        
     }
 
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        return $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+        if($this->backend->write($this->fixPath($file), $data, $content_type, $overwrite))
+            return true;
+        elseif($this->failover !== true)
+            return false;
+
+        $temp_file = \Hazaar\Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->manager->name, true) 
+            . DIRECTORY_SEPARATOR . md5($file) . '.dat';
+
+        return file_put_contents($temp_file, pack('S', strlen($filename)) . $filename . $data) > 0;
 
     }
 
@@ -391,14 +426,14 @@ class Manager {
 
     }
 
-    private function deepCopy($src, $dst, $srcBackend, $progressCallback = NULL) {
+    private function deepCopy($src, $dst, $srcManager, $progressCallback = NULL) {
 
         $dstPath = rtrim($dst, '/') . '/' . basename($src);
 
         if(! $this->exists($dstPath))
             $this->mkdir($dstPath);
 
-        $dir = new Dir($src, $srcBackend, $this);
+        $dir = new Dir($src, $srcManager, $this);
 
         while(($f = $dir->read()) != FALSE) {
 
@@ -406,7 +441,7 @@ class Manager {
                 call_user_func_array($progressCallback, array('copy', $f));
 
             if($f->type() == 'dir')
-                $this->deepCopy($f->fullpath(), $dstPath, $srcBackend, $progressCallback);
+                $this->deepCopy($f->fullpath(), $dstPath, $srcManager, $progressCallback);
 
             else
                 $this->backend->write($this->fixPath($dstPath, $f->basename()), $f->get_contents(), $f->mime_content_type());
@@ -512,6 +547,12 @@ class Manager {
 
     }
 
+    public function filesize($path) {
+
+        return $this->backend->filesize($this->fixPath($path));
+
+    }
+
     /*
      * Advanced backend dependant features
      */
@@ -539,13 +580,10 @@ class Manager {
 
     }
 
-    public function link($path) {
+    public function link($src, $dst) {
 
-        if(method_exists($this->backend, 'link')) {
-
-            return $this->backend->link($path);
-
-        }
+        if(method_exists($this->backend, 'link'))
+            return $this->backend->link($src, $dst);
 
         return FALSE;
 
@@ -553,11 +591,8 @@ class Manager {
 
     public function share($path) {
 
-        if(method_exists($this->backend, 'share')) {
-
+        if(method_exists($this->backend, 'share'))
             return $this->backend->share($path);
-
-        }
 
         return FALSE;
 
@@ -579,6 +614,134 @@ class Manager {
 
         return new \Hazaar\Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
 
+    }
+
+    //Get a directory listing
+    public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE){
+
+        return $this->backend->scandir($this->fixPath($path));
+        
+    }
+
+    public function touch($path){
+
+        return $this->backend->touch($this->fixPath($path));
+        
+    }
+
+    public function realpath($path){
+
+        return $this->backend->realpath($this->fixPath($path));
+        
+    }
+
+    public function is_readable($path){
+
+        return $this->backend->is_readable($this->fixPath($path));
+        
+    }
+
+    public function is_writable($path){
+
+        return $this->backend->is_writable($this->fixPath($path));
+        
+    }
+
+    //TRUE if path is a directory
+    public function is_dir($path){
+
+        return $this->backend->is_dir($this->fixPath($path));
+        
+    }
+
+    //TRUE if path is a symlink
+    public function is_link($path){
+
+        return $this->backend->is_link($this->fixPath($path));
+        
+    }
+
+    //TRUE if path is a normal file
+    public function is_file($path){
+
+        return $this->backend->is_file($this->fixPath($path));
+        
+    }
+
+    //Returns the file type
+    public function filetype($path){
+
+        return $this->backend->filetype($this->fixPath($path));
+        
+    }
+
+    //Returns the file create time
+    public function filectime($path){
+
+        return $this->backend->filectime($this->fixPath($path));
+        
+    }
+
+    //Returns the file modification time
+    public function filemtime($path){
+
+        return $this->backend->filemtime($this->fixPath($path));
+        
+    }
+
+    //Returns the file access time
+    public function fileatime($path){
+
+        return $this->backend->fileatime($this->fixPath($path));
+        
+    }
+
+    public function fileperms($path){
+
+        return $this->backend->fileperms($this->fixPath($path));
+        
+    }
+
+    public function chmod($path, $mode){
+
+        return $this->backend->chmod($this->fixPath($path), $mode);
+        
+    }
+
+    public function chown($path, $user){
+
+        return $this->backend->chown($this->fixPath($path), $user);
+        
+    }
+
+    public function chgrp($path, $group){
+
+        return $this->backend->chgrp($this->fixPath($path), $group);
+        
+    }
+
+    public function mime_content_type($path){
+
+        return $this->backend->mime_content_type($this->fixPath($path));
+
+    }
+
+    public function md5Checksum($path){
+
+        return $this->backend->md5Checksum($this->fixPath($path));
+
+    }
+
+    public function preview_uri($path){
+
+        return $this->backend->preview_uri($this->fixPath($path));
+        
+    }
+
+    public function direct_uri($path){
+
+        return $this->backend->direct_uri($this->fixPath($path));
+        
     }
 
 }

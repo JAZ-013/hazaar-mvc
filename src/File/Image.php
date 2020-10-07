@@ -6,9 +6,9 @@ class Image extends \Hazaar\File {
 
     private $renderer;
 
-    function __construct($filename = NULL, $quality = NULL, $backend = NULL, $renderer = 'default') {
+    function __construct($filename = NULL, $quality = NULL, $manager = NULL, $renderer = 'default') {
 
-        parent::__construct($filename, $backend);
+        parent::__construct($filename, $manager);
 
         $this->renderer = $this->get_renderer($renderer, $quality);
 
