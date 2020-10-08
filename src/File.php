@@ -10,8 +10,6 @@ define('FILE_FILTER_SET', 2);
 
 class File implements File\_Interface {
 
-    protected $backend;
-
     protected $manager;
 
     public    $source_file;
@@ -620,11 +618,11 @@ class File implements File\_Interface {
 
     }
 
-    public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
 
         $move = $this->exists();
 
-        $file = $this->copyTo($destination, $overwrite, $create_dest, $dstBackend);
+        $file = $this->copyTo($destination, $overwrite, $create_dest, $dstManager);
 
         if(!$file instanceof File)
             return false;
@@ -635,8 +633,8 @@ class File implements File\_Interface {
 
             $this->source_file = $destination . '/' . $this->basename();
 
-            if($dstBackend)
-                $this->manager = $dstBackend;
+            if($dstManager)
+                $this->manager = $dstManager;
 
         }
 
@@ -653,7 +651,7 @@ class File implements File\_Interface {
      * @param boolean $overwrite   Overwrite the destination file if it exists.
      * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
      *                             destination does not exist an error will be thrown.
-     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
+     * @param mixed   $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
      * @throws \Exception
      *
@@ -662,16 +660,16 @@ class File implements File\_Interface {
      *
      * @return mixed
      */
-    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
 
-        if(! $dstBackend)
-            $dstBackend = $this->manager;
+        if(! $dstManager)
+            $dstManager = $this->manager;
 
         if($this->contents){
 
-            $this->manager = $dstBackend;
+            $this->manager = $dstManager;
 
-            $dir = new File\Dir($destination, $dstBackend, $this->manager);
+            $dir = new File\Dir($destination, $dstManager);
 
             if(!$dir->exists()){
 
@@ -691,10 +689,10 @@ class File implements File\_Interface {
         if(!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(!$dstBackend->exists($destination)) {
+        if(!$dstManager->exists($destination)) {
 
             if($create_dest)
-                $dstBackend->mkdir($destination);
+                $dstManager->mkdir($destination);
 
             else
                 throw new File\Exception\TargetNotFound($destination, $this->source_file);
@@ -703,13 +701,13 @@ class File implements File\_Interface {
 
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
-        if($dstBackend === $this->manager)
-            $result = $dstBackend->copy($this->source_file, $actual_destination, $overwrite);
+        if($dstManager === $this->manager)
+            $result = $dstManager->copy($this->source_file, $actual_destination, $overwrite);
         else
-            $result = $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+            $result = $dstManager->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
         if($result)
-            return new File($actual_destination, $dstBackend, $this->manager, $this->relative_path);
+            return new File($actual_destination, $dstManager, $this->relative_path);
 
         return false;
 
@@ -724,7 +722,7 @@ class File implements File\_Interface {
      * @param boolean $overwrite   Overwrite the destination file if it exists.
      * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
      *                             destination does not exist an error will be thrown.
-     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
+     * @param mixed   $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
      * @throws \Exception
      *
@@ -733,16 +731,16 @@ class File implements File\_Interface {
      *
      * @return mixed
      */
-    public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+    public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
 
-        if(! $dstBackend)
-            $dstBackend = $this->manager;
+        if(! $dstManager)
+            $dstManager = $this->manager;
 
         if($this->contents){
 
-            $this->manager = $dstBackend;
+            $this->manager = $dstManager;
 
-            $dir = new File\Dir($destination, $dstBackend, $this->manager);
+            $dir = new File\Dir($destination, $dstManager);
 
             if(!$dir->exists()){
 
@@ -762,7 +760,7 @@ class File implements File\_Interface {
         if(!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(!$dstBackend->exists(dirname($destination))) {
+        if(!$dstManager->exists(dirname($destination))) {
 
             if(!$create_dest)
                 throw new \Hazaar\Exception('Destination does not exist!');
@@ -778,19 +776,19 @@ class File implements File\_Interface {
 
                 $dir .= '/' . $part;
 
-                if(!$dstBackend->exists($dir))
-                    $dstBackend->mkdir($dir);
+                if(!$dstManager->exists($dir))
+                    $dstManager->mkdir($dir);
 
             }
 
         }
 
-        if($dstBackend === $this->manager)
-            $result = $dstBackend->copy($this->source_file, $destination, $overwrite);
+        if($dstManager === $this->manager)
+            $result = $dstManager->copy($this->source_file, $destination, $overwrite);
         else
-            $result = $dstBackend->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+            $result = $dstManager->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
-        return new File($destination, $dstBackend, $this->manager, $this->relative_path);
+        return new File($destination, $dstManager, $this->relative_path);
 
     }
 
