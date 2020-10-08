@@ -15,9 +15,10 @@ class Manager implements Backend\_Interface {
         'enabled' => true,
         'auth' => false,
         'allow' => array(
-            'read' => false,    //Default disallow reads when auth enabled
-            'cmd'  => false,    //Default disallow file manager commands
-            'dir' => true       //Allow directory listings
+            'read' => false,        //Default disallow reads when auth enabled
+            'cmd'  => false,        //Default disallow file manager commands
+            'dir' => true,          //Allow directory listings
+            'filebrowser' => false  //Allow access to the JS file browser
         ),
         'userdef' => array(),
         'failover' => false

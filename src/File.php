@@ -53,11 +53,11 @@ class File implements File\_Interface {
 
             $manager = $file->manager;
 
-            $file = $file->source_file;
-
             $this->info = $file->info;
 
             $this->mime_content_type = $file->mime_content_type;
+
+            $file = $file->source_file;
 
         }elseif(is_resource($file)){
 
