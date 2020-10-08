@@ -702,7 +702,7 @@ class File implements File\_Interface {
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
         if($dstManager === $this->manager)
-            $result = $dstManager->copy($this->source_file, $actual_destination, $overwrite);
+            $result = $dstManager->copy($this->source_file, $actual_destination, $this->manager, $overwrite);
         else
             $result = $dstManager->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
@@ -784,7 +784,7 @@ class File implements File\_Interface {
         }
 
         if($dstManager === $this->manager)
-            $result = $dstManager->copy($this->source_file, $destination, $overwrite);
+            $result = $dstManager->copy($this->source_file, $destination, $this->manager, $overwrite);
         else
             $result = $dstManager->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 

@@ -427,14 +427,11 @@ class Manager implements Backend\_Interface {
     /*
      * File Operations
      */
-    public function copy($src, $dst, $srcBackend = NULL, $recursive = FALSE, $progressCallback = NULL) {
+    public function copy($src, $dst, $srcManager = NULL, $recursive = FALSE, $progressCallback = NULL) {
 
-        if($srcBackend instanceof Manager)
-            $srcBackend = $srcBackend->getBackend();
+        if($srcManager !== $this) {
 
-        if($srcBackend !== $this->backend) {
-
-            $file = new \Hazaar\File($src, $srcBackend, $this);
+            $file = new \Hazaar\File($src, $srcManager);
 
             switch($file->type()) {
                 case 'file':
@@ -448,7 +445,7 @@ class Manager implements Backend\_Interface {
                     if(! $recursive)
                         return FALSE;
 
-                    return $this->deepCopy($file->fullpath(), $dst, $srcBackend, $progressCallback);
+                    return $this->deepCopy($file->fullpath(), $dst, $srcManager, $progressCallback);
 
                     break;
 
