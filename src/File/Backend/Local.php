@@ -582,7 +582,10 @@ class Local implements _Interface {
         if(array_key_exists($metafile, $this->meta))
             return $this->meta[$metafile];
 
-        $this->meta[$metafile] = $db = new \Hazaar\Btree(dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata');
+        if(!file_exists($metafile))
+            return null;
+
+        $this->meta[$metafile] = $db = new \Hazaar\Btree($metafile);
 
         if(!($meta = $db->get($fullpath))){
 
