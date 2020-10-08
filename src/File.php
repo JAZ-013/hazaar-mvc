@@ -271,7 +271,7 @@ class File implements File\_Interface {
     public function size() {
 
         if($this->contents)
-            return strlen($this->contents);
+            return (is_array($this->contents)) ? array_sum(array_map('strlen', $this->contents)) : strlen($this->contents);
 
         if(!$this->exists())
             return false;
@@ -421,7 +421,7 @@ class File implements File\_Interface {
     public function get_contents($offset = -1, $maxlen = NULL) {
 
         if($this->contents)
-            return $this->contents;
+            return is_array($this->contents) ? implode("\n", $this->contents) : $this->contents;
 
         $this->contents = $this->manager->read($this->source_file, $offset, $maxlen);
 
@@ -543,7 +543,7 @@ class File implements File\_Interface {
      */
     public function saveAs($filename, $overwrite = FALSE) {
 
-        return $this->manager->write($filename, $this->contents, $this->mime_content_type(), $overwrite);
+        return $this->manager->write($filename, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
     }
 
