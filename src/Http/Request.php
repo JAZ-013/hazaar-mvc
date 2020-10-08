@@ -24,6 +24,8 @@ class Request extends \Hazaar\Map {
 
     public  $context = null;
 
+    private $dont_encode_uri = false;
+
     /**
      * HTTP request constructor
      *
@@ -462,7 +464,7 @@ class Request extends \Hazaar\Map {
         /*
          * Build the header section
          */
-        $access_uri = implode('/', array_map('rawurlencode', explode('/', $uri->path()))) . $uri->queryString();
+        $access_uri = ($this->dont_encode_uri ? $uri->path() : implode('/', array_map('rawurlencode', explode('/', $uri->path())))) . $uri->queryString();
 
         $http_request = "{$this->method} {$access_uri} HTTP/1.1\r\n";
 
@@ -619,6 +621,26 @@ class Request extends \Hazaar\Map {
     public function verifyPeerName($value = true){
 
         return stream_context_set_option($this->context, 'ssl', 'verify_peer_name', $value);
+
+    }
+
+    /**
+     * Enable/Disable URI encoding
+     * 
+     * URI encoding is enabled by default.  Internally this calls PHPs rawurlencode() function to encode URIs into HTTP safe
+     * URIs.  However there may occasionally be special circumstances where the encoding may need to be disabled.  Usually this
+     * is becuase the encoding is already being done by the calling function/class.  
+     * 
+     * A prime example of this is Hazaar MVC's SharePoint filesystem backend driver.  SharePoint is very finicky about the
+     * format of the URIs and wants some characters left alone (ie: brackets and quotes) as they make up the function/path
+     * reference being accessed.  These functions/references will then have their contents only encoded and this is handled
+     * by the driver itself so encoding again in the `Request` class will screw things up.
+     * 
+     * @param boolean $value TRUE enables encoding (the default).  FALSE will disable encoding.
+     */
+    public function setURIEncode($value = true){
+
+        $this->dont_encode_uri = !boolify($value);
 
     }
 

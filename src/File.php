@@ -8,7 +8,7 @@ define('FILE_FILTER_OUT', 1);
 
 define('FILE_FILTER_SET', 2);
 
-class File {
+class File implements File\_Interface {
 
     protected $backend;
 
@@ -49,15 +49,13 @@ class File {
      */
     private $filters = array();
 
-    function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null, $relative_path = null) {
+    function __construct($file = null, File\Manager $manager = null, $relative_path = null) {
 
         if($file instanceof \Hazaar\File) {
 
-            $this->backend = $file->backend;
+            $manager = $file->manager;
 
-            $this->manager = $file->manager;
-
-            $this->source_file = $file->source_file;
+            $file = $file->source_file;
 
             $this->info = $file->info;
 
@@ -67,32 +65,25 @@ class File {
 
             $meta = stream_get_meta_data($file);
 
-            $this->backend = new \Hazaar\File\Backend\Local();
-
-            $this->source_file = $meta['uri'];
-
             $this->resource = $file;
+
+            $file = $meta['uri'];
 
         } else {
 
             if(empty($file))
                 $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
 
-            $this->source_file = $file;
-
-            if(! $backend)
-                $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
-
-            if(! $backend instanceof File\Backend\_Interface)
-                throw new \Hazaar\Exception('Can not create new file object without a valid file backend!');
-
-            $this->backend = $backend;
-
-            $this->manager = $manager;
-
         }
 
-        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
+        if(!$manager instanceof File\Manager)
+            $manager = new File\Manager();
+
+        $this->manager = $manager;
+
+        $this->source_file = $this->manager->fixPath($file);
+
+        $this->relative_path = rtrim($this->manager->fixPath($relative_path), '/');
 
     }
 
@@ -104,13 +95,13 @@ class File {
 
     public function backend(){
 
-        return strtolower((new \ReflectionClass($this->backend))->getShortName());
+        return $this->manager->getBackendName();
 
     }
 
     public function getBackend(){
 
-        return $this->backend;
+        return $this->manager;
 
     }
 
@@ -143,13 +134,13 @@ class File {
 
     public function set_meta($values) {
 
-        return $this->backend->set_meta($this->source_file, $values);
+        return $this->manager->set_meta($this->source_file, $values);
 
     }
 
     public function get_meta($key = NULL) {
 
-        return $this->backend->get_meta($this->source_file, $key);
+        return $this->manager->get_meta($this->source_file, $key);
 
     }
 
@@ -285,7 +276,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->filesize($this->source_file);
+        return $this->manager->filesize($this->source_file);
 
     }
 
@@ -294,13 +285,13 @@ class File {
      */
     public function exists() {
 
-        return $this->backend->exists($this->source_file);
+        return $this->manager->exists($this->source_file);
 
     }
 
     public function realpath() {
 
-        return $this->backend->realpath($this->source_file);
+        return $this->manager->realpath($this->source_file);
 
     }
 
@@ -309,40 +300,13 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->is_readable($this->source_file);
+        return $this->manager->is_readable($this->source_file);
 
     }
 
     public function is_writable() {
 
-        return $this->backend->is_writable($this->source_file);
-
-    }
-
-    public function is_dir() {
-
-        if(!$this->exists())
-            return false;
-
-        return $this->backend->is_dir($this->source_file);
-
-    }
-
-    public function dir() {
-
-        if($this->is_dir())
-            return new File\Dir($this->source_file, $this->backend, $this->manager);
-
-        return FALSE;
-
-    }
-
-    public function is_link() {
-
-        if(!$this->exists())
-            return false;
-
-        return $this->backend->is_link($this->source_file);
+        return $this->manager->is_writable($this->source_file);
 
     }
 
@@ -351,13 +315,40 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->is_file($this->source_file);
+        return $this->manager->is_file($this->source_file);
+
+    }
+
+    public function is_dir() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->manager->is_dir($this->source_file);
+
+    }
+
+    public function is_link() {
+
+        if(!$this->exists())
+            return false;
+
+        return $this->manager->is_link($this->source_file);
+
+    }
+
+    public function dir($child = null) {
+
+        if($this->is_dir())
+            return new File\Dir($this->source_file, $this->manager, $this->manager);
+
+        return FALSE;
 
     }
 
     public function parent() {
 
-        return new File\Dir($this->dirname(), $this->backend, $this->manager);
+        return new File\Dir($this->dirname(), $this->manager, $this->manager);
 
     }
 
@@ -366,7 +357,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->filetype($this->source_file);
+        return $this->manager->filetype($this->source_file);
 
     }
 
@@ -375,7 +366,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->filectime($this->source_file);
+        return $this->manager->filectime($this->source_file);
 
     }
 
@@ -384,7 +375,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->filemtime($this->source_file);
+        return $this->manager->filemtime($this->source_file);
 
     }
 
@@ -393,7 +384,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->touch($this->source_file);
+        return $this->manager->touch($this->source_file);
 
     }
 
@@ -402,7 +393,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return $this->backend->fileatime($this->source_file);
+        return $this->manager->fileatime($this->source_file);
 
     }
 
@@ -414,7 +405,7 @@ class File {
         if(!$this->exists())
             return false;
 
-        return ($this->backend->filesize($this->source_file) > 0);
+        return ($this->manager->filesize($this->source_file) > 0);
 
     }
 
@@ -432,7 +423,7 @@ class File {
         if($this->contents)
             return $this->contents;
 
-        $this->contents = $this->backend->read($this->source_file, $offset, $maxlen);
+        $this->contents = $this->manager->read($this->source_file, $offset, $maxlen);
 
         $this->filter_in($this->contents);
 
@@ -451,6 +442,9 @@ class File {
      */
     public function put_contents($data, $overwrite = true) {
 
+        if($data instanceof File)
+            $data = $data->get_contents();
+            
         $content_type = null;
 
         if(!is_resource($this->handle))
@@ -461,7 +455,7 @@ class File {
 
         $this->filter_out($data);
 
-        return $this->backend->write($this->source_file, $data, $content_type, $overwrite);
+        return $this->manager->write($this->source_file, $data, $content_type, $overwrite);
 
     }
 
@@ -474,6 +468,9 @@ class File {
      * @param mixed $bytes The data to set as the content
      */
     public function set_contents($bytes) {
+
+        if($bytes instanceof File)
+            $bytes = $bytes->get_contents();
 
         if(array_key_exists(FILE_FILTER_SET, $this->filters)){
 
@@ -546,7 +543,7 @@ class File {
      */
     public function saveAs($filename, $overwrite = FALSE) {
 
-        return $this->backend->write($filename, $this->contents, $overwrite);
+        return $this->manager->write($filename, $this->contents, $this->mime_content_type(), $overwrite);
 
     }
 
@@ -562,11 +559,11 @@ class File {
 
         if($this->is_dir()) {
 
-            return $this->backend->rmdir($this->source_file, TRUE);
+            return $this->manager->rmdir($this->source_file, TRUE);
 
         } else {
 
-            return $this->backend->unlink($this->source_file);
+            return $this->manager->unlink($this->source_file);
 
         }
 
@@ -581,7 +578,7 @@ class File {
 
         //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
         //a cheap method of calculating the checksum
-        if(($md5 = $this->backend->md5Checksum($this->source_file)) === false)
+        if(($md5 = $this->manager->md5Checksum($this->source_file)) === false)
             $md5 = md5($this->get_contents());
 
         return $md5;
@@ -627,26 +624,30 @@ class File {
 
         $move = $this->exists();
 
-        if(!$this->copyTo($destination, $overwrite, $create_dest, $dstBackend))
+        $file = $this->copyTo($destination, $overwrite, $create_dest, $dstBackend);
+
+        if(!$file instanceof File)
             return false;
 
         if($move){
 
-            $this->backend->unlink($this->source_file);
+            $this->manager->unlink($this->source_file);
 
             $this->source_file = $destination . '/' . $this->basename();
 
             if($dstBackend)
-                $this->backend = $dstBackend;
+                $this->manager = $dstBackend;
 
         }
 
-        return true;
+        return $file;
 
     }
 
     /**
      * Copy the file to another folder
+     * 
+     * This differs to copy() which expects the target to be the full new file pathname.
      *
      * @param string  $destination The destination folder to copy the file into
      * @param boolean $overwrite   Overwrite the destination file if it exists.
@@ -664,11 +665,11 @@ class File {
     public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
-            $dstBackend = $this->backend;
+            $dstBackend = $this->manager;
 
         if($this->contents){
 
-            $this->backend = $dstBackend;
+            $this->manager = $dstBackend;
 
             $dir = new File\Dir($destination, $dstBackend, $this->manager);
 
@@ -700,10 +701,96 @@ class File {
 
         }
 
-        if($dstBackend === $this->backend)
-            return $dstBackend->copy($this->source_file, $destination);
+        $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
-        return $dstBackend->write(rtrim($destination, '/') . '/' . $this->basename(), $this->get_contents(), $this->mime_content_type(), $overwrite);
+        if($dstBackend === $this->manager)
+            $result = $dstBackend->copy($this->source_file, $actual_destination, $overwrite);
+        else
+            $result = $dstBackend->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+
+        if($result)
+            return new File($actual_destination, $dstBackend, $this->manager, $this->relative_path);
+
+        return false;
+
+    }
+
+    /**
+     * Copy the file to another folder and filename
+     * 
+     * This differs from copyTo which expects the target to be a folder
+     *
+     * @param string  $destination The destination folder and file name to copy the file into
+     * @param boolean $overwrite   Overwrite the destination file if it exists.
+     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                             destination does not exist an error will be thrown.
+     * @param mixed   $dstBackend  The destination backend.  Defaults to the same backend as the source.
+     *
+     * @throws \Exception
+     *
+     * @throws File\Exception\SourceNotFound
+     * @throws File\Exception\TargetNotFound
+     *
+     * @return mixed
+     */
+    public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstBackend = NULL) {
+
+        if(! $dstBackend)
+            $dstBackend = $this->manager;
+
+        if($this->contents){
+
+            $this->manager = $dstBackend;
+
+            $dir = new File\Dir($destination, $dstBackend, $this->manager);
+
+            if(!$dir->exists()){
+
+                if(!$create_dest)
+                    throw new \Hazaar\Exception('Destination does not exist!');
+
+                $dir->create(true);
+
+            }
+
+            $this->source_file = $destination . '/' . $this->basename();
+
+            return $this->save();
+
+        }
+
+        if(!$this->exists())
+            throw new File\Exception\SourceNotFound($this->source_file, $destination);
+
+        if(!$dstBackend->exists(dirname($destination))) {
+
+            if(!$create_dest)
+                throw new \Hazaar\Exception('Destination does not exist!');
+
+            $parts = explode('/', dirname($destination));
+
+            $dir = '';
+
+            foreach($parts as $part){
+
+                if($part === '')
+                    continue;
+
+                $dir .= '/' . $part;
+
+                if(!$dstBackend->exists($dir))
+                    $dstBackend->mkdir($dir);
+
+            }
+
+        }
+
+        if($dstBackend === $this->manager)
+            $result = $dstBackend->copy($this->source_file, $destination, $overwrite);
+        else
+            $result = $dstBackend->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+
+        return new File($destination, $dstBackend, $this->manager, $this->relative_path);
 
     }
 
@@ -712,7 +799,7 @@ class File {
         if($this->mime_content_type)
             return $this->mime_content_type;
 
-        return $this->backend->mime_content_type($this->fullpath());
+        return $this->manager->mime_content_type($this->fullpath());
 
     }
 
@@ -724,19 +811,19 @@ class File {
 
     public function thumbnail($params = array()) {
 
-        return $this->backend->thumbnail($this->fullpath(), $params);
+        return $this->manager->thumbnail($this->fullpath(), $params);
 
     }
 
     public function preview_uri($params = array()) {
 
-        return $this->backend->preview_uri($this->fullpath(), $params);
+        return $this->manager->preview_uri($this->fullpath(), $params);
 
     }
 
     public function direct_uri() {
 
-        return $this->backend->direct_uri($this->fullpath());
+        return $this->manager->direct_uri($this->fullpath());
 
     }
 
@@ -786,7 +873,7 @@ class File {
         if($target === null)
             $target = new File\TempDir();
         elseif(!$target instanceof \Hazaar\File\Dir)
-            $target = new \Hazaar\File\Dir($target, $this->backend, $this->manager);
+            $target = new \Hazaar\File\Dir($target, $this->manager, $this->manager);
 
         $files = array();
 
@@ -860,7 +947,7 @@ class File {
         if($this->handle)
             return $this->handle;
 
-        return $this->handle = fopen($this->backend->resolvePath($this->source_file), $mode);
+        return $this->handle = fopen($this->manager->getBackend()->resolvePath($this->source_file), $mode);
 
     }
 
@@ -1175,18 +1262,13 @@ class File {
      *
      * NOTE: This will not work if the file is currently opened by another process.
      *
-     * @param mixed $newname The new name.
+     * @param mixed $newname The new name.  Must not be an absolute/relative path.  If you want to move the file use File::moveTo().
      *
      * @return boolean
      */
-    public function rename($newname){
+    public function rename($newname, $overwrite = false){
 
-        if(!rename($this->source_file, $newname))
-            return false;
-
-        $this->source_file = $newname;
-
-        return true;
+        return $this->manager->move($this->source_file, $this->dirname() . '/' . $newname, $overwrite);
 
     }
 

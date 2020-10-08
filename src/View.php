@@ -33,6 +33,8 @@ class View implements \ArrayAccess {
 
     protected $_methodHandler;
 
+    private $_prepared = array();
+
     public function __construct($view, $init_helpers = array()) {
 
         $this->load($view);
@@ -634,11 +636,14 @@ class View implements \ArrayAccess {
      *
      * @return mixed The rendered view output will be returned.  This can then be echo'd directly to the client.
      */
-    public function partial($view, $data = null) {
+    public function partial($view, $data = null, $merge_data = false) {
 
         if($this->_rendering !== true)
             return false;
 
+        if(array_key_exists($view, $this->_prepared))
+            return $this->_prepared[$view];
+        
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
          *
@@ -664,9 +669,20 @@ class View implements \ArrayAccess {
 
             $output = $partial->render();
 
+            if($merge_data === true)
+                $this->extend($partial->getData());
+
         }
 
         return $output;
+
+    }
+
+    public function preparePartial($view, $data = null){
+
+        $content = $this->partial($view, $data, true);
+
+        $this->_prepared[$view] = $content;
 
     }
 

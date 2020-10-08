@@ -181,7 +181,11 @@ class Application {
             )
         );
 
-        Application\Config::$override_paths = array('host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'), 'local');
+        Application\Config::$override_paths = array(
+            'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
+            'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
+            'local'
+        );
 
         /*
          * Load it with a config object. if the file doesn't exist
@@ -190,17 +194,17 @@ class Application {
          */
         $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
 
+        if(!$this->config->loaded())
+            die('Application is not configured!');
+
         Application\Url::$base = $this->config->app->get('base');
 
         Application\Url::$rewrite = $this->config->app->get('rewrite');
 
-        if(!defined('RUNTIME_PATH')){
-
-            define('RUNTIME_PATH', $this->runtimePath(null, true));
-
-            $this->GLOBALS['runtime'] = RUNTIME_PATH;
-
-        }
+        /*
+         * Create the request object
+         */
+        $this->request = Application\Request\Loader::load();
 
         //Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config->app->addInputFilter(function($value){
@@ -242,11 +246,6 @@ class Application {
          * Create a new router object for evaluating routes
          */
         $this->router = new Application\Router($this->config);
-
-        /*
-         * Create the request object
-         */
-        $this->request = Application\Request\Loader::load();
 
         /*
          * Create a timer for performance measuring
@@ -506,6 +505,14 @@ class Application {
 
         if($this->router->getController() !== 'hazaar') {
 
+            if(!defined('RUNTIME_PATH')){
+
+                define('RUNTIME_PATH', $this->runtimePath(null, true));
+    
+                $this->GLOBALS['runtime'] = RUNTIME_PATH;
+    
+            }
+            
             /*
              * Check that all required modules are loaded
              */

@@ -169,6 +169,8 @@ class Client {
         if(! $request instanceof Request)
             return FALSE;
 
+        $this->SetHeader('Connection', 'close');
+
         if(is_array($this->headers) && count($this->headers) > 0) {
 
             foreach($this->headers as $header => $value)
