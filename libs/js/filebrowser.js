@@ -360,13 +360,13 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
     if (host._render) {
         switch (arg1) {
             case 'selected':
-                return host.selected();
+                return host._selected();
             case 'get':
                 return host;
             case 'selectNextItem':
-                return host.selectItem(host.selected(true).next().attr('id'));
+                return host._selectItem(host._selected(true).next().attr('id'));
             case 'selectPrevItem':
-                return host.selectItem(host.selected(true).prev().attr('id'));
+                return host._selectItem(host._selected(true).prev().attr('id'));
             case 'delete':
                 host.conn.unlink([arg2]);
                 break;
@@ -387,14 +387,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host.focus = null;
         host.cwd = null;
         host.clipboard = [];
-        host.datetime = function (time) {
+        host.__datetime = function (time) {
             if (!time)
                 return;
             if (typeof time === 'number')
                 time = new Date(time * 1000);
             return host.monthNames[time.getMonth()] + ' ' + time.getDay() + ', ' + time.getFullYear() + ' ' + time.getHours() + ':' + time.getMinutes();
         };
-        host.selected = function (returnObjects) {
+        host._selected = function (returnObjects) {
             var selected = [];
             var selectedItems = host.itemsDIV.children('.selected');
             if (returnObjects === true)
@@ -411,7 +411,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             });
             return selected;
         };
-        host.selectItem = function (target) {
+        host._selectItem = function (target) {
             var item = host.itemsDIV.children().removeClass('selected').filter('#' + target);
             if (item.length > 0) {
                 var file = $(item).data('file');
@@ -425,8 +425,8 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }
             return false;
         };
-        host.select = function () {
-            var selected = host.selected();
+        host._select = function () {
+            var selected = host._selected();
             var data = [selected];
             if (host.settings.userpanel) {
                 var userData = {};
@@ -1048,7 +1048,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
                 $(host).trigger('selection', [selected]);
             }).dblclick(function () {
-                host.select();
+                host._select();
             }).on('contextmenu', function (event) {
                 if (event.ctrlKey)
                     return;
@@ -1385,7 +1385,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host.searchINPUT.focus();
                 event.preventDefault();
             } else if (event.keyCode === 113) {
-                var selected = host.selected(true);
+                var selected = host._selected(true);
                 if (selected.length > 0)
                     host.rename(selected[0]);
             } else if (event.keyCode === 27) {

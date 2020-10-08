@@ -134,6 +134,16 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     public function __default($controller, $source_name = null) {
 
+        if(($source_name === null || $source_name === 'index') && $this->config->global->allow['filebrowser'] === true){
+
+            $response = new \Hazaar\Controller\Response\Layout('@media/browser');
+
+            $response->addHelper('filebrowser');
+
+            return $response;
+
+        }
+
         if($this->request->has('cmd'))
             return $this->command($this->request->get('cmd'), $this->connector);
 
