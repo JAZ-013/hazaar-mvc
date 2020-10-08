@@ -55,7 +55,7 @@ class File implements File\_Interface {
 
             $manager = $file->manager;
 
-            $this->source_file = $file->source_file;
+            $file = $file->source_file;
 
             $this->info = $file->info;
 
@@ -65,18 +65,14 @@ class File implements File\_Interface {
 
             $meta = stream_get_meta_data($file);
 
-            
-
-            $this->source_file = $meta['uri'];
-
             $this->resource = $file;
+
+            $file = $meta['uri'];
 
         } else {
 
             if(empty($file))
                 $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
-
-            $this->source_file = $file;
 
         }
 
@@ -85,7 +81,9 @@ class File implements File\_Interface {
 
         $this->manager = $manager;
 
-        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
+        $this->source_file = $this->manager->fixPath($file);
+
+        $this->relative_path = rtrim($this->manager->fixPath($relative_path), '/');
 
     }
 

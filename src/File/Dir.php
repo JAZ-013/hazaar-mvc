@@ -37,7 +37,7 @@ class Dir implements _Interface {
 
         $this->manager = $manager;
 
-        $this->path = $this->fixPath($path);
+        $this->path = $this->manager->fixPath($path);
 
         $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
 
@@ -58,17 +58,6 @@ class Dir implements _Interface {
     public function getManager(){
 
         return $this->manager;
-
-    }
-
-    public function fixPath($path, $file = NULL) {
-
-        $path = '/' . trim($path, '/');
-
-        if($file)
-            $path .= ((substr($path, -1, 1) !== '/') ? '/' : NULL) . $file;
-
-        return $path;
 
     }
 
@@ -98,7 +87,7 @@ class Dir implements _Interface {
 
     public function path($suffix = NULL) {
 
-        return $this->fixPath($this->path, $suffix);
+        return $this->path . ($suffix ? '/' . $this->manager->fixPath($suffix) : '');
 
     }
 
@@ -110,19 +99,19 @@ class Dir implements _Interface {
 
     public function realpath($suffix = NULL) {
 
-        return $this->manager->realpath($this->fixPath($this->path, $suffix));
+        return $this->manager->realpath($this->path, $suffix);
 
     }
 
     public function dirname(){
 
-        return  str_replace('\\', '/', dirname($this->fixPath($this->path)));
+        return  str_replace('\\', '/', dirname($this->path));
 
     }
 
     public function name(){
 
-        return pathinfo($this->fixPath($this->path), PATHINFO_BASENAME);
+        return pathinfo($this->path, PATHINFO_BASENAME);
 
     }
 
@@ -134,19 +123,19 @@ class Dir implements _Interface {
 
     public function basename(){
 
-        return basename($this->fixPath($this->path));
+        return basename($this->path);
 
     }
 
     public function size(){
 
-        return $this->manager->filesize($this->fixPath($this->path));
+        return $this->manager->filesize($this->path);
 
     }
 
     public function type(){
 
-        return $this->manager->filetype($this->fixPath($this->path));
+        return $this->manager->filetype($this->path);
 
     }
 
@@ -377,10 +366,12 @@ class Dir implements _Interface {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        if($this->manager->is_dir($this->fixPath($this->path, $file)))
-            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->manager, $relative_path);
+        $fullpath = $this->path . '/' . $file;
 
-        return new \Hazaar\File($this->fixPath($this->path, $file), $this->manager, $relative_path);
+        if($this->manager->is_dir($fullpath))
+            return new \Hazaar\File\Dir($fullpath, $this->manager, $relative_path);
+
+        return new \Hazaar\File($fullpath, $this->manager, $relative_path);
 
     }
 
@@ -406,7 +397,7 @@ class Dir implements _Interface {
      */
     public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
-        $start = rtrim($this->path, $this->manager->separator) . $this->manager->separator;
+        $start = $this->path . '/';
 
         $list = array();
 
@@ -439,7 +430,7 @@ class Dir implements _Interface {
                 } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                     continue;
 
-                $list[] = new \Hazaar\File($item, $this->manager, $this->manager, $relative_path);
+                $list[] = new \Hazaar\File($item, $this->manager, $relative_path);
 
             }
 
@@ -451,7 +442,7 @@ class Dir implements _Interface {
 
     public function copyTo($target, $recursive = FALSE, $transport_callback = NULL) {
 
-        $target = $this->fixPath($target);
+        $target = $this->managr->fixPath($target);
 
         if($this->manager->exists($target)) {
 
@@ -468,9 +459,9 @@ class Dir implements _Interface {
             if($cur == '.' || $cur == '..')
                 continue;
 
-            $sourcePath = $this->fixPath($this->path, $cur);
+            $sourcePath = $this->path . '/' . $cur;
 
-            $targetPath = $this->fixPath($target, $cur);
+            $targetPath = $target . '/' . $cur;
 
             if(is_array($transport_callback) && count($transport_callback) == 2) {
 

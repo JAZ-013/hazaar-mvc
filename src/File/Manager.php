@@ -202,12 +202,12 @@ class Manager implements Backend\_Interface {
     
     public function fixPath($path, $file = NULL) {
 
+        $path = '/' . trim(str_replace('\\', '/', $path), '/');
+
         if($file)
-            $path .= ((strlen($path) > 1) ? $this->backend->separator : NULL) . $file;
+            $path .= ((substr($path, -1, 1) !== '/') ? '/' : NULL) . $file;
 
-        $sep = (($this->backend->separator === '/') ? '\\' : '/');
-
-        return str_replace($sep, $this->backend->separator, $path);
+        return $path;
 
     }
     
@@ -365,39 +365,11 @@ class Manager implements Backend\_Interface {
 
         return $this->backend->read($this->fixPath($file), $offset, $maxlen);
 
-        dump($result);
-
-        var_dump($content);
-
-        $len = ake(unpack('S', $content), 1);
-
-        var_dump($len);
-
-        $filename = substr($content, 2, $len);
-
-        var_dump($filename);
-
-        $data = substr($content, 2 + $len);
-
-        var_dump($data);
-
-        exit;
-
-        die('Ready to write temp file!');
-        
     }
 
     public function write($file, $data, $content_type, $overwrite = FALSE) {
 
-        if($this->backend->write($this->fixPath($file), $data, $content_type, $overwrite))
-            return true;
-        elseif($this->failover !== true)
-            return false;
-
-        $temp_file = \Hazaar\Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->manager->name, true) 
-            . DIRECTORY_SEPARATOR . md5($file) . '.dat';
-
-        return file_put_contents($temp_file, pack('S', strlen($filename)) . $filename . $data) > 0;
+        return $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
 
     }
 
