@@ -681,7 +681,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
 
-        return $this->update_info($result);
+        return ($result !== false);
 
     }
 
