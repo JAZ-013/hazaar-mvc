@@ -510,7 +510,7 @@ class Dir implements _Interface {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        return new \Hazaar\File($this->path($child), $this->manager, $this->manager, $relative_path);
+        return new \Hazaar\File($this->path($child), $this->manager, $relative_path);
 
     }
 
@@ -524,7 +524,7 @@ class Dir implements _Interface {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        return new \Hazaar\File\Dir($this->path($child), $this->manager, $this->manager, $relative_path);
+        return new \Hazaar\File\Dir($this->path($child), $this->manager, $relative_path);
 
     }
 
