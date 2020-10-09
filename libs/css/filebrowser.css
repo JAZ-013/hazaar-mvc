@@ -562,16 +562,16 @@
     }
 
     .fb-container > .fb-main > .fb-layout > .fb-items:empty:after {
-        display: inline-block;
         position: absolute;
-        top: 0;
+        top: 50%;
         right: 0;
         bottom: 0;
         left: 0;
-        padding: 50px 0;
         text-align: center;
         vertical-align: middle;
-        content: "This folder does not contain and files.";
+        line-height: 30px;
+        margin-top: -15px;
+        content: "This folder does not contain any files.";
         color: #999;
         font-size: 16px;
     }
