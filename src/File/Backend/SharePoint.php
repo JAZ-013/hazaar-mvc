@@ -765,7 +765,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $result = $this->_query($url, 'POST');
 
-        return $this->update_info($result);
+        return ($result instanceof \stdClass && \property_exists($result, 'd') && \property_exists($result->d, 'MoveTo'));
 
     }
 
