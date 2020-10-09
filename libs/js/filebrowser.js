@@ -778,19 +778,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.itemsDIV.html($('<div class="fb-items-loading">'));
                     host.conn.open($(this).parent().attr('id'), false, 0).done(function () {
                         if (host.settings.autoexpand && !chevronDIV.hasClass('expanded') && itemChildrenDIV.children().length > 0)
-                            chevronDIV.click();
+                            chevronDIV.trigger('expand');
                     });
                 });
-                chevronDIV.click(function () {
+                chevronDIV.on('expand', function () {
                     var funcLoaded = function (obj) {
-                        obj.toggleClass('expanded').removeClass('dir-loading');
-                        if (obj.hasClass('expanded')) {
-                            obj.siblings('.fb-tree-item-children').slideDown();
-                        } else {
-                            obj.siblings('.fb-tree-item-children').slideUp(function () {
-                                $(this).find('.fb-tree-item-chevron.expanded').removeClass('expanded').siblings('.fb-tree-item-children').hide();
-                            });
-                        }
+                        obj.addClass('expanded').removeClass('dir-loading').siblings('.fb-tree-item-children').slideDown();
                     };
                     if ($(this).siblings('.fb-tree-item-children').children().length > 0) {
                         funcLoaded($(this));
@@ -802,9 +795,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                             funcLoaded(obj);
                         });
                     }
+                }).on('contract', function () {
+                    $(this).removeClass('expanded').siblings('.fb-tree-item-children').slideUp(function () {
+                        $(this).find('.fb-tree-item-chevron.expanded').removeClass('expanded').siblings('.fb-tree-item-children').hide();
+                    });
+                }).click(function () {
+                    if ($(this).is('.expanded')) $(this).trigger('contract'); else $(this).trigger('expand');
                 });
-                if (!item.dirs > 0)
-                    chevronDIV.addClass('childless');
+                if (!item.dirs > 0) chevronDIV.addClass('childless');
                 itemDIV.on('contextmenu', function (event) {
                     if (event.ctrlKey)
                         return;
@@ -910,7 +908,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 return;
             do {
                 var item = current.children('.fb-tree-item-chevron:not(.expanded)');
-                item.click();
+                item.trigger('expand');
             } while ((current = current.parent().parent('.fb-tree-item')).length > 0);
         };
         host._rmdir = function (target) {
