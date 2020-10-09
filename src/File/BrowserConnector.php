@@ -253,7 +253,7 @@ class BrowserConnector {
 
         $files = array();
 
-        $path = $source->fixPath($this->path($target)) . '/';
+        $path = rtrim($source->fixPath($this->path($target)), '/') . '/';
 
         $dir = $source->dir($path);
 
