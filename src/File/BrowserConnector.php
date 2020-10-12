@@ -117,9 +117,11 @@ class BrowserConnector {
 
         $is_dir = $file instanceof \Hazaar\File\Dir || $file->is_dir();
 
-        $parent = ($file->fullpath() == '/') ? $this->target($source) : $this->target($source, $file->dirname() . '/');
+        $parent = ($file->fullpath() === '/') ? $this->target($source) : $this->target($source, rtrim($file->dirname(), '/') . '/');
 
-        $fileId = $this->target($source, $source->fixPath($file->dirname(), $file->basename()) . ($is_dir ? '/' : ''));
+        $path = $source->fixPath($file->dirname(), $file->basename());
+
+        $fileId = $this->target($source, ($is_dir ? rtrim($path, '/') . '/' : $path));
 
         $linkURL = rtrim($this->url, '/') . '/' . $source->name . rtrim($file->dirname(), '/') . '/' . $file->basename();
 
