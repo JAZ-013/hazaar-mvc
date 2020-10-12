@@ -782,7 +782,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     }
 
     //Write the contents of a file
-    public function write($file, $data, $content_type, $overwrite = FALSE) {
+    public function write($file, $data, $content_type = null, $overwrite = FALSE) {
 
         $url = $this->_folder(dirname($file), "Files/add(url='" . $this->encodePath($file) . "',overwrite=" . strbool($overwrite) . ")");
 

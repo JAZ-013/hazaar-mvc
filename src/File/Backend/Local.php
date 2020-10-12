@@ -150,7 +150,7 @@ class Local implements _Interface {
 
     }
 
-    public function write($file, $data, $content_type, $overwrite = true) {
+    public function write($file, $data, $content_type = null, $overwrite = true) {
 
         $file = $this->resolvePath($file);
 
