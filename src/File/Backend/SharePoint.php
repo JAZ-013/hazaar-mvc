@@ -759,7 +759,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Move a file from src to dst
     public function move($src, $dst) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
+        $dstInfo = $this->info($dst);
+
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst);
+        
+        if(ake($dstInfo, '__metadata.type') === 'SP.Folder')
+            $dst .= '/' . $this->encodePath($src);
 
         $url = $this->_object_url($src) . "/moveTo('$dst')";
 
