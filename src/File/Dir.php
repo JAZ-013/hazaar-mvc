@@ -248,10 +248,9 @@ class Dir implements _Interface {
 
             $parents[] = $last;
 
-            //Gets dirname an ensures separator is a forward slash (/).
-            $last = str_replace(DIRECTORY_SEPARATOR, $this->manager->separator, dirname($last));
+            $last = $this->manager->fixPath(dirname($last));
 
-            if($last === $this->manager->separator)
+            if($last === '/')
                 break;
 
         }
