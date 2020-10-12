@@ -13,7 +13,23 @@
 </head>
 <body>
 
-    <?=$this->filebrowser->get('mediabrowser')->width('100%')->height('100%');?>
+    <?php
+    
+        $fb = $this->filebrowser->get('mediabrowser')
+            ->width('100%')->height('100%')
+            ->showinfo(true)
+            ->useMeta(true);
+    
+        if($this->application->request->has('root')){
+
+            list($source, $path) = explode(':', $this->application->request->root, 2);
+
+            $fb->root($source, $path);
+
+        }
+
+        echo $fb;
+    ?>
 
     <?=$this->post();?>
 
