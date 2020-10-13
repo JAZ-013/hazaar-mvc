@@ -1358,11 +1358,17 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 let matches = sessionStorage.getItem('filebrowser.' + host.id + '.' + host.conn._target(host.settings.root) + '.cwd');
                 if (matches) startDir = matches;
             }
-            let source = host.conn._source(startDir), parts = host.conn._path(startDir).replace(/^\/|\/+$/g, '').split('/');
+            let source = host.conn._source(startDir), parts = host.conn._path(startDir).replace(/^\/|\/+$/g, '').split('/'), rootPath = '/';
+            if (host.settings.root) {
+                let rootParts = host.settings.root[1].replace(/^\/|\/+$/g, '').split('/');
+                parts = parts.filter(value => !rootParts.includes(value));
+                source = host.settings.root[0];
+                rootPath = host.settings.root[1];
+            }
             let f = function (data) {
                 if (parts.length > 0) host.conn.open(host.conn._target(source, data.cwd.name + parts.shift()), true).done(f);
             };
-            host.conn.open(host.conn._target(source, '/'), true).done(f);
+            host.conn.open(host.conn._target(source, rootPath), true).done(f);
         });
         $(host).click(function (event) {
             if (!event.isTrigger && host.menuDIV.is(':visible')) {
