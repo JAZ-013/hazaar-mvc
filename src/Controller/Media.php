@@ -86,6 +86,9 @@ class Media extends \Hazaar\Controller\WebDAV {
 
                 $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $id);
 
+                if($source->failover === true || $config->global->failover === true)
+                    $manager->activateFailover();
+
                 if($manager->authorise())
                     $connector->addSource($id, $manager, $source->get('name'));
 

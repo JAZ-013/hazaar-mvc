@@ -637,7 +637,8 @@ class Local implements _Interface {
 
         $fullpath = $this->resolvePath($path);
 
-        $db = $this->meta($fullpath);
+        if(!($db = $this->meta($fullpath)))
+            return false;
 
         $meta = $db->get($fullpath);
 

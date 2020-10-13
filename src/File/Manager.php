@@ -36,7 +36,7 @@ class Manager implements Backend\_Interface {
 
     public         $name;
 
-    public         $failover = false;
+    private        $failover = false;
 
     function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
 
@@ -154,7 +154,8 @@ class Manager implements Backend\_Interface {
 
         $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
 
-        $manager->failover = ($source->failover === true || $config->global->failover === true);
+        if($source->failover === true || $config->global->failover === true)
+            $manager->activateFailover();
 
         return $manager;
 
@@ -174,6 +175,53 @@ class Manager implements Backend\_Interface {
         Manager::$default_backend = $backend;
 
         Manager::$default_backend_options = $options;
+
+    }
+
+    public function activateFailover(){
+
+        $this->failover = new Manager('local', array('root' => \Hazaar\Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name)));
+
+        if(!$this->failover->exists('/'))
+            $this->failover->create(true);
+
+    }
+
+    public function failoverSync(){
+
+        if(!($this->failover && $this->backend->is_dir('/')))
+            return false;
+
+        $clean = array('dir' => array(), 'file' => array());
+
+        $names = $this->failover->find();
+
+        foreach($names as $name){
+
+            $item = $this->failover->get($name);
+
+            if($item instanceof Dir){
+
+                if($this->backend->exists($name) || $this->backend->mkdir($name))
+                    $clean['dir'][] = $name;
+
+            }elseif($item instanceof \Hazaar\File){
+
+                $this->backend->write($name, $item->get_contents(), $item->mime_content_type(), true);
+
+                $clean['file'][] = $name;
+
+            }
+
+        }
+
+        foreach($clean['file'] as $file)
+            $this->failover->unlink($file);
+
+        foreach($clean['dir'] as $dir)
+            $this->failover->rmdir($dir);
+        
+        return true;
 
     }
 
@@ -364,13 +412,48 @@ class Manager implements Backend\_Interface {
 
     public function read($file, $offset = NULL, $maxlen = NULL) {
 
-        return $this->backend->read($this->fixPath($file), $offset, $maxlen);
+        $bytes = null;
+
+        if($this->failover && $this->failover->exists($file)){
+
+            $f = $this->failover->get($file); //Make the file as a directory to store logs
+
+            $bytes = $f->get_contents();
+
+        }else{
+
+            $bytes = $this->backend->read($this->fixPath($file), $offset, $maxlen);
+
+        }
+
+        return $bytes;
 
     }
 
-    public function write($file, $data, $content_type, $overwrite = FALSE) {
+    public function write($file, $data, $content_type = null, $overwrite = FALSE) {
 
-        return $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+        $result = false;
+
+        try{
+
+            $result = $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+
+        }catch(Backend\Exception\Offline $e){
+
+            if($this->failover){
+
+                $f = $this->failover->get($file); //Make the file as a directory to store logs
+
+                if($f->is_dir())
+                    throw new \Exception('File exists and is not a file!');
+
+                $result = $f->put_contents($data) > 0;
+
+            }
+
+        }
+
+        return $result;
 
     }
 
@@ -589,7 +672,20 @@ class Manager implements Backend\_Interface {
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE){
 
-        return $this->backend->scandir($this->fixPath($path));
+        $items = $this->backend->scandir($this->fixPath($path));
+
+        foreach($items as &$item){
+
+            $fullpath = $this->fixPath($path, $item);
+
+            $item = ($this->is_dir($fullpath) ? new \Hazaar\File\Dir($fullpath, $this) : new \Hazaar\File($fullpath, $this));
+
+        }
+
+        if($this->failover && $this->failover->exists($path))
+            $items = array_merge($items, $this->failover->scandir($path, $regex_filter, $show_hidden));
+        
+        return $items;
         
     }
 
