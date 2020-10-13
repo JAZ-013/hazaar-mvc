@@ -932,7 +932,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._item(item);
             });
             $(host).trigger('chdir', [cwd]);
-            if (host.settings.saveCWD === true) sessionStorage.setItem('filebrowser.' + host.id + '.cwd', cwd.id);
+            if (host.settings.saveCWD === true) sessionStorage.setItem('filebrowser.' + host.id + '.' + host.conn._target(host.settings.root) + '.cwd', cwd.id);
         };
         host._date = function (date) {
             var d = new Date(date * 1000);
@@ -1355,14 +1355,20 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
                 if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
             } else if (host.settings.saveCWD === true) {
-                let matches = sessionStorage.getItem('filebrowser.' + host.id + '.cwd');
+                let matches = sessionStorage.getItem('filebrowser.' + host.id + '.' + host.conn._target(host.settings.root) + '.cwd');
                 if (matches) startDir = matches;
             }
-            let source = host.conn._source(startDir), parts = host.conn._path(startDir).replace(/^\/|\/+$/g, '').split('/');
+            let source = host.conn._source(startDir), parts = host.conn._path(startDir).replace(/^\/|\/+$/g, '').split('/'), rootPath = '/';
+            if (host.settings.root) {
+                let rootParts = host.settings.root[1].replace(/^\/|\/+$/g, '').split('/');
+                parts = parts.filter(value => !rootParts.includes(value));
+                source = host.settings.root[0];
+                rootPath = host.settings.root[1];
+            }
             let f = function (data) {
                 if (parts.length > 0) host.conn.open(host.conn._target(source, data.cwd.name + parts.shift()), true).done(f);
             };
-            host.conn.open(host.conn._target(source, '/'), true).done(f);
+            host.conn.open(host.conn._target(source, rootPath), true).done(f);
         });
         $(host).click(function (event) {
             if (!event.isTrigger && host.menuDIV.is(':visible')) {
