@@ -189,7 +189,7 @@ class Dir implements _Interface {
 
     public function parent() {
 
-        return new File\Dir($this->dirname(), $this->manager, $this->manager);
+        return new File\Dir($this->dirname(), $this->manager);
 
     }
 
@@ -414,7 +414,7 @@ class Dir implements _Interface {
 
             if($this->manager->is_dir($item) && ($depth === null || $depth > 0)) {
 
-                $subdir = new \Hazaar\File\Dir($item, $this->manager, $this->manager, $relative_path);
+                $subdir = new \Hazaar\File\Dir($item, $this->manager, $relative_path);
 
                 if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
                     $list = array_merge($list, $subdiritems);
@@ -478,7 +478,7 @@ class Dir implements _Interface {
 
                 if($recursive) {
 
-                    $dir = new Dir($sourcePath, $this->manager, $this->manager);
+                    $dir = new Dir($sourcePath, $this->manager);
 
                     $dir->copyTo($targetPath, $recursive, $transport_callback);
 
@@ -505,7 +505,7 @@ class Dir implements _Interface {
         $path = $this->path($child);
 
         if($force_dir === true || (file_exists($path) && is_dir($path)))
-            return new \Hazaar\File\Dir($path, $this->manager, $this->manager);
+            return new \Hazaar\File\Dir($path, $this->manager);
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
