@@ -87,7 +87,7 @@ class Dir implements _Interface {
 
     public function path($suffix = NULL) {
 
-        return $this->path . ($suffix ? '/' . $this->manager->fixPath($suffix) : '');
+        return $this->path . ($suffix ? '/' . $suffix : '');
 
     }
 
@@ -440,8 +440,6 @@ class Dir implements _Interface {
     }
 
     public function copyTo($target, $recursive = FALSE, $transport_callback = NULL) {
-
-        $target = $this->managr->fixPath($target);
 
         if($this->manager->exists($target)) {
 

@@ -353,34 +353,43 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!$item)
             return $folder;
 
-        if(!($folder instanceof \stdClass && property_exists($folder, 'Exists')))
-            $folder = (object)array_merge((array)ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array)$folder);
+        try{
 
-        if(ake($folder, 'Exists')){
+            if(!($folder instanceof \stdClass && property_exists($folder, 'Exists')))
+                $folder = (object)array_merge((array)ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array)$folder);
 
-            if(ake($folder, 'Exists') && !property_exists($folder, 'items'))
-                $folder->items = $this->load(implode('/', $parts));
+            if(ake($folder, 'Exists')){
 
-            foreach($folder->items as &$f){
+                if(ake($folder, 'Exists') && !property_exists($folder, 'items'))
+                    $folder->items = $this->load(implode('/', $parts));
 
-                if($f->Name === $item){
+                foreach($folder->items as &$f){
 
-                    if($new_item !== null)
-                        $f = $new_item;
+                    if($f->Name === $item){
 
-                    return $f;
+                        if($new_item !== null)
+                            $f = $new_item;
+
+                        return $f;
+
+                    }
+
+                }
+
+                if($new_item !== null){
+
+                    $folder->items[] = $new_item;
+
+                    return $new_item;
 
                 }
 
             }
 
-            if($new_item !== null){
+        }catch(Exception\SharePointError $e){
 
-                $folder->items[] = $new_item;
-
-                return $new_item;
-
-            }
+            if($e->response->status !== 404)
+                throw $e;
 
         }
 
