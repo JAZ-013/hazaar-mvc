@@ -749,13 +749,13 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Copy a file from src to dst
     public function copy($src, $dst, $recursive = FALSE) {
 
-        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst) . '/' . $this->encodePath($src);
+        $dst = parse_url($this->options['webURL'], PHP_URL_PATH) . '/' . $this->resolvePath($dst);
 
         $url = $this->_object_url($src) . "/copyTo('$dst')";
 
         $result = $this->_query($url, 'POST');
 
-        return $this->update_info($result);
+        return ($result instanceof \stdClass && \property_exists($result, 'd') && \property_exists($result->d, 'CopyTo'));
 
     }
 
