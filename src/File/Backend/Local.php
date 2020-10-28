@@ -52,7 +52,7 @@ class Local implements _Interface {
 
         }
 
-        return ake(self::$mime_types, $extension);
+        return ake(self::$mime_types, strtolower($extension));
 
     }
 
