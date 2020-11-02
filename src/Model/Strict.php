@@ -387,7 +387,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if(array_key_exists('value', $def)){
 
-            $value = $def['value'];
+            $value = (array_key_exists($key, $this->values) && $this->values[$key] instanceof DataBinderValue && $this->values[$key]->value = $def['value']) ? $this->values[$key] : $def['value'];
 
             if($type = ake($def, 'type'))
                 DataTypeConverter::convertType($value, $type);
