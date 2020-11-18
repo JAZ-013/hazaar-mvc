@@ -4,7 +4,7 @@ namespace Hazaar\File\Backend\Exception;
 
 class SharePointError extends \Hazaar\Exception {
 
-    private $response;
+    public $response;
     
     function __construct($message, $response = null, $code = 500){
 

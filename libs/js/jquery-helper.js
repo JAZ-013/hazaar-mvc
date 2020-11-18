@@ -97,7 +97,7 @@ let dataBinder = function (data, name, parent, namespace) {
 
 let dataBinderArray = function (data, name, parent, namespace) {
     if (this === window) return new dataBinderArray(data, name, parent, namespace);
-    this._init(data, name, parent);
+    this._init(data, name, parent, namespace);
 };
 
 let dataBinderValue = function (name, value, label, parent) {
@@ -108,6 +108,7 @@ let dataBinderValue = function (name, value, label, parent) {
     this._other = null;
     this._enabled = true;
     this._parent = parent;
+    this._data = {};
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
@@ -202,6 +203,10 @@ dataBinderValue.prototype.find = function (selector) {
     return selector ? o.filter(selector) : o;
 };
 
+dataBinderValue.prototype.data = function (name, value) {
+    return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
+};
+
 dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._jquery = jQuery({});
     this._name = name;
@@ -211,6 +216,7 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._watchers = {};
     this._watchID = 0;
     this._enabled = true;
+    this._data = {};
     if (Object.keys(data).length > 0)
         for (let key in data) this.add(key, data[key]);
     Object.defineProperties(this, {
@@ -493,6 +499,10 @@ dataBinder.prototype.each = function (callback) {
     for (x in this._attributes) callback(x, this._attributes[x] ? this._attributes[x] : new dataBinderValue(x, null, null, this));
 };
 
+dataBinder.prototype.data = function (name, value) {
+    return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
+};
+
 dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -502,6 +512,7 @@ dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     this._template = null;
     this._watchers = [];
     this._enabled = true;
+    this._data = {};
     this.resync();
     if (Array.isArray(data) && data.length > 0)
         for (let x in data) this.push(data[x]);
@@ -747,4 +758,8 @@ dataBinderArray.prototype.unwatchAll = function () {
             || this._attributes[x] instanceof dataBinderArray)
             this._attributes[x].unwatchAll();
     }
+};
+
+dataBinderArray.prototype.data = function (name, value) {
+    return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
