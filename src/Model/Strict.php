@@ -344,17 +344,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = $this;
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^(]*\))/', $key);
 
             end($parts);
 
             $lastKey = key($parts);
 
-            foreach($parts as $key => $part){
+            foreach($parts as $part_key => $part){
 
                 if($value instanceof Strict){
 
-                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+                    if(preg_match('/^(\w+)\(([\w\d\.=]+)\)$/', $part, $matches)){
+
+                        $value = $value->find($matches[1], array_unflatten($matches[2]));
+
+                    }else{
+
+                        $value = $value->get($part, (($lastKey === $part_key) ? $exec_filters : false));
+
+                    }
 
                 }elseif($value instanceof DataBinderValue){
 
