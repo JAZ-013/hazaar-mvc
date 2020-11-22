@@ -1338,13 +1338,10 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return      string The Map as a JSON string
      */
-    public function toJSON($ignorenulls = FALSE, $args = NULL) {
+    public function toJSON($ignorenulls = FALSE, $flags = NULL, $depth = 512) {
 
-        if($array = $this->toArray($ignorenulls)) {
-
-            return json_encode($array, $args);
-
-        }
+        if($array = $this->toArray($ignorenulls))
+            return json_encode($array, $flags, $depth);
 
         return NULL;
 
