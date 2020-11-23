@@ -71,7 +71,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
             foreach($element as $child) {
 
-                $out[] = self::renderElement($child);
+                $out[] = $this->renderElement($child);
 
             }
 
@@ -102,7 +102,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
         $content = array();
 
         foreach($this->content as $child)
-            $content[] = self::renderElement($child);
+            $content[] = $this->renderElement($child);
 
         $out .= implode($content);
 
