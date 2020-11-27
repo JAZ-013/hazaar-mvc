@@ -447,14 +447,14 @@ dataBinder.prototype.populate = function (items) {
     }
 };
 
-dataBinder.prototype.extend = function (items) {
+dataBinder.prototype.extend = function (items, dont_replace_with_nulls) {
     for (let x in items) {
         if (x in this._attributes) {
             if (this._attributes[x] instanceof dataBinder)
                 this[x].extend(items[x]);
             else if (this._attributes[x] instanceof dataBinderArray)
                 this[x].populate(items[x]);
-            else
+            else if (dont_replace_with_nulls !== true)
                 this[x] = items[x];
         } else
             this.add(x, items[x]);
