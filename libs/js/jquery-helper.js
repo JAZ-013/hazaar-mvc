@@ -736,11 +736,11 @@ dataBinderArray.prototype.watch = function (cb, args) {
     if (typeof cb === 'function') this._watchers.push([cb, args]);
 };
 
-dataBinderArray.prototype.empty = function () {
-    for (x in this._elements)
-        this._elements[x].empty();
+dataBinderArray.prototype.empty = function (no_update) {
+    if (this._elements.length === 0) return false;
+    for (x in this._elements) this._elements[x].empty();
     this._elements = [];
-    jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
+    if(no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
 
 dataBinderArray.prototype.enabled = function (value) {
