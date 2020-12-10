@@ -114,7 +114,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * Allows the map to be locked so that it's values are not accidentally changed.
      */
-    private $locked = FALSE;
+    protected $locked = FALSE;
 
     /**
      * @detail      The Map constructor sets up the default state of the Map.  You can pass an array or another Map
