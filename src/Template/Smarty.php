@@ -207,6 +207,8 @@ class Smarty {
 
         $obj->render($params);
 
+        error_clear_last();
+
         return ob_get_clean();
 
     }
