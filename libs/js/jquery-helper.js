@@ -740,7 +740,7 @@ dataBinderArray.prototype.empty = function (no_update) {
     if (this._elements.length === 0) return false;
     for (x in this._elements) this._elements[x].empty();
     this._elements = [];
-    if(no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
+    if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
 
 dataBinderArray.prototype.enabled = function (value) {
@@ -774,3 +774,14 @@ dataBinderArray.prototype.unwatchAll = function () {
 dataBinderArray.prototype.data = function (name, value) {
     return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
+
+dataBinderArray.prototype[Symbol.iterator] = function () {
+    return {
+        index: 0,
+        data: this._elements,
+        next: function () {
+            if (this.index < this.data.length) return { value: this.data[this.index++], done: false };
+            return { done: true };
+        }
+    }
+}
