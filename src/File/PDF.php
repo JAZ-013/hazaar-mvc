@@ -357,7 +357,7 @@ class PDF extends \Hazaar\File {
             if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
                 $asset_suffix = '-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
             else
-                $asset_suffix = '.stretch_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
+                $asset_suffix = '.focal_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
 
             $client = new \Hazaar\Http\Client();
 
@@ -375,11 +375,8 @@ class PDF extends \Hazaar\File {
 
             foreach($releases as $info){
 
-                if(!$info instanceof \stdClass)
-                    throw new \Hazaar\Exception('Unable to parse Github API response body!');
-
-                if(!($assets = ake($info, 'assets')))
-                    throw new \Hazaar\Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
+                if(!(($info instanceof \stdClass) && ($assets = ake($info, 'assets'))))
+                    continue;
 
                 foreach($assets as $asset){
 
