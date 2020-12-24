@@ -591,6 +591,7 @@ dataBinderArray.prototype._update = function (key, attr_element, do_update) {
 
 dataBinderArray.prototype._trigger = function (name, obj) {
     this._parent._trigger(this._attr_name(name), obj);
+    this._parent._trigger(this._attr_name(), obj);
 };
 
 dataBinderArray.prototype.push = function (element, no_update) {
@@ -606,18 +607,18 @@ dataBinderArray.prototype.push = function (element, no_update) {
             }
         });
     }
-    element = this.__convert_type(key, element);
-    this._elements[key] = element;
+    this._elements[key] = element = this.__convert_type(key, element);
     jQuery(sel).trigger('push', [this._attr_name(), element, key]);
     if (no_update !== true) {
         let newitem = null;
-        if (this._elements[key] instanceof dataBinder) {
-            newitem = this._newitem(key, this._elements[key]);
+        if (element instanceof dataBinder) {
+            newitem = this._newitem(key, element);
             jQuery(sel).append(newitem);
         }
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](this._elements[key], newitem, this._watchers[x][1]);
+        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](element, newitem, this._watchers[x][1]);
         this.resync();
-    } else this._update(this._attr_name(), this._elements[key], true);
+        this._trigger(key, element);
+    } else this._update(this._attr_name(), element, true);
     return key;
 };
 
@@ -649,6 +650,7 @@ dataBinderArray.prototype.unset = function (index, no_update) {
     jQuery(sel).trigger('pop', [this._attr_name(), element, index]);
     if (no_update !== true && this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](null, null, this._watchers[x][1]);
     this._update(this._attr_name(), element, true);
+    this._trigger(key, element);
     return element;
 };
 
