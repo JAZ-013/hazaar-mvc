@@ -409,14 +409,14 @@ dataBinder.prototype.save = function (no_label) {
     return attrs;
 };
 
-dataBinder.prototype.watch = function (key, callback, args) {
+dataBinder.prototype.watch = function (key, cb, args) {
+    if (typeof cb !== 'function') return null;
     if ((match = key.match(/(\w+)\.([\w\.]*)/)) !== null)
         return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
-            ? this._attributes[match[1]].watch(match[2], callback, args) : null;
-    if (!(key in this._watchers))
-        this._watchers[key] = {};
+            ? this._attributes[match[1]].watch(match[2], cb, args) : null;
+    if (!(key in this._watchers)) this._watchers[key] = {};
     let id = "" + this._watchID++;
-    this._watchers[key][id] = [callback, args];
+    this._watchers[key][id] = [cb, args];
     return id;
 };
 
@@ -517,7 +517,8 @@ dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._elements = [];
     this._template = null;
-    this._watchers = [];
+    this._watchers = {};
+    this._watchID = 0;
     this._enabled = true;
     this._data = {};
     this.resync();
@@ -608,10 +609,13 @@ dataBinderArray.prototype.push = function (element, no_update) {
     element = this.__convert_type(key, element);
     this._elements[key] = element;
     jQuery(sel).trigger('push', [this._attr_name(), element, key]);
-    if (no_update !== true && this._elements[key] instanceof dataBinder) {
-        let newitem = this._newitem(key, this._elements[key]);
-        jQuery(sel).append(newitem);
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
+    if (no_update !== true) {
+        let newitem = null;
+        if (this._elements[key] instanceof dataBinder) {
+            newitem = this._newitem(key, this._elements[key]);
+            jQuery(sel).append(newitem);
+        }
+        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](this._elements[key], newitem, this._watchers[x][1]);
         this.resync();
     } else this._update(this._attr_name(), this._elements[key], true);
     return key;
@@ -643,6 +647,7 @@ dataBinderArray.prototype.unset = function (index, no_update) {
     if (no_update !== true && element instanceof dataBinder) jQuery(sel).children().eq(index).remove();
     this._cleanupItem(index);
     jQuery(sel).trigger('pop', [this._attr_name(), element, index]);
+    if (no_update !== true && this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](null, null, this._watchers[x][1]);
     this._update(this._attr_name(), element, true);
     return element;
 };
@@ -678,7 +683,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
+                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](this._elements[x], newitem, this._watchers[x][1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
@@ -733,7 +738,10 @@ dataBinderArray.prototype.__nullify = function (value) {
 };
 
 dataBinderArray.prototype.watch = function (cb, args) {
-    if (typeof cb === 'function') this._watchers.push([cb, args]);
+    if (typeof cb !== 'function') return null;
+    let id = this._watchID++;
+    this._watchers[id] = [cb, args];
+    return id;
 };
 
 dataBinderArray.prototype.empty = function (no_update) {
