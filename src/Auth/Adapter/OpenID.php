@@ -20,6 +20,11 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
     }
 
+    public function setLogoutURI($uri){
+
+        $this->metadata['end_session_endpoint'] = $uri;
+
+    }
 
     public function getProfile(){
 
@@ -40,7 +45,10 @@ class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
     public function logout($redirect_url = null){
 
-        $endpoint = new \Hazaar\Http\Uri(ake($this->metadata, 'end_session_endpoint'));
+        if(!($uri = ake($this->metadata, 'end_session_endpoint')))
+            return false;
+
+        $endpoint = new \Hazaar\Http\Uri($uri);
 
         $endpoint->client_id = $this->client_id;
 

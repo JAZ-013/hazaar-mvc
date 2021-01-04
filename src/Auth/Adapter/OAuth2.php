@@ -61,6 +61,30 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
+    public function setRegistrationURI($uri){
+
+        $this->metadata['registration_endpoint'] = $uri;
+
+    }
+
+    public function setIntrospectURI($uri){
+
+        $this->metadata['introspection_endpoint'] = $uri;
+
+    }
+
+    public function setRevokeURI($uri){
+
+        $this->metadata['revocation_endpoint'] = $uri;
+
+    }
+
+    public function setUserinfoURI($uri){
+
+        $this->metadata['user_info_endpoint'] = $uri;
+
+    }
+
     public function discover($uri){
 
         $key = hash('sha1', $uri);
@@ -355,7 +379,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $request = new \Hazaar\Http\Request(ake($this->metadata, 'token_endpoint'), 'POST');
+        if(!($uri = ake($this->metadata, 'token_endpoint')))
+            throw new \Exception('There is no token endpoint set for this auth adapter!');
+
+        $request = new \Hazaar\Http\Request($uri, 'POST');
 
         $request->grant_type = 'refresh_token';
 
@@ -399,7 +426,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     private function getRedirectUri(){
 
         if(substr($_SERVER['REQUEST_URI'], 0, strlen(APPLICATION_BASE)) !== APPLICATION_BASE)
-        throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
+            throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
 
         $action = $_SERVER['REQUEST_URI'];
 
@@ -450,7 +477,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function introspect($token = null, $token_type = 'access_token'){
 
-        $request = new \Hazaar\Http\Request(ake($this->metadata, 'introspection_endpoint'), 'POST');
+        if(!($uri = ake($this->metadata, 'introspection_endpoint')))
+            return false;
+
+        $request = new \Hazaar\Http\Request($uri, 'POST');
 
         $request->client_id = $this->client_id;
 
@@ -468,7 +498,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function revoke(){
 
-        $request = new \Hazaar\Http\Request(ake($this->metadata, 'revocation_endpoint'), 'POST');
+        if(!($uri = ake($this->metadata, 'revocation_endpoint')))
+            return false;
+
+        $request = new \Hazaar\Http\Request($uri, 'POST');
 
         $request->client_id = $this->client_id;
 
@@ -484,7 +517,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function userinfo(){
 
-        $request = new \Hazaar\Http\Request(ake($this->metadata, 'user_info_endpoint'), 'GET');
+        if(!($uri = ake($this->metadata, 'user_info_endpoint')))
+            return false;
+
+        $request = new \Hazaar\Http\Request($uri, 'GET');
 
         $response = $this->http_client->send($request);
 
