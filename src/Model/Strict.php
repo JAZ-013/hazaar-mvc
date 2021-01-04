@@ -347,17 +347,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = $this;
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^(]*\))/', $key);
 
             end($parts);
 
             $lastKey = key($parts);
 
-            foreach($parts as $key => $part){
+            foreach($parts as $part_key => $part){
 
                 if($value instanceof Strict){
 
-                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+                    if(preg_match('/^(\w+)\(([\w\d\.=]+)\)$/', $part, $matches)){
+
+                        $value = $value->find($matches[1], array_unflatten($matches[2]));
+
+                    }else{
+
+                        $value = $value->get($part, (($lastKey === $part_key) ? $exec_filters : false));
+
+                    }
 
                 }elseif($value instanceof DataBinderValue){
 
@@ -390,7 +398,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if(array_key_exists('value', $def)){
 
-            $value = $def['value'];
+            $value = (array_key_exists($key, $this->values) && $this->values[$key] instanceof DataBinderValue && $this->values[$key]->value = $def['value']) ? $this->values[$key] : $def['value'];
 
             if($type = ake($def, 'type'))
                 DataTypeConverter::convertType($value, $type);
@@ -498,11 +506,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $def = array('type' => $def);
 
         /*
-         * Static/Ready-Only check.
+         * Ready-Only check.
          *
          * If a value is static then updates to it are not allowed and are silently ignored
          */
-        if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
+        if ((array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
         if(array_key_exists('prepare', $def))
@@ -526,6 +534,16 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          */
         if ($value !== null && array_key_exists('type', $def))
             DataTypeConverter::convertType($value, $def['type']);
+
+        /*
+         * Static value check
+         * 
+         * If a value is "static" then it can not be changed.  However here, we look if the value being set
+         * is a dataBinderValue with the same value as the static value and if so, we let it through.  This 
+         * allows the same value to be set with a different label.
+         */
+        if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
+            return false;
 
         /*
          * null value check.
@@ -934,7 +952,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
                 continue;
 
-            if(array_key_exists('value', $def))
+            if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
                 $value = $def['value'];
 
             /*

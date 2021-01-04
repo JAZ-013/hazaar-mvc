@@ -8,9 +8,9 @@ class GZFile extends \Hazaar\File {
 
     private $encoding = FORCE_GZIP;
 
-    function __construct($file = null, $backend = NULL){
+    function __construct($file = null, $manager = NULL){
 
-        parent::__construct($file, $backend);
+        parent::__construct($file, $manager);
 
         $this->set_mime_content_type('application/gzip');
 
@@ -275,7 +275,7 @@ class GZFile extends \Hazaar\File {
         if($this->contents)
             return $this->contents;
 
-        $this->contents = gzdecode($this->backend->read($this->source_file, $offset, $maxlen));
+        $this->contents = gzdecode($this->manager->read($this->source_file, $offset, $maxlen));
 
         $this->filter_in($this->contents);
 
@@ -284,7 +284,7 @@ class GZFile extends \Hazaar\File {
     }
 
     /**
-     * Put contents directly writes data to the storage backend without storing it in the file object itself
+     * Put contents directly writes data to the storage manager without storing it in the file object itself
      *
      * NOTE: This function is called internally to save data that has been updated in the file object.
      *
@@ -309,7 +309,7 @@ class GZFile extends \Hazaar\File {
      */
     public function saveAs($filename, $overwrite = FALSE) {
 
-        return $this->backend->write($filename, gzencode($this->contents, $this->level, $this->encoding), $overwrite);
+        return $this->manager->write($filename, gzencode($this->contents, $this->level, $this->encoding), $overwrite);
 
     }
 

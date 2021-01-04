@@ -69,7 +69,7 @@ abstract class Basic extends \Hazaar\Controller {
 
         $response = null;
 
-        if(!($this->__action = $request->popPath()))
+        if(!($this->__action = $request->shiftPath()))
             $this->__action = 'index';
 
         if(method_exists($this, 'init')) {

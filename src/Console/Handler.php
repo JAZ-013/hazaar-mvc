@@ -50,28 +50,35 @@ class Handler {
 
         if(file_exists($installed)){
 
-            $this->libraries = json_decode(file_get_contents($installed), true);
+            $this->libraries = json_decode(file_get_contents($installed));
 
-            usort($this->libraries, function($a, $b){
-                if ($a['name'] == $b['name'])
-                    return 0;
-                return ($a['name'] < $b['name']) ? -1 : 1;
-            });
+            if($this->libraries instanceof \stdClass && isset($this->libraries->packages))
+                $this->libraries = $this->libraries->packages;
 
-            foreach($this->libraries as $library){
+            if(is_array($libraries)){
 
-                if(!(($name = substr(ake($library, 'name'), 18))
-                    && ake($library, 'type') == 'library'
-                    && $consoleClass = ake(ake($library, 'extra'), 'hazaar-console-class')))
-                    continue;
+                usort($this->libraries, function($a, $b){
+                    if ($a->name === $b->name)
+                        return 0;
+                    return ($a->name < $b->name) ? -1 : 1;
+                });
 
-                if(!class_exists($consoleClass))
-                    continue;
+                foreach($this->libraries as $library){
 
-                if(!($path = $this->getSupportPath($consoleClass)))
-                    continue;
+                    if(!(($name = substr(ake($library, 'name'), 18))
+                        && ake($library, 'type') == 'library'
+                        && $consoleClass = ake(ake($library, 'extra'), 'hazaar-console-class')))
+                        continue;
 
-                $this->load(new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $this->application));
+                    if(!class_exists($consoleClass))
+                        continue;
+
+                    if(!($path = $this->getSupportPath($consoleClass)))
+                        continue;
+
+                    $this->modules[$name] = new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this);
+
+                }
 
             }
 

@@ -22,6 +22,8 @@ class Gui extends \Hazaar\View\Helper {
 
         $this->requires('jQuery');
 
+        $this->requires('Fontawesome');
+
     }
 
     public function init(\Hazaar\View\Layout $view, $args = array()) {

@@ -197,6 +197,10 @@ class Smarty {
 
         }";
 
+        $errors = error_reporting();
+
+        error_reporting(0);
+
         eval($code);
 
         $obj = new $id;
@@ -207,6 +211,10 @@ class Smarty {
 
         $obj->render($params);
 
+        error_clear_last();
+
+        error_reporting($errors);
+        
         return ob_get_clean();
 
     }

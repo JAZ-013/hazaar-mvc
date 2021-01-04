@@ -39,7 +39,10 @@ class FileBrowser {
 
     }
 
-    public function __toString() {
+    /**
+     * @detail      Output the browser as HTML
+     */
+    public function toString() {
 
         $args = $this->settings->toJson();
 
@@ -49,6 +52,24 @@ class FileBrowser {
 
     }
 
+    /**
+     * @detail      Magic method to output the browser as HTML
+     */
+    public function __toString(){
+
+        return $this->toString();
+
+    }
+
+    /**
+     * @detail      Set an optional parameter
+     * 
+     * @param       string $key The name of the parameter.
+     * 
+     * @param       mixed $value The value of the parameter.
+     * 
+     * @return      FileBrowser
+     */
     public function set($key, $value) {
 
         $this->settings[$key] = $value;
@@ -70,9 +91,31 @@ class FileBrowser {
 
     }
 
+    /**
+     * @detail      Set the display title for the filebrowser
+     * 
+     * @param       string $title The title to display
+     * 
+     * @return      FileBrowser
+     */
     public function title($title) {
 
         return $this->set('title', $title);
+
+    }
+
+    /**
+     * @detail      Set the root path to browse
+     * 
+     * @param       string $source The name of the media source
+     * 
+     * @param       string $path The path on the media source.  Defaults to '/';
+     * 
+     * @return      FileBrowser
+     */
+    public function root($source, $path = '/'){
+
+        return $this->set('root', [$source, $path]);
 
     }
 
@@ -89,45 +132,96 @@ class FileBrowser {
 
     }
 
-    public function width($pixels) {
+    /**
+     * @detail      Set the width of the browser
+     * 
+     * @param       mixed $width A valid HTML/CSS dimension.  eg: 500px, 100%, 8em, etc.
+     * 
+     * @return      FileBrowser
+     */
+    public function width($width) {
 
-        return $this->set('width', $pixels);
+        return $this->set('width', $width);
 
     }
 
-    public function height($pixels) {
+    /**
+     * @detail      Set the height of the browser
+     * 
+     * @param       mixed $height A valid HTML/CSS dimension.  eg: 500px, 100%, 8em, etc.
+     * 
+     * @return      FileBrowser
+     */
+    public function height($height) {
 
-        return $this->set('height', $pixels);
+        return $this->set('height', $height);
 
     }
 
+    /**
+     * @detail      Enable/Disable folder tree auto expansion.
+     * 
+     * @param       boolean $value TRUE/FALSE to ENABLE/DISABLE.  
+     * 
+     * @return      FileBrowser
+     */
     public function autoexpand($value) {
 
         return $this->set('autoexpand', $value);
 
     }
 
+    /**
+     * @detail      Show the file info panel on the right of the browser to display detailed file information.
+     * 
+     * @param       boolean $value TRUE/FALSE to ENABLE/DISABLE.  
+     * 
+     * @return      FileBrowser
+     */
     public function showinfo($value = TRUE) {
 
         return $this->set('showinfo', $value);
 
     }
 
+    /**
+     * @detail      Toggle multiple file selection behaviour.
+     * 
+     * @param       boolean $value TRUE/FALSE to ENABLE/DISABLE.  
+     * 
+     * @return      FileBrowser
+     */
     public function allowmultiple($value = TRUE) {
 
         return $this->set('allowmultiple', $value);
 
     }
 
+    /**
+     * @detail      Set the width and height of the file previews
+     * 
+     * @param       mixed $width A valid HTML/CSS dimension.  eg: 500px, 100%, 8em, etc.
+     * 
+     * @param       mixed $height A valid HTML/CSS dimension.  eg: 500px, 100%, 8em, etc.
+     * 
+     * @return      FileBrowser
+     */
     public function previewsize($width = NULL, $height = NULL) {
 
         return $this->set('previewsize', array('w' => $width, 'h' => $height));
 
     }
 
-    public function useMeta($boolean = TRUE) {
+    /**
+     * @detail      Toggles if file metadata should be used
+     * 
+     * @param       boolean $value TRUE/FALSE to ENABLE/DISABLE.
+     * 
+     * @return      FileBrowser
+     */
+    public function useMeta($value = TRUE) {
 
-        return $this->set('useMeta', $boolean);
+        return $this->set('useMeta', $value);
 
     }
 

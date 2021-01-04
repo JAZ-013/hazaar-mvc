@@ -360,13 +360,13 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
     if (host._render) {
         switch (arg1) {
             case 'selected':
-                return host.selected();
+                return host._selected();
             case 'get':
                 return host;
             case 'selectNextItem':
-                return host.selectItem(host.selected(true).next().attr('id'));
+                return host._selectItem(host._selected(true).next().attr('id'));
             case 'selectPrevItem':
-                return host.selectItem(host.selected(true).prev().attr('id'));
+                return host._selectItem(host._selected(true).prev().attr('id'));
             case 'delete':
                 host.conn.unlink([arg2]);
                 break;
@@ -387,14 +387,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host.focus = null;
         host.cwd = null;
         host.clipboard = [];
-        host.datetime = function (time) {
+        host.__datetime = function (time) {
             if (!time)
                 return;
             if (typeof time === 'number')
                 time = new Date(time * 1000);
             return host.monthNames[time.getMonth()] + ' ' + time.getDay() + ', ' + time.getFullYear() + ' ' + time.getHours() + ':' + time.getMinutes();
         };
-        host.selected = function (returnObjects) {
+        host._selected = function (returnObjects) {
             var selected = [];
             var selectedItems = host.itemsDIV.children('.selected');
             if (returnObjects === true)
@@ -411,7 +411,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             });
             return selected;
         };
-        host.selectItem = function (target) {
+        host._selectItem = function (target) {
             var item = host.itemsDIV.children().removeClass('selected').filter('#' + target);
             if (item.length > 0) {
                 var file = $(item).data('file');
@@ -425,8 +425,8 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }
             return false;
         };
-        host.select = function () {
-            var selected = host.selected();
+        host._select = function () {
+            var selected = host._selected();
             var data = [selected];
             if (host.settings.userpanel) {
                 var userData = {};
@@ -778,19 +778,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.itemsDIV.html($('<div class="fb-items-loading">'));
                     host.conn.open($(this).parent().attr('id'), false, 0).done(function () {
                         if (host.settings.autoexpand && !chevronDIV.hasClass('expanded') && itemChildrenDIV.children().length > 0)
-                            chevronDIV.click();
+                            chevronDIV.trigger('expand');
                     });
                 });
-                chevronDIV.click(function () {
+                chevronDIV.on('expand', function () {
                     var funcLoaded = function (obj) {
-                        obj.toggleClass('expanded').removeClass('dir-loading');
-                        if (obj.hasClass('expanded')) {
-                            obj.siblings('.fb-tree-item-children').slideDown();
-                        } else {
-                            obj.siblings('.fb-tree-item-children').slideUp(function () {
-                                $(this).find('.fb-tree-item-chevron.expanded').removeClass('expanded').siblings('.fb-tree-item-children').hide();
-                            });
-                        }
+                        obj.addClass('expanded').removeClass('dir-loading').siblings('.fb-tree-item-children').slideDown();
                     };
                     if ($(this).siblings('.fb-tree-item-children').children().length > 0) {
                         funcLoaded($(this));
@@ -802,9 +795,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                             funcLoaded(obj);
                         });
                     }
+                }).on('contract', function () {
+                    $(this).removeClass('expanded').siblings('.fb-tree-item-children').slideUp(function () {
+                        $(this).find('.fb-tree-item-chevron.expanded').removeClass('expanded').siblings('.fb-tree-item-children').hide();
+                    });
+                }).click(function () {
+                    if ($(this).is('.expanded')) $(this).trigger('contract'); else $(this).trigger('expand');
                 });
-                if (!item.dirs > 0)
-                    chevronDIV.addClass('childless');
+                if (!item.dirs > 0) chevronDIV.addClass('childless');
                 itemDIV.on('contextmenu', function (event) {
                     if (event.ctrlKey)
                         return;
@@ -910,7 +908,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 return;
             do {
                 var item = current.children('.fb-tree-item-chevron:not(.expanded)');
-                item.click();
+                item.trigger('expand');
             } while ((current = current.parent().parent('.fb-tree-item')).length > 0);
         };
         host._rmdir = function (target) {
@@ -934,7 +932,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._item(item);
             });
             $(host).trigger('chdir', [cwd]);
-            if (host.settings.saveCWD === true) document.cookie = 'filebrowser.' + host.id + '.cwd=' + cwd.id;
+            if (host.settings.saveCWD === true) sessionStorage.setItem('filebrowser.' + host.id + '.' + host.conn._target(host.settings.root) + '.cwd', cwd.id);
         };
         host._date = function (date) {
             var d = new Date(date * 1000);
@@ -978,10 +976,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             return value.toLocaleString('en', { maximumFractionDigits: prec }) + (exclude_suffix === true ? '' : ' ' + suffix);
         };
         host._item = function (item) {
-            if (item.kind !== 'file') {
-                console.log('Skipping non-file: ' + item.name);
-                return;
-            }
+            if (item.kind !== 'file') return;
             var dataType = item.mime ? item.mime.replace(/\./g, '_').replace(/\//g, '-') : null;
             var thumbDIV = $('<div class="fb-item-thumb fileicon">').attr('data-type', dataType);
             var itemDIV = $('<div class="fb-item">').append([
@@ -1048,7 +1043,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
                 $(host).trigger('selection', [selected]);
             }).dblclick(function () {
-                host.select();
+                host._select();
             }).on('contextmenu', function (event) {
                 if (event.ctrlKey)
                     return;
@@ -1268,13 +1263,8 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }
         };
         host._mode = function (defmode) {
-            var ca = document.cookie.split(';');
-            for (x in ca) {
-                var item = ca[x].trim().split('=');
-                if (item[0] === 'filebrowser.' + host.id + '.mode')
-                    return item[1];
-            }
-            return defmode;
+            let mode = sessionStorage.getItem('filebrowser.' + host.id + '.mode');
+            return mode ? mode : defmode;
         };
         host.settings = $.extend(true, {
             title: 'File Browser',
@@ -1312,7 +1302,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         host.mainDIV.removeClass('grid').addClass('list');
                         $(this).children().removeClass('im-grid').addClass('im-list');
                     }
-                    document.cookie = 'filebrowser.' + host.id + '.mode=' + host.settings.mode;
+                    sessionStorage.setItem('filebrowser.' + host.id + '.mode', host.settings.mode);
                 }
             });
         }
@@ -1365,13 +1355,20 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
                 if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
             } else if (host.settings.saveCWD === true) {
-                let matches = document.cookie.match(new RegExp("filebrowser\." + host.id + "\.cwd=([^;\s$]+)"));
-                if (matches) startDir = matches[1];
+                let matches = sessionStorage.getItem('filebrowser.' + host.id + '.' + host.conn._target(host.settings.root) + '.cwd');
+                if (matches) startDir = matches;
             }
-            host.conn.open(startDir, true).done(function (data) {
-                if (host.settings.select)
-                    $('#' + host.conn._target(host.conn._source(startDir), host.conn._path(startDir) + '/' + host.settings.select)).addClass('selected');
-            });
+            let source = host.conn._source(startDir), parts = host.conn._path(startDir).replace(/^\/|\/+$/g, '').split('/'), rootPath = '/';
+            if (host.settings.root) {
+                let rootParts = host.settings.root[1].replace(/^\/|\/+$/g, '').split('/');
+                parts = parts.filter(value => !rootParts.includes(value));
+                source = host.settings.root[0];
+                rootPath = host.settings.root[1];
+            }
+            let f = function (data) {
+                if (parts.length > 0) host.conn.open(host.conn._target(source, data.cwd.name + parts.shift()), true).done(f);
+            };
+            host.conn.open(host.conn._target(source, rootPath), true).done(f);
         });
         $(host).click(function (event) {
             if (!event.isTrigger && host.menuDIV.is(':visible')) {
@@ -1385,7 +1382,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host.searchINPUT.focus();
                 event.preventDefault();
             } else if (event.keyCode === 113) {
-                var selected = host.selected(true);
+                var selected = host._selected(true);
                 if (selected.length > 0)
                     host.rename(selected[0]);
             } else if (event.keyCode === 27) {

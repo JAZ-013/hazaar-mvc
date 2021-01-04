@@ -114,7 +114,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * Allows the map to be locked so that it's values are not accidentally changed.
      */
-    private $locked = FALSE;
+    protected $locked = FALSE;
 
     /**
      * @detail      The Map constructor sets up the default state of the Map.  You can pass an array or another Map
@@ -1346,13 +1346,10 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return      string The Map as a JSON string
      */
-    public function toJSON($ignorenulls = FALSE, $args = NULL) {
+    public function toJSON($ignorenulls = FALSE, $flags = NULL, $depth = 512) {
 
-        if($array = $this->toArray($ignorenulls)) {
-
-            return json_encode($array, $args);
-
-        }
+        if($array = $this->toArray($ignorenulls))
+            return json_encode($array, $flags, $depth);
 
         return NULL;
 

@@ -24,6 +24,12 @@ class Request extends \Hazaar\Map {
 
     public  $context = null;
 
+    private $dont_encode_uri = false;
+
+    private $json_encode_flags = null;
+
+    private $json_encode_depth = 512;
+
     /**
      * HTTP request constructor
      *
@@ -367,7 +373,7 @@ class Request extends \Hazaar\Map {
                             case 'text/json' :
                             case 'application/json' :
 
-                                $data = json_encode($part[1]);
+                                $data = json_encode($part[1], $this->json_encode_flags, $this->json_encode_depth);
 
                                 break;
 
@@ -405,7 +411,7 @@ class Request extends \Hazaar\Map {
 
                 $this->setHeader('Content-Type', 'application/json');
 
-                $body = json_encode($this->body);
+                $body = json_encode($this->body, $this->json_encode_flags, $this->json_encode_depth);
 
             } else { //Otherwise use the raw content body
 
@@ -427,7 +433,7 @@ class Request extends \Hazaar\Map {
                 case 'application/javascript' :
                 case 'application/x-javascript' :
 
-                    $body = $this->toJSON();
+                    $body = $this->toJSON(false, $this->json_encode_flags, $this->json_encode_depth);
 
                     break;
 
@@ -462,7 +468,7 @@ class Request extends \Hazaar\Map {
         /*
          * Build the header section
          */
-        $access_uri = implode('/', array_map('rawurlencode', explode('/', $uri->path()))) . $uri->queryString();
+        $access_uri = ($this->dont_encode_uri ? $uri->path() : implode('/', array_map('rawurlencode', explode('/', $uri->path())))) . $uri->queryString();
 
         $http_request = "{$this->method} {$access_uri} HTTP/1.1\r\n";
 
@@ -619,6 +625,42 @@ class Request extends \Hazaar\Map {
     public function verifyPeerName($value = true){
 
         return stream_context_set_option($this->context, 'ssl', 'verify_peer_name', $value);
+
+    }
+
+    /**
+     * Enable/Disable URI encoding
+     * 
+     * URI encoding is enabled by default.  Internally this calls PHPs rawurlencode() function to encode URIs into HTTP safe
+     * URIs.  However there may occasionally be special circumstances where the encoding may need to be disabled.  Usually this
+     * is becuase the encoding is already being done by the calling function/class.  
+     * 
+     * A prime example of this is Hazaar MVC's SharePoint filesystem backend driver.  SharePoint is very finicky about the
+     * format of the URIs and wants some characters left alone (ie: brackets and quotes) as they make up the function/path
+     * reference being accessed.  These functions/references will then have their contents only encoded and this is handled
+     * by the driver itself so encoding again in the `Request` class will screw things up.
+     * 
+     * @param boolean $value TRUE enables encoding (the default).  FALSE will disable encoding.
+     */
+    public function setURIEncode($value = true){
+
+        $this->dont_encode_uri = !boolify($value);
+
+    }
+
+    /**
+     * Set JSON encoding flags/depth used when request is encoded to JSON
+     * 
+     * Requests will automatically encode any data parameters to JSON encoded strings when generating the reqeust as a string.  If
+     * there are any JSON encoding flags required, this function will apply those flags to all JSON encoding methods used when
+     * rendering the request.  This includes requests sent with a mime content type of `application/json` as well as multipart
+     * encoded requests.
+     */
+    public function setJSONEncodeFlags($flags, $depth = 512){
+
+        $this->json_encode_flags = $flags;
+
+        $this->json_encode_depth = $depth;
 
     }
 

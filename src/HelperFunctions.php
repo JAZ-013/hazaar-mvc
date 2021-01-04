@@ -50,7 +50,7 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
         if(is_object($array)){
 
-            if(property_exists($array, $key) && (!$non_empty || !is_string($array->$key) || ($non_empty && trim($array->$key) !== NULL)))
+            if(property_exists($array, $key) && ($non_empty === false || is_string($array->$key) === false || ($non_empty === true && trim($array->$key) !== NULL)))
                 return $array->$key;
             elseif($array instanceof \ArrayAccess && isset($array[$key]))
                 return $array[$key];
@@ -61,9 +61,9 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
             $parts = explode('.', $key);
 
-            foreach($parts as $part) if(($array = ake($array, $part, null, $non_empty)) === null) break;
+            foreach($parts as $part) if(($array = ake($array, $part, $default, $non_empty)) === $default) break;
 
-            if(!is_null($array)) return $array;
+            return $array;
 
         }
 

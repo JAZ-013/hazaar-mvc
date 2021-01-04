@@ -554,17 +554,24 @@
 
     .fb-container > .fb-main > .fb-layout > .fb-items > .fb-items-loading {
         background: url(images/loading.gif) no-repeat center center;
-        width: 100%;
-        height: 100%;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
     }
 
-    .fb-container > .fb-main:empty:after {
-        display: block;
-        width: 100%;
-        padding: 50px 0;
+    .fb-container > .fb-main > .fb-layout > .fb-items:empty:after {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        bottom: 0;
+        left: 0;
         text-align: center;
         vertical-align: middle;
-        content: "This folder does not contain and files.";
+        line-height: 30px;
+        margin-top: -15px;
+        content: "This folder does not contain any files.";
         color: #999;
         font-size: 16px;
     }

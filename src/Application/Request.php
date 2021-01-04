@@ -82,13 +82,13 @@ abstract class Request implements Request\_Interface {
     }
 
     /**
-     * Pop a part off the path.
+     * Shift a part off the front of the path.
      *
      * A "part" is simple anything delimited by '/' in the path section of the URL.
      *
      * @return string
      */
-    public function popPath(){
+    public function shiftPath(){
 
         if(!$this->path)
             return null;
@@ -111,6 +111,44 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Add a part to the start of the path
+     */
+    public function unshiftPath($part){
+
+        $this->path = '/' . $part . ((strlen($this->path) > 0) ? '/' . $this->path : '');
+        
+    }
+
+    /**
+     * Pop a part off the end of the path
+     */
+    public function popPath(){
+
+        if(!$this->path)
+            return null;
+
+        if(($pos = strrpos($this->path, '/')) === false){
+
+            $part = $this->path;
+
+            $this->path = null;
+
+        }else{
+
+            $part = substr($this->path, $pos + 1);
+
+            $this->path = substr($this->path, 0, $pos);
+
+        }
+
+        return $part;
+
+    }
+
+    /**
+     * Push a part on to the end of the path
+     */
     public function pushPath($part){
 
         $this->path .= ((strlen($this->path) > 0) ? '/' : '') . $part;
@@ -279,19 +317,38 @@ abstract class Request implements Request\_Interface {
     /**
      * Return an array of request parameters as key/value pairs.
      *
-     * @param array $filter Only include parameters with keys specified in this filter.
+     * @param array $filter_in Only include parameters with keys specified in this filter.
+     * 
+     * @param array $filter_out Exclude parameters with keys specified in this filter.
      *
      * @return array
      */
-    public function getParams($filter = NULL) {
+    public function getParams($filter_in = NULL, $filter_out = NULL) {
 
-        if($filter === NULL)
+        if($filter_in === null && $filter_out === null)
             return $this->params;
 
-        if(! is_array($filter))
-            $filter = array($filter);
+        $params = $this->params;
 
-        return array_intersect_key($this->params, array_flip($filter));
+        if($filter_in){
+            
+            if(!is_array($filter_in))
+                $filter_in = array($filter_in);
+
+            $params = array_intersect_key($params, array_flip($filter_in));
+
+        }
+
+        if($filter_out){
+
+            if(!is_array($filter_out))
+                $filter_out = array($filter_out);
+
+            $params = array_diff_key($params, array_flip($filter_out));
+
+        }
+
+        return $params;
 
     }
 
