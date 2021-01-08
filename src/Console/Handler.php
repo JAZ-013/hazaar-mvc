@@ -41,7 +41,7 @@ class Handler {
 
     }
 
-    public function loadComposerModules(){
+    public function loadComposerModules($application){
 
         $installed = ROOT_PATH
             . DIRECTORY_SEPARATOR . 'vendor'
@@ -55,7 +55,7 @@ class Handler {
             if($this->libraries instanceof \stdClass && isset($this->libraries->packages))
                 $this->libraries = $this->libraries->packages;
 
-            if(is_array($libraries)){
+            if(is_array($this->libraries)){
 
                 usort($this->libraries, function($a, $b){
                     if ($a->name === $b->name)
@@ -76,13 +76,14 @@ class Handler {
                     if(!($path = $this->getSupportPath($consoleClass)))
                         continue;
 
-                    $this->modules[$name] = new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this);
+                    $this->load(new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this));
 
                 }
 
             }
 
         }
+
         return;
 
     }

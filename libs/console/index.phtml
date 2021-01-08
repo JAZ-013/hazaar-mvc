@@ -205,14 +205,14 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                         <tr>
                             <td>
                                 <div class="text-small">
-                                    <?=$this->html->a(ake($lib, 'homepage', '#'), $lib['name'])->target('_blank');?>
+                                    <?=$this->html->a(ake($lib, 'homepage', '#'), ake($lib, 'name'))->target('_blank');?>
                                 </div>
                                 <div class="text-xsmall">
-                                    <?=$lib['description'];?>
+                                    <?=ake($lib, 'description');?>
                                 </div>
                             </td>
                             <td>
-                                <?=$lib['version'];?>
+                                <?=ake($lib, 'version');?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
