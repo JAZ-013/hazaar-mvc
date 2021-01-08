@@ -448,7 +448,7 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
-        $url = 'http://api.hazaarmvc.com/api/report/' . $type;
+        $url = 'https://api.hazaarmvc.com/api/report/' . $type;
 
         $data = json_encode(array(
             'status' => $this->code,
