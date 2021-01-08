@@ -24,6 +24,8 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     protected $scopes = array();
 
+    private $authenticate_callback = null;
+
     function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
 
         parent::__construct($cache_config, $cache_backend);
@@ -82,6 +84,12 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
     public function setUserinfoURI($uri){
 
         $this->metadata['user_info_endpoint'] = $uri;
+
+    }
+
+    public function setAuthenticateCallback($cb){
+
+        $this->authenticate_callback = $cb;
 
     }
 
@@ -234,6 +242,9 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
             $this->session->hazaar_auth_identity = $data->access_token;
 
             $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity));
+
+            if(is_callable($this->authenticate_callback))
+                call_user_func($this->authenticate_callback, $data);
 
             if($uri = $this->session->redirect_uri){
 
