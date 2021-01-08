@@ -30,7 +30,7 @@ class Gui extends \Hazaar\View\Helper {
 
         $view->requires($this->application->url('hazaar', 'file/js/popup.js'));
 
-        $view->link($this->application->url('hazaar', 'file/css/popup.css'));
+        //$view->link($this->application->url('hazaar', 'file/css/popup.css'));
 
     }
 
