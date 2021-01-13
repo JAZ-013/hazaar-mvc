@@ -218,7 +218,7 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._attributes = {};
     this._watchers = {};
-    this._watchID = 0;
+    dataBinder._watchID = 0;
     this._enabled = true;
     this._data = {};
     if (Object.keys(data).length > 0)
@@ -427,7 +427,7 @@ dataBinder.prototype.watch = function (key, cb, args) {
         return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
             ? this._attributes[match[1]].watch(match[2], cb, args) : null;
     if (!(key in this._watchers)) this._watchers[key] = {};
-    let id = "" + this._watchID++;
+    let id = "" + dataBinder._watchID++;
     this._watchers[key][id] = [cb, args];
     return id;
 };
@@ -510,7 +510,7 @@ dataBinder.prototype.compare = function (value) {
             || ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== (value._attributes[x] instanceof dataBinderValue ? value._attributes[x].value : value._attributes[x])))
             return false;
     }
-    for (x in this._attributes) if (!(x in value._attributes)) return false;
+    for (x in this._attributes) if (!(('_attributes' in value) && (x in value._attributes))) return false;
     return true;
 };
 
@@ -530,7 +530,6 @@ dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     this._elements = [];
     this._template = null;
     this._watchers = {};
-    this._watchID = 0;
     this._enabled = true;
     this._data = {};
     this.resync();
@@ -603,7 +602,7 @@ dataBinderArray.prototype._update = function (key, attr_element, do_update) {
 
 dataBinderArray.prototype._trigger = function (name, obj) {
     this._parent._trigger(this._attr_name(name), obj);
-    this._parent._trigger(this._attr_name(), obj);
+    this._parent._trigger(this._name, obj);
 };
 
 dataBinderArray.prototype.push = function (element, no_update) {
@@ -753,7 +752,7 @@ dataBinderArray.prototype.__nullify = function (value) {
 
 dataBinderArray.prototype.watch = function (cb, args) {
     if (typeof cb !== 'function') return null;
-    let id = this._watchID++;
+    let id = "" + dataBinder._watchID++;
     this._watchers[id] = [cb, args];
     return id;
 };
