@@ -354,7 +354,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if($value instanceof Strict){
 
-                    if(preg_match('/^(\w+)\(([\w\d\.=]+)\)$/', $part, $matches)){
+                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
 
                         $value = $value->find($matches[1], array_unflatten($matches[2]));
 

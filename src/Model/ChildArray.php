@@ -127,6 +127,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
             settype($criteriaValue, gettype($value));
 
+            $criteriaValue = trim($criteriaValue, ' "\'');
+
             if($value !== $criteriaValue)
                 return false;
 
