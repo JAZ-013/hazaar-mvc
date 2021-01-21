@@ -4,7 +4,9 @@ namespace Hazaar\Logger\Backend;
 
 class File extends \Hazaar\Logger\Backend {
 
-    private $h;
+    private $hLog;
+
+    private $hErr;
 
     public function init() {
 
@@ -18,23 +20,23 @@ class File extends \Hazaar\Logger\Backend {
 
         $log_file = \Hazaar\Application::getInstance()->runtimePath('hazaar.log');
 
-        if(is_writable($log_file)){
+        $this->setDefaultOption('logfile', $log_file);
 
-            $this->setDefaultOption('logfile', $log_file);
+        if(($log_file && $this->getOption('logfile')) && is_writable($log_file)){
 
-            if(($this->hLog = fopen($this->getOption('logfile'), 'a')) == FALSE)
-                throw new Exception\OpenLogFileFailed($this->getOption('logfile'));
+            if(($this->hLog = fopen($log_file, 'a')) == FALSE)
+                throw new Exception\OpenLogFileFailed($log_file);
 
         }
         
         $error_file = \Hazaar\Application::getInstance()->runtimePath('error.log');
 
-        if(is_writable($error_file)){
+        $this->setDefaultOption('errfile', $error_file);
 
-            $this->setDefaultOption('errfile', $error_file);
+        if(($error_file = $this->getOption('errfile')) && is_writable($error_file)){
 
-            if(($this->hErr = fopen($this->getOption('errfile'), 'a')) == FALSE)
-                throw new Exception\OpenLogFileFailed($this->getOption('errfile'));
+            if(($this->hErr = fopen($error_file, 'a')) == FALSE)
+                throw new Exception\OpenLogFileFailed($error_file);
 
         }
 
@@ -51,6 +53,9 @@ class File extends \Hazaar\Logger\Backend {
     }
 
     public function write($tag, $message, $level = E_NOTICE) {
+
+        if(!$this->hLog)
+            return false;
 
         $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
 
@@ -73,8 +78,10 @@ class File extends \Hazaar\Logger\Backend {
 
         fwrite($this->hLog, implode(' | ', $line) . "\r\n");
 
-        if($level == E_ERROR)
+        if($this->hErr && $level == E_ERROR)
             fwrite($this->hErr, implode(' | ', $line) . "\r\n");
+
+        return true;
 
     }
 
