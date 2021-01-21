@@ -115,7 +115,7 @@ class Router {
 
             $this->controller = $this->findController($this->default_controller);
 
-            $this->controller_name = $request->popPath();
+            $this->controller_name = $request->shiftPath();
 
             $this->is_default_controller = true;
 

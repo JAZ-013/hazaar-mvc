@@ -58,7 +58,6 @@ class PDF extends \Hazaar\File {
      * Hazaar\File\PDF constructor
      *
      * @param mixed $file Filename to use if the file will be written to disk.  If null, the file can exist only in memory.
-     * @param mixed $backend The file backend to use for reading/writing the file.
      * @param mixed $manager An optional file manager for accessing public file data
      * @param mixed $relative_path Internal relative path when accessing the file through a Hazaar\File\Dir object.
      *
@@ -66,7 +65,7 @@ class PDF extends \Hazaar\File {
      *
      * @throws Exception\WKPDF\NotExecutable The WKPDFtoHTML executable exists but failed to execute.
      */
-    function __construct($file = null, $backend = NULL, $manager = null, $relative_path = null){
+    function __construct($file = null, $manager = null, $relative_path = null){
 
         $cmd = $this->getCommand();
 
@@ -90,7 +89,7 @@ class PDF extends \Hazaar\File {
 
         } while(file_exists($this->tmp));
 
-        parent::__construct($file, $backend, $manager, $relative_path);
+        parent::__construct($file, $manager, $relative_path);
 
         parent::registerFilter(FILE_FILTER_SET, 'render');
 
@@ -358,7 +357,7 @@ class PDF extends \Hazaar\File {
             if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
                 $asset_suffix = '-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
             else
-                $asset_suffix = '.stretch_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
+                $asset_suffix = '.focal_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
 
             $client = new \Hazaar\Http\Client();
 
@@ -376,11 +375,8 @@ class PDF extends \Hazaar\File {
 
             foreach($releases as $info){
 
-                if(!$info instanceof \stdClass)
-                    throw new \Hazaar\Exception('Unable to parse Github API response body!');
-
-                if(!($assets = ake($info, 'assets')))
-                    throw new \Hazaar\Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
+                if(!(($info instanceof \stdClass) && ($assets = ake($info, 'assets'))))
+                    continue;
 
                 foreach($assets as $asset){
 

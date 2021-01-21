@@ -344,17 +344,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = $this;
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^(]*\))/', $key);
 
             end($parts);
 
             $lastKey = key($parts);
 
-            foreach($parts as $key => $part){
+            foreach($parts as $part_key => $part){
 
                 if($value instanceof Strict){
 
-                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
+
+                        $value = $value->find($matches[1], array_unflatten($matches[2]));
+
+                    }else{
+
+                        $value = $value->get($part, (($lastKey === $part_key) ? $exec_filters : false));
+
+                    }
 
                 }elseif($value instanceof DataBinderValue){
 
@@ -387,7 +395,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if(array_key_exists('value', $def)){
 
-            $value = $def['value'];
+            $value = (array_key_exists($key, $this->values) && $this->values[$key] instanceof DataBinderValue && $this->values[$key]->value = $def['value']) ? $this->values[$key] : $def['value'];
 
             if($type = ake($def, 'type'))
                 DataTypeConverter::convertType($value, $type);
@@ -402,7 +410,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if ($exec_filters && is_array($def) && array_key_exists('read', $def))
-            $value = $this->execCallback($def['read'], $value, $key);
+            $value = $this->execCallback($def['read'], $value, $key, $def);
 
         return $value;
 
@@ -495,15 +503,15 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $def = array('type' => $def);
 
         /*
-         * Static/Ready-Only check.
+         * Ready-Only check.
          *
          * If a value is static then updates to it are not allowed and are silently ignored
          */
-        if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
+        if ((array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
         if(array_key_exists('prepare', $def))
-            $value = $this->execCallback($def['prepare'], $value, $key);
+            $value = $this->execCallback($def['prepare'], $value, $key, $def);
 
         /*
          * Run any pre-update callbacks
@@ -512,7 +520,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('pre', $def['update']))
-            $value = $this->execCallback($def['update']['pre'], $value, $key);
+            $value = $this->execCallback($def['update']['pre'], $value, $key, $def);
 
         /*
          * Type check
@@ -523,6 +531,16 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          */
         if ($value !== null && array_key_exists('type', $def))
             DataTypeConverter::convertType($value, $def['type']);
+
+        /*
+         * Static value check
+         * 
+         * If a value is "static" then it can not be changed.  However here, we look if the value being set
+         * is a dataBinderValue with the same value as the static value and if so, we let it through.  This 
+         * allows the same value to be set with a different label.
+         */
+        if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
+            return false;
 
         /*
          * null value check.
@@ -685,7 +703,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('post', $def['update']))
-            $this->execCallback($def['update']['post'], $old_value, $key);
+            $this->execCallback($def['update']['post'], $old_value, $key, $def);
 
         return $value;
 
@@ -779,7 +797,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @return mixed
      */
-    private function execCallback($cb_def, $value, $key) {
+    private function execCallback($cb_def, $value, $key, $def) {
 
         if (is_array($cb_def)) {
 
@@ -787,7 +805,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $params = array(
                 $value,
-                $key
+                $key,
+                $def
             );
 
             if (array_key_exists(2, $cb_def) && is_array($cb_def[2]))
@@ -797,11 +816,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         } elseif (is_callable($cb_def)) {
 
-            $value = call_user_func($cb_def, $value, $key);
+            $value = call_user_func($cb_def, $value, $key, $def);
 
         } elseif (method_exists($this, $cb_def)){
             
-            $value = call_user_func(array($this, $cb_def), $value, $key);
+            $value = call_user_func(array($this, $cb_def), $value, $key, $def);
 
         }
 
@@ -922,7 +941,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
                 continue;
 
-            if(array_key_exists('value', $def))
+            if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
                 $value = $def['value'];
 
             /*
@@ -961,7 +980,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * Run any toArray callbacks
              */
             if (!$disable_callbacks && array_key_exists('toArray', $def))
-                $value = $this->execCallback($def['toArray'], $value, $key);
+                $value = $this->execCallback($def['toArray'], $value, $key, $def);
 
             if ($depth === null || $depth > 0) {
 
@@ -1059,7 +1078,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if (!$this->disable_callbacks && is_array($def) && array_key_exists('read', $def))
-            return $def['read']($value, $key);
+            return $def['read']($value, $key, $def);
 
         return $value;
 

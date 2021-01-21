@@ -39,6 +39,16 @@ class Media extends \Hazaar\Controller\WebDAV {
         if($this->config->disabled === true)
             return;
 
+        //Check for global command authentication
+        if($this->config->global->has('auth')
+        && $this->config->global->auth === true
+        && $this->config->global->allow['cmd'] !== true){
+
+            if(!($this->auth && $this->auth->authenticated()))
+                throw new \Hazaar\Exception('Unauthorised!', 403);
+
+        }
+
         if($this->config->global->has('cache'))
             $this->global_cache = boolify($this->config->global['cache']);
 
@@ -134,18 +144,18 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     public function __default($controller, $source_name = null) {
 
-        if($this->request->has('cmd'))
-            return $this->command($this->request->get('cmd'), $this->connector);
+        if(($source_name === null || $source_name === 'index') && $this->config->global->allow['filebrowser'] === true){
 
-        //Check for global authentication
-        if($this->config->global->has('auth')
-            && $this->config->global->auth === true
-            && $this->config->global->allow['read'] !== true){
+            $response = new \Hazaar\Controller\Response\Layout('@media/browser');
 
-            if(!($this->auth && $this->auth->authenticated()))
-                throw new \Hazaar\Exception('Unauthorised!', 403);
+            $response->addHelper('filebrowser');
+
+            return $response;
 
         }
+
+        if($this->request->has('cmd'))
+            return $this->command($this->request->get('cmd'), $this->connector);
 
         $source = $this->connector->source($source_name);
 
@@ -379,16 +389,6 @@ class Media extends \Hazaar\Controller\WebDAV {
     }
 
     private function command($cmd, $connector) {
-
-        //Check for global command authentication
-        if($this->config->global->has('auth')
-            && $this->config->global->auth === true
-            && $this->config->global->allow['cmd'] !== true){
-
-            if(!($this->auth && $this->auth->authenticated()))
-                throw new \Hazaar\Exception('Unauthorised!', 403);
-
-        }
 
         if($cmd == 'authorise') {
 

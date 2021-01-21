@@ -171,7 +171,8 @@ class Response {
                 while(strlen($this->buffer) > 0) {
 
                     //Get the current chunk length
-                    $chunk_len_end = strpos($this->buffer, "\r\n", $this->chunk_offset + 1) + 2;
+                    if(($chunk_len_end = strpos($this->buffer, "\r\n", $this->chunk_offset + 1) + 2) === 2)
+                        break;
 
                     $chunk_len_string = substr($this->buffer, 0, $chunk_len_end - $this->chunk_offset - 2);
 

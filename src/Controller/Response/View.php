@@ -34,6 +34,9 @@ class View extends \Hazaar\Controller\Response\Html {
 
     public function populate($values) {
 
+        if(is_object($values))
+            $values = $values instanceof \Hazaar\Model\Strict ? $values->toArray() : \iterator_to_array($values);
+
         $this->_data = $values;
 
     }

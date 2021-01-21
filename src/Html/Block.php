@@ -155,7 +155,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
             if(is_array($arg)){
 
                 foreach($arg as $a)
-                    $this->add($a);
+                    self::add($a);
 
                 continue;
 
@@ -195,19 +195,19 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     public function before($selector, $content){
 
-        return $this->spliceElement($selector, $content, 0);
+        return self::spliceElement($selector, $content, 0);
 
     }
 
     public function after($selector, $content){
 
-        return $this->spliceElement($selector, $content, 1);
+        return self::spliceElement($selector, $content, 1);
 
     }
 
     public function replace($selector, $content){
 
-        return $this->spliceElement($selector, $content, 0, 1);
+        return self::spliceElement($selector, $content, 0, 1);
 
     }
 
