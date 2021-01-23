@@ -357,7 +357,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if($value instanceof Strict){
 
-                    if(preg_match('/^(\w+)\(([\w\d\.=]+)\)$/', $part, $matches)){
+                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
 
                         $value = $value->find($matches[1], array_unflatten($matches[2]));
 
@@ -413,7 +413,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if ($exec_filters && is_array($def) && array_key_exists('read', $def))
-            $value = $this->execCallback($def['read'], $value, $key);
+            $value = $this->execCallback($def['read'], $value, $key, $def);
 
         return $value;
 
@@ -514,7 +514,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             return false;
 
         if(array_key_exists('prepare', $def))
-            $value = $this->execCallback($def['prepare'], $value, $key);
+            $value = $this->execCallback($def['prepare'], $value, $key, $def);
 
         /*
          * Run any pre-update callbacks
@@ -523,7 +523,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('pre', $def['update']))
-            $value = $this->execCallback($def['update']['pre'], $value, $key);
+            $value = $this->execCallback($def['update']['pre'], $value, $key, $def);
 
         /*
          * Type check
@@ -706,7 +706,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('post', $def['update']))
-            $this->execCallback($def['update']['post'], $old_value, $key);
+            $this->execCallback($def['update']['post'], $old_value, $key, $def);
 
         return $value;
 
@@ -800,7 +800,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @return mixed
      */
-    private function execCallback($cb_def, $value, $key) {
+    private function execCallback($cb_def, $value, $key, $def) {
 
         if (is_array($cb_def)) {
 
@@ -808,7 +808,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $params = array(
                 $value,
-                $key
+                $key,
+                $def
             );
 
             if (array_key_exists(2, $cb_def) && is_array($cb_def[2]))
@@ -818,11 +819,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         } elseif (is_callable($cb_def)) {
 
-            $value = call_user_func($cb_def, $value, $key);
+            $value = call_user_func($cb_def, $value, $key, $def);
 
         } elseif (method_exists($this, $cb_def)){
             
-            $value = call_user_func(array($this, $cb_def), $value, $key);
+            $value = call_user_func(array($this, $cb_def), $value, $key, $def);
 
         }
 
@@ -991,7 +992,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * Run any toArray callbacks
              */
             if (!$disable_callbacks && array_key_exists('toArray', $def))
-                $value = $this->execCallback($def['toArray'], $value, $key);
+                $value = $this->execCallback($def['toArray'], $value, $key, $def);
 
             if ($depth === null || $depth > 0) {
 
@@ -1092,7 +1093,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if (!$this->disable_callbacks && is_array($def) && array_key_exists('read', $def))
-            return $def['read']($value, $key);
+            return $def['read']($value, $key, $def);
 
         return $value;
 
