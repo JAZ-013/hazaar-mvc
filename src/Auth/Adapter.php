@@ -341,6 +341,8 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
                 }
 
+                $this->authenticationSuccess($identity, $this->extra);
+
                 return TRUE;
 
             }
@@ -411,6 +413,8 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
                         $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
+                        $this->authenticationSuccess($identity, $this->extra);
+                        
                         return TRUE;
 
                     }else $this->deauth();
@@ -547,5 +551,14 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-}
+    /**
+     * Overload function called when a user is successfully authenticated.
+     * 
+     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
+     * be overridden.
+     */
+    protected function authenticationSuccess($identity, $data){
 
+    }
+
+}
