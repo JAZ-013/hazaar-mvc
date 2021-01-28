@@ -9,7 +9,7 @@
 
 namespace Hazaar\View;
 
-class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
+class Layout extends \Hazaar\View {
 
     private $_content = '';
 
@@ -370,67 +370,6 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         if(array_key_exists($key, $this->_views))
             unset($this->_views[$key]);
-
-    }
-
-    /*
-     * Array Access
-     */
-
-    public function offsetExists($offset) {
-
-        return array_key_exists($offset, $this->_views);
-
-    }
-
-    public function offsetGet($offset) {
-
-        return $this->_views[$offset];
-
-    }
-
-    public function offsetSet($offset, $value) {
-
-        $this->add($value, $offset);
-
-    }
-
-    public function offsetUnset($offset) {
-
-        $this->remove($offset);
-
-    }
-
-    /*
-     * Iterator
-     */
-    public function current() {
-
-        return current($this->_views);
-
-    }
-
-    public function key() {
-
-        return key($this->_views);
-
-    }
-
-    public function next() {
-
-        return next($this->_views);
-
-    }
-
-    public function rewind() {
-
-        return rewind($this->_views);
-
-    }
-
-    public function valid() {
-
-        return current($this->_views);
 
     }
 
