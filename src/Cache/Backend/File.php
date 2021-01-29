@@ -99,8 +99,6 @@ class File extends \Hazaar\Cache\Backend {
         //If the lifetime value is greater than 0 then we support namespace timeouts.
         if($this->options->lifetime > 0){
 
-            //$this->timeout_file = $this->cache_dir . DIRECTORY_SEPARATOR . '.timeout';
-
             $this->addCapabilities('expire_ns', 'keepalive');
 
             //If a timeout exists, load it and check if we need to drop the namespace.
@@ -248,6 +246,8 @@ class File extends \Hazaar\Cache\Backend {
 
     public function clear() {
 
+        $this->keepalive();
+
         return $this->store->reset_btree_file();
 
     }
@@ -268,6 +268,8 @@ class File extends \Hazaar\Cache\Backend {
 
         }
 
+        $this->keepalive();
+        
         return $array;
 
     }

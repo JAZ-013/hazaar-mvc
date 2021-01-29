@@ -35,6 +35,10 @@ class Database extends \Hazaar\Cache\Backend {
 
     protected $weight = 6;
 
+    private   $namespace;
+
+    private   $timeout;
+
     static public function available(){
 
         return true;
@@ -43,27 +47,101 @@ class Database extends \Hazaar\Cache\Backend {
 
     public function init($namespace) {
 
-        $this->addCapabilities('array');
+        $this->namespace = $namespace;
+
+        $this->addCapabilities('array', 'keepalive');
 
         $this->configure(array(
             'cache_table' => 'cache_' . $namespace
         ));
 
-        if(! trim($this->options->config))
-            throw new Exception\NoDBConfig();
-
         if(! trim($this->options->cache_table))
             throw new Exception\NoDBTable();
 
-        $this->db = new \Hazaar\DBI($this->options->config);
+        if($this->options->has('schema'))
+            $this->options->config['schema'] = $this->options['schema'];
 
-        $fields = array(
-            'key'    => 'TEXT PRIMARY KEY',
-            'value'  => 'TEXT',
-            'expire' => 'INTEGER'
-        );
+        $this->db = \Hazaar\DBI\Adapter::getInstance($this->options->get('config'));
 
-        $this->db->createTable($this->options->cache_table, $fields);
+        if(!$this->db->table('__meta__')->exists()){
+
+            $fields = array(
+                'namespace'    => 'TEXT PRIMARY KEY',
+                'tablename'    => 'TEXT',
+                'timeout'  => 'integer'
+            );
+
+            $this->db->createTable('__meta__', $fields);
+
+        }
+
+        if(!$this->db->table($this->options->cache_table)->exists()){
+
+            $fields = array(
+                'key'    => 'TEXT PRIMARY KEY',
+                'value'  => 'TEXT',
+                'expire' => 'INTEGER'
+            );
+
+            $this->db->createTable($this->options->cache_table, $fields);
+
+        }
+
+        //If the lifetime value is greater than 0 then we support namespace timeouts.
+        if($this->options->lifetime > 0){
+
+            $this->addCapabilities('expire_ns', 'keepalive');
+
+            //If a timeout exists, load it and check if we need to drop the namespace.
+            if(!($timeout = $this->db->table('__meta__')->find(array('namespace' => $this->namespace), array('timeout'))->execute()->fetchColumn(0)))
+                $timeout = 0;
+
+            //If the namespace has expired, drop it
+            if(time() >= $timeout){
+
+                $this->db->dropTable($this->namespace);
+
+                $this->timeout = time() + $this->options->lifetime;
+
+            }
+
+        }
+
+    }
+
+    /**
+     * Store the namespace timeout in the cache dir timeout file.
+     *
+     * This should only happen if a keepalive() has been called.
+     */
+    function __destruct(){
+
+        if(!$this->db)
+            return;
+
+        if($this->timeout > 0)
+            $this->db->table('__meta__')->insert(array('namespace' => $this->namespace, 'tablename' => $this->options->cache_table, 'timeout' => $this->timeout), null, 'namespace', true);
+
+        $this->db->beginTransaction();
+
+        //Cleanup any expired namespace tables
+        $dead_tables = $this->db->table('__meta__')->find(array('timeout' => array('$lt' => time())));
+
+        while($meta = $dead_tables->fetch()){
+
+            if($this->db->dropTable($meta['tablename']))
+                $this->db->table('__meta__')->delete(array('namespace' => $meta['namespace']));
+
+        }
+
+        $this->db->commit();
+
+    }
+
+    private function keepalive(){
+
+        if($this->options->keepalive === true && $this->options->lifetime > 0)
+            $this->timeout = time() + $this->options->lifetime;
 
     }
 
@@ -71,13 +149,25 @@ class Database extends \Hazaar\Cache\Backend {
 
         $result = $this->db->exists($this->options->cache_table, array('key' => $key, 'expire' => array('$gt' => time())));
 
+        $this->keepalive();
+
         return boolval($result);
 
     }
 
     public function get($key) {
 
-        $result = $this->db->table($this->options->cache_table)->findOne(array('key' => $key, 'expire' => array('$gt' => time())), array('value'));
+        $criteria = array(
+            'key' => $key, 
+            '$or' => array(
+                array('expire' => null),
+                array('expire' => array('$gt' => time()))
+            )
+        );
+
+        $result = $this->db->table($this->options->cache_table)->findOne($criteria, array('value'));
+
+        $this->keepalive();
 
         if(! is_array($result))
             return FALSE;
@@ -88,15 +178,16 @@ class Database extends \Hazaar\Cache\Backend {
 
     public function set($key, $value, $timeout = NULL) {
 
-        $expire = time() + $timeout;
+        $data = array('key' => $key, 'value' => $value);
+
+        if($timeout > 0)
+            $data['expire'] = time() + $timeout;
 
         $value = addslashes($value);
 
-        if($this->db->table($this->options->cache_table)->exists(array('key' => $key)))
-            $this->db->table($this->options->cache_table)->update(array('key' => $key), array('value' => $value, 'expire' => $expire));
+        $this->db->table($this->options->cache_table)->insert($data, null, 'key', true);
 
-        else
-            $this->db->table($this->options->cache_table)->insert(array('key' => $key, 'value' => $value, 'expire' => $expire));
+        $this->keepalive();
 
     }
 
@@ -104,11 +195,23 @@ class Database extends \Hazaar\Cache\Backend {
 
         $this->db->table($this->options->cache_table)->delete(array('key' => $key));
 
+        $this->keepalive();
+
     }
 
     public function clear() {
 
-        $this->db->table($this->options->cache_table)->delete();
+        $this->db->table($this->options->cache_table)->deleteAll();
+
+        $this->keepalive();
+
+    }
+
+    public function toArray(){
+
+        $this->keepalive();
+
+        return $this->db->table($this->options->cache_table)->collate('key', 'value');
 
     }
 

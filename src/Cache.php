@@ -154,7 +154,7 @@ class Cache implements \ArrayAccess {
 
         $result = $this->backend->get($key);
 
-        if (!$this->backend->can('store_objects'))
+        if ($result && !$this->backend->can('store_objects'))
             $result = unserialize($result);
 
         if ($result === FALSE) {
@@ -284,10 +284,19 @@ class Cache implements \ArrayAccess {
 
     public function toArray() {
 
-        if ($this->backend->can('array'))
-            return $this->backend->toArray();
+        if (!$this->backend->can('array'))
+            return FALSE;
 
-        return FALSE;
+        $values = $this->backend->toArray();
+
+        if ($values && !$this->backend->can('store_objects')){
+
+            foreach($values as &$value)
+                $value = unserialize($value);
+
+        }
+
+        return $values;
 
     }
 
