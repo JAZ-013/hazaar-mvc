@@ -41,7 +41,7 @@ class Image extends \Hazaar\File {
 
     public function get_contents($offset = -1, $maxlen = NULL, $allow_compress = TRUE) {
 
-        if(! $this->renderer->loaded())
+        if(!$this->renderer->loaded())
             $this->renderer->load(parent::get_contents($offset, $maxlen, $allow_compress));
 
         return $this->renderer->read();
@@ -50,7 +50,7 @@ class Image extends \Hazaar\File {
 
     private function checkLoaded() {
 
-        if(! $this->renderer->loaded())
+        if(!$this->renderer->loaded())
             $this->renderer->load(parent::get_contents());
 
     }
@@ -83,6 +83,8 @@ class Image extends \Hazaar\File {
     }
 
     public function has_contents(){
+
+        $this->checkLoaded();
 
         return $this->renderer->width() > 0;
 
