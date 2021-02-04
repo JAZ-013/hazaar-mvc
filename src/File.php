@@ -338,7 +338,7 @@ class File implements File\_Interface {
     public function dir($child = null) {
 
         if($this->is_dir())
-            return new File\Dir($this->source_file, $this->manager, $this->manager);
+            return new File\Dir($this->source_file, $this->manager, $this->relative_path);
 
         return FALSE;
 
@@ -346,7 +346,7 @@ class File implements File\_Interface {
 
     public function parent() {
 
-        return new File\Dir($this->dirname(), $this->manager, $this->manager);
+        return new File\Dir($this->dirname(), $this->manager, $this->relative_path);
 
     }
 
