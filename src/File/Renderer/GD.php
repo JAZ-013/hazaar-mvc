@@ -177,6 +177,10 @@ class GD extends BaseRenderer {
 
         $dst = imagecreatetruecolor($width, $height);
 
+        imagealphablending($dst, false);
+
+        imagesavealpha($dst, true);
+
         /*
          * Check if we are cropping and figure out what area we want
          */
