@@ -22,6 +22,8 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     private $file;
 
+    private $log;
+
     public function init($request) {
 
         $this->application->getResponseType('json');
@@ -38,6 +40,9 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         if($this->config->disabled === true)
             return;
+
+        if($this->config->global['log'] === true)
+            $this->log = new \Hazaar\Logger\Frontend(E_NOTICE, 'file', array('logfile' => \Hazaar\Application::getInstance()->runtimePath('media.log'))); 
 
         //Check for global command authentication
         if($this->config->global->has('auth')
@@ -389,6 +394,29 @@ class Media extends \Hazaar\Controller\WebDAV {
     }
 
     private function command($cmd, $connector) {
+
+        if($this->log){
+
+            $messages = [];
+
+            if($targets = $this->request->get('target')){
+
+                if(!is_array($targets)) 
+                    $targets = array($targets);
+
+                foreach($targets as $target)
+                    $messages[] = ake($connector->source($target), 'name') . ':' . $connector->path($target);
+
+            }else{
+
+                $messages[] = json_encode($this->request->getParams(null, 'cmd'));
+                
+            }
+
+            foreach($messages as $msg)
+                    $this->log->writeLog('MEDIA', strtoupper($cmd) . ' | ' . $msg);
+
+        }
 
         if($cmd == 'authorise') {
 

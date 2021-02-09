@@ -21,7 +21,8 @@ class Manager implements Backend\_Interface {
             'filebrowser' => false  //Allow access to the JS file browser
         ),
         'userdef' => array(),
-        'failover' => false
+        'failover' => false,
+        'log' => false
     );
 
     static private $default_backend;
