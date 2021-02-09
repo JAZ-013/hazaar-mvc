@@ -42,7 +42,8 @@ class Dir implements _Interface {
 
         $this->path = $this->manager->fixPath($path);
 
-        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
+        if($relative_path)
+            $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
 
     }
 
