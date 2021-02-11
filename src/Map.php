@@ -846,7 +846,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function addInputFilter($callback, $filter_field = NULL, $filter_type = NULL, $filter_recurse = FALSE) {
 
-        if(! $callback)
+        if(!is_callable($callback))
             throw new Exception\BadFilterDeclaration();
 
         $filter = array('callback' => $callback, 'field' => $filter_field);
