@@ -43,7 +43,7 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         $this->socket->close();
 
-        unset($this->socket);
+        $this->socket = null;
 
         return true;
 
@@ -54,7 +54,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!($this->socket instanceof \Hazaar\Socket && is_string($msg) && strlen($msg) > 0))
             return false;
 
-        return $this->socket->send($msg . "\r\n", strlen($msg) + 2);
+        return $this->socket->send($msg . "\r\n", strlen($msg) + 2, NULL);
 
     }
 
@@ -63,7 +63,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->socket->readSelect($this->read_timeout))
             throw new \Exception('SMTP data receive timeout');
 
-        $this->socket->recv($response, $len);
+        $this->socket->recv($response, $len, NULL);
 
         if($this->getMessageCode($response, $message) !== $code)
             return false;

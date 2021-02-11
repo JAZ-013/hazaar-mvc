@@ -20,6 +20,10 @@ class Adapter {
 
     private        $to      = array();
 
+    private        $cc      = array();
+
+    private        $bcc     = array();
+
     private        $subject;
 
     private        $body    = array();
@@ -114,6 +118,21 @@ class Adapter {
     }
 
     /**
+     * Clear all recipients ready for re-using the adapter
+     * 
+     * This is for working with templates that need to be sent/rendered multiple times to send to many recipients.
+     */
+    public function clear(){
+
+        $this->to = [];
+
+        $this->cc = [];
+
+        $this->bcc = [];
+
+    }
+
+    /**
      * Set the 'To:' address header of the email
      *
      * @param string $email The email address
@@ -127,11 +146,47 @@ class Adapter {
     }
 
     /**
+     * Set the 'CC:' address header of the email
+     *
+     * @param string $email The email address
+     *
+     * @param string $name The name part
+     */
+    public function addCC($email, $name = NULL) {
+
+        $this->cc[] = $this->encodeEmailAddress($email, $name);
+
+    }
+
+    /**
+     * Set the 'BCC:' address header of the email
+     *
+     * @param string $email The email address
+     *
+     * @param string $name The name part
+     */
+    public function addBCC($email, $name = NULL) {
+
+        $this->bcc[] = $this->encodeEmailAddress($email, $name);
+
+    }
+
+    /**
      * Set the 'Subject' header of the email
      *
      * @param string $subject The email address
      */
     public function setSubject($subject) {
+
+        if(!$subject instanceof Template){
+
+            $template = new Template();
+
+            $template->loadFromString($subject);
+
+            $subject = $template;
+
+        }
 
         $this->subject = $subject;
 
@@ -221,7 +276,7 @@ class Adapter {
      *
      * @return string The body of the email
      */
-    private function getBody($params = array()) {
+    public function getBody($params = array()) {
 
         $message = '';
 
@@ -305,9 +360,19 @@ class Adapter {
 
         }
 
-        return $this->transport->send($this->to, $this->subject, $body, $headers);
+        if(count($this->cc) > 0)
+            $headers['CC'] = implode(', ', $this->cc);
 
+        if(count($this->bcc) > 0)
+            $headers['BCC'] = implode(', ', $this->bcc);
+        
+        $result = $this->transport->send($this->to, $this->subject->render($params), $body, $headers);
+
+        if($result)
+            $this->clear();
+
+        return $result;
+        
     }
 
 }
-

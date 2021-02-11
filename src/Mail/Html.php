@@ -12,7 +12,7 @@ class Html extends \Hazaar\Mail\Mime\Part {
 
         parent::__construct();
 
-        $this->html = $html;
+        $this->html = $html instanceof \Hazaar\Mail\Template ? $html : new \Hazaar\Mail\Template($html);
 
         $this->boundary = '----alt_border_' . uniqid();
 
@@ -22,7 +22,7 @@ class Html extends \Hazaar\Mail\Mime\Part {
 
     public function encode($width_limit = 998, $params = null) {
 
-        $html = $this->html instanceof \Hazaar\Mail\Template ? $this->html->render($params) : $this->html;
+        $html = $this->html->render($params);
 
         $text = new \Hazaar\Mail\Mime\Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
 
