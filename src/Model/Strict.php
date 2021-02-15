@@ -545,7 +545,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * null value check.
          */
-        if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false && !array_key_exists('value', $def)) {
+        if ($value === null 
+            && ((array_key_exists('nulls', $def) && $def['nulls'] === false) || (array_key_exists('notnull', $def) && $def['notnull'] === true)) 
+            && !array_key_exists('value', $def)) {
 
             if (array_key_exists('default', $def))
                 $value = $def['default'];
