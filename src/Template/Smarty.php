@@ -122,7 +122,7 @@ class Smarty {
 
         $default_params = array(
             'hazaar' => array('version' => HAZAAR_VERSION),
-            'application' => \Hazaar\Application::getInstance(),
+            'application' => $app,
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
