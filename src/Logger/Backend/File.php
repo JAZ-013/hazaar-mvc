@@ -18,22 +18,18 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('write_uri', TRUE);
 
-        $log_file = \Hazaar\Application::getInstance()->runtimePath('hazaar.log');
+        $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
 
-        $this->setDefaultOption('logfile', $log_file);
-
-        if(($log_file && $this->getOption('logfile')) && is_writable($log_file)){
+        if(($log_file = $this->getOption('logfile')) && is_writable(dirname($log_file))){
 
             if(($this->hLog = fopen($log_file, 'a')) == FALSE)
                 throw new Exception\OpenLogFileFailed($log_file);
 
         }
         
-        $error_file = \Hazaar\Application::getInstance()->runtimePath('error.log');
+        $this->setDefaultOption('errfile', \Hazaar\Application::getInstance()->runtimePath('error.log'));
 
-        $this->setDefaultOption('errfile', $error_file);
-
-        if(($error_file = $this->getOption('errfile')) && is_writable($error_file)){
+        if(($error_file = $this->getOption('errfile')) && is_writable(dirname($error_file))){
 
             if(($this->hErr = fopen($error_file, 'a')) == FALSE)
                 throw new Exception\OpenLogFileFailed($error_file);
