@@ -441,9 +441,6 @@ class Application {
         if(strlen($path) > 0)
             $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
 
-        if($file)
-            $path .= DIRECTORY_SEPARATOR . $file;
-
         $path = APPLICATION_PATH . ($path ? $path : NULL);
 
         if($force_realpath === true)
