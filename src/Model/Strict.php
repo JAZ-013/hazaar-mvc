@@ -248,6 +248,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function getDefinition($key){
 
+        if(strpos($key, '.') !== false){
+
+            $item = ['items' => $this->fields];
+
+            $parts = explode('.', $key);
+
+            foreach($parts as $part){
+
+                if(!(array_key_exists('items', $item) && array_key_exists($part, $item['items'])))
+                    return null;
+
+                $item = ake($item['items'], $part);
+
+            }
+
+            return $item;
+
+        }
+
         $def = ake($this->fields, $key);
 
         if(is_string($def))
@@ -464,15 +483,17 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if($item instanceof Strict){
 
-                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
+                    if($lastKey === $part_key){
+
+                        return $item->set($part, $value, $exec_filters);
+
+                    }elseif(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
 
                         $item = $item->find($matches[1], array_unflatten($matches[2]));
 
-                    }else{
-
-                        return $item->set($part, $value, (($lastKey === $part_key) ? $exec_filters : false));
-
                     }
+
+                    $item = $item->get($part, false);
 
                 }
 
