@@ -72,9 +72,8 @@ class Session extends \Hazaar\Cache\Backend {
              * it now for this application. Otherwise just use the default name
              * specified in the PHP configuration. ie: PHPSESSID
              */
-            if ($app->config->has('session')
-                && is_array($app->config->session)
-                && array_key_exists('name', $app->config->session)
+            if ($app->config->has('session') 
+                && $app->config->session->has('name') 
                 && $name = $app->config->session['name'])
                 session_name($name);
 
