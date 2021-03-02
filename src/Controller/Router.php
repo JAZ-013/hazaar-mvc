@@ -10,6 +10,8 @@ class Router extends \Hazaar\Controller {
 
     private $className;
 
+    public $use_metrics = false;
+
     public function __initialize(\Hazaar\Application\Request $request){
 
         parent::__initialize($request);
@@ -47,8 +49,8 @@ class Router extends \Hazaar\Controller {
 
             $timezone = $this->application->config['app']['timezone'];
 
-            //Reset the application configuration to defaults so that we don't use any loaded options
-            $this->application->config->reset(true);
+            //Reset the application view configuration to defaults so that we don't use any loaded view options
+            $this->application->config->view = [];
 
             if(defined('RUNTIME_PATH'))
                 $this->application->config->app['runtimepath'] = RUNTIME_PATH;

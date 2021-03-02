@@ -50,15 +50,15 @@ class Application extends Module {
 
         if($this->metrics instanceof \Hazaar\File\Metric){
 
-            $count_month = array_filter(ake($this->metrics->graph('hits', 'count_1year'), 'ticks'),
+            $count_month = array_filter(ake($this->metrics->graph('hits', 'count_1year'), 'ticks', array()),
                 function($value, $key) use($date_start){
                     return $key > $date_start;
                 }, ARRAY_FILTER_USE_BOTH);
 
             $this->view->stats = array(
-                'hour' => array_sum(ake($this->metrics->graph('hits', 'count_1hour'), 'ticks')),
-                'day' => array_sum(ake($this->metrics->graph('hits', 'count_1day'), 'ticks')),
-                'week' => array_sum(ake($this->metrics->graph('hits', 'count_1week'), 'ticks')),
+                'hour' => array_sum(ake($this->metrics->graph('hits', 'count_1hour'), 'ticks', array())),
+                'day' => array_sum(ake($this->metrics->graph('hits', 'count_1day'), 'ticks', array())),
+                'week' => array_sum(ake($this->metrics->graph('hits', 'count_1week'), 'ticks', array())),
                 'month' => array_sum($count_month)
             );
 

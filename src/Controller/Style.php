@@ -22,6 +22,8 @@ class Style extends \Hazaar\Controller {
 
     private $filename;
 
+    public $use_metrics = false;
+
     public function __initialize(\Hazaar\Application\Request $request) {
 
         parent::__initialize($request);

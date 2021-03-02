@@ -108,6 +108,8 @@ class Application {
 
     protected $response_type = null;
 
+    private $metrics = false; //Internal metrics settings.  This is disabled when using the console.
+
     /**
      * The main application constructor
      *
@@ -230,14 +232,14 @@ class Application {
         /*
          * Check if we require SSL and if so, redirect here.
          */
-        /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+        if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
 
-        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+            header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
 
-        exit;
+            exit;
 
-        }*/
-
+        }
+        
     }
 
     /**
@@ -258,7 +260,7 @@ class Application {
             if(file_exists($shutdown))
                 include ($shutdown);
 
-            if($this->config->app['metrics'] === true){
+            if($this->metrics === true){
 
                 $metric_file = $this->runtimePath('metrics.dat');
 
@@ -634,6 +636,9 @@ class Application {
                     throw new Application\Exception\RouteNotFound($this->request->getBasePath());
 
             }
+
+            if($this->config->app['metrics'] === true)
+                $this->metrics = $controller->use_metrics;
 
             $this->url_default_part = $controller->url_default_action_name;
 

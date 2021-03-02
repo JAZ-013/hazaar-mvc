@@ -30,6 +30,8 @@ abstract class Controller {
 
     protected $base_path;    //Optional base_path for controller relative url() calls.
 
+    public $use_metrics = true;
+
     /**
      * Base controller constructor
      * 
