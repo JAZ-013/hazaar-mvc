@@ -605,7 +605,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
-        }
+        }elseif($value instanceof \Hazaar\Date && ($format = ake($def, 'format')))
+            $value->setFormat($format);
 
         /*
          * Field validation
