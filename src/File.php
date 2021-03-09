@@ -518,6 +518,20 @@ class File implements File\_Interface, \JsonSerializable {
     }
 
     /**
+     * Return the contents of the file as a data URI encoded string
+     * 
+     * This function is basically the opposite of Hazaar\File::set_decoded_contents() and will generate
+     * a data URI based on the current MIME content type and the contents of the file.
+     * 
+     * @return string
+     */
+    public function get_encoded_contents(){
+
+        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->get_contents());
+
+    }
+
+    /**
      * Saves the current in-memory content to the storage backend.
      *
      * Internally this calls File::put_contents() to write the data to the backend.
@@ -1418,7 +1432,7 @@ class File implements File\_Interface, \JsonSerializable {
 
     public function jsonSerialize(){
 
-        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->contents);
+        return $this->get_encoded_contents();
 
     }
 
