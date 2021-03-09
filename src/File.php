@@ -8,7 +8,7 @@ define('FILE_FILTER_OUT', 1);
 
 define('FILE_FILTER_SET', 2);
 
-class File implements File\_Interface {
+class File implements File\_Interface, \JsonSerializable {
 
     protected $manager;
 
@@ -514,6 +514,20 @@ class File implements File\_Interface {
         }
 
         return false;
+
+    }
+
+    /**
+     * Return the contents of the file as a data URI encoded string
+     * 
+     * This function is basically the opposite of Hazaar\File::set_decoded_contents() and will generate
+     * a data URI based on the current MIME content type and the contents of the file.
+     * 
+     * @return string
+     */
+    public function get_encoded_contents(){
+
+        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->get_contents());
 
     }
 
@@ -1413,6 +1427,12 @@ class File implements File\_Interface {
         $file = new File($path);
 
         return $file->unlink();
+
+    }
+
+    public function jsonSerialize(){
+
+        return $this->get_encoded_contents();
 
     }
 
