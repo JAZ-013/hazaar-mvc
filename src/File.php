@@ -8,7 +8,7 @@ define('FILE_FILTER_OUT', 1);
 
 define('FILE_FILTER_SET', 2);
 
-class File implements File\_Interface {
+class File implements File\_Interface, \JsonSerializable {
 
     protected $manager;
 
@@ -1413,6 +1413,12 @@ class File implements File\_Interface {
         $file = new File($path);
 
         return $file->unlink();
+
+    }
+
+    public function jsonSerialize(){
+
+        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->contents);
 
     }
 
