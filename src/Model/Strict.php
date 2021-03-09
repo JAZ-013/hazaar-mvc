@@ -192,46 +192,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function loadDefinition(array $field_definition) {
 
-        $this->fields = $field_definition;
+        $this->fields = [];
 
-        $this->values = array();
+        $this->values = [];
 
-        if (is_array($this->fields) && count($this->fields) > 0) {
+        if (is_array($field_definition) && count($field_definition) > 0) {
 
-            foreach($this->fields as $field => &$def) {
+            foreach($field_definition as $field => $def) {
 
                 if ($field == '*')
                     continue;
 
-                if (!is_array($def))
-                    $def = array('type' => $def);
-
-                $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
-
-                if ($type = ake($def, 'type')){
-
-                    /*
-                     * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
-                     */
-                    if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
-
-                        $value = new ChildArray($def['arrayOf'], $value);
-
-                        //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model') {
-
-                        $value = new ChildModel(ake($def, 'items', 'any'), $value);
-
-                        //Otherwise, just convert the type
-                    } elseif($value !== null) {
-
-                        DataTypeConverter::convertType($value, $type);
-
-                    }
-
-                }
-
-                $this->values[$field] = $value;
+                self::add($field, $def);
 
             }
 
@@ -273,6 +245,50 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $def = array('type' => $def);
 
         return $def;
+
+    }
+
+    public function add($field, $def = 'string', $value = null){
+
+        if(array_key_exists($field, $this->fields))
+            throw new \Exception('Trying to add field that already exists: ' . $field);
+
+        if (!is_array($def))
+            $def = array('type' => $def);
+
+        $this->fields[$field] = $def;
+
+        if($value !== null)
+            $def['value'] = $value;
+
+        $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
+
+        if ($type = ake($def, 'type')){
+
+            /*
+                * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
+                */
+            if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
+
+                $value = new ChildArray($def['arrayOf'], $value);
+
+                //If the type is a model then we use the ChildModel class
+            }elseif($type == 'model') {
+
+                $value = new ChildModel(ake($def, 'items', 'any'), $value);
+
+                //Otherwise, just convert the type
+            } elseif($value !== null) {
+
+                DataTypeConverter::convertType($value, $type);
+
+            }
+
+        }
+
+        $this->values[$field] = $value;
+
+        return true;
 
     }
 
