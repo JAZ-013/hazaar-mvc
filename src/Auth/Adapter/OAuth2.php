@@ -288,7 +288,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         $response = $this->http_client->send($request);
 
         if($response->status == 200)
-            return json_decode($response->body, true);
+            return json_decode($response->body);
 
         return false;
 
