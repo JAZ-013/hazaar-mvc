@@ -266,7 +266,10 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     private function authenticateCredentials($identity, $credential, $grant_type = 'password'){
 
-        $target_url = (is_array($this->target_url) ? ake($this->target_url, 1, ake($this->target_url, 0)) : $this->target_url);
+        if(!($token_endpoint = ake($this->metadata, 'token_endpoint')))
+            return false;
+
+        $target_url = (is_array($token_endpoint) ? ake($token_endpoint, 1, ake($token_endpoint, 0)) : $token_endpoint);
 
         $request = new \Hazaar\Http\Request($target_url, 'POST');
 
