@@ -79,7 +79,8 @@ class Session extends \Hazaar\Cache {
         if(!parent::clear())
             return false;
 
-        setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
+        if(ake($_COOKIE, $this->session_name) === $this->session_id)
+            setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
 
         return true;
 
