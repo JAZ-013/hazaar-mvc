@@ -36,7 +36,10 @@ class Session extends \Hazaar\Cache {
         if($options->has('session_name'))
             $this->session_name = $options->get('session_name');
 
-        if(!($this->session_id = ake($_COOKIE, $this->session_name)))
+        if($options->has('session_id'))
+            $this->session_id = $options->get('session_id');
+
+        if(!($this->session_id || ($this->session_id = ake($_COOKIE, $this->session_name))))
             $this->session_id =  $options->has('session_id') ? $options->get('session_id') : hash($options->get('hash_algorithm'), uniqid());
         else $this->session_init = true;
 
@@ -76,7 +79,8 @@ class Session extends \Hazaar\Cache {
         if(!parent::clear())
             return false;
 
-        setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
+        if(ake($_COOKIE, $this->session_name) === $this->session_id)
+            setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
 
         return true;
 

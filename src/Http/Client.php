@@ -184,7 +184,7 @@ class Client {
         if($this->auth)
             $request->authorisation($this->auth);
 
-        elseif($this->username)
+        if($this->username)
             $request->authorise($this->username, $this->password);
 
         $this->applyCookies($request);
