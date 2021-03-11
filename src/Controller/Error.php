@@ -92,10 +92,9 @@ class Error extends \Hazaar\Controller\Action {
 
             while($line = fgets($h)) {
 
-                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-
+                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches))
                     $status_codes[$matches[1]] = $matches[2];
-                }
+                    
             }
         }
 
@@ -198,6 +197,12 @@ class Error extends \Hazaar\Controller\Action {
         $this->status = $this->getStatusMessage($this->code);
 
         return NULL;
+
+    }
+
+    public function getMessage(){
+
+        return $this->errstr;
 
     }
 
