@@ -640,7 +640,7 @@ dataBinderArray.prototype.remove = function (value, no_update) {
 };
 
 dataBinderArray.prototype.unset = function (index, no_update) {
-    if (index < 0 || typeof index !== 'number') return;
+    if (index < 0 || typeof index !== 'number' || typeof this._elements[index] === 'undefined') return false;
     let element = this._elements[index];
     let sel = this._node_name();
     if (typeof element === 'undefined') return;
@@ -710,7 +710,7 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 };
 
 dataBinderArray.prototype.populate = function (elements) {
-    this._elements = [];
+    this.empty();
     if (!elements || typeof elements !== 'object') return;
     else if (!Array.isArray(elements))
         elements = Object.values(elements);
@@ -747,7 +747,7 @@ dataBinderArray.prototype.watch = function (cb, args) {
 
 dataBinderArray.prototype.empty = function (no_update) {
     if (this._elements.length === 0) return false;
-    for (x in this._elements) this._elements[x].empty();
+    while(this.unset(0) !== false);
     this._elements = [];
     if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
