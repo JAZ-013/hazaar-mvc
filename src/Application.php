@@ -652,9 +652,11 @@ class Application {
              * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
              */
             if($controller instanceof Controller\Error)
-                die('FATAL: Error loop detected! Last error was: '
-                . $controller->getErrorMessage() . "\n\nTrace:\n\n<pre>"
-                . print_r($controller->getTrace(), TRUE) . "</pre>");
+                die('<h1>' . $controller->getStatusMessage() . '</h1><pre>'
+                . (ini_get('display_errors') ? $controller->getErrorMessage() . "\n\nTrace:\n\n" . print_r($controller->getTrace(), TRUE) : $controller->getMessage())
+                . "</pre><hr/><i>Hazaar MVC/" . HAZAAR_VERSION 
+                . ' (' . php_uname('s') . ')'
+                . " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>");
 
             else
                 throw $e;
