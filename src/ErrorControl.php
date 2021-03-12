@@ -290,6 +290,37 @@ function errorAndDie() {
 
 }
 
+function dieDieDie($err){
+
+    while(count(ob_get_status()) > 0)
+        ob_end_clean();
+
+    $code = 500;
+
+    $err_string = 'An unknown error has occurred';
+
+    if($err instanceof \Exception){
+
+        $err_string = $err->getMessage();
+
+        if(boolify(ini_get('display_errors')))
+            $err_string .= "\n\non line " . $err->getLine() . " of file " . $err->getFile() . "\n\n" . $err->getTraceAsString();
+
+    }elseif(is_string($err)){
+
+        $err_string = $err;
+
+    }
+
+    http_response_code($code);
+
+    die('<h1>' . http_response_text(http_response_code()) . "</h1><pre>$err_string</pre>"
+        . "<hr/><i>Hazaar MVC/" . HAZAAR_VERSION 
+        . ' (' . php_uname('s') . ')'
+        . " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>");
+
+}
+
 function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
     if($errno >= 500)
