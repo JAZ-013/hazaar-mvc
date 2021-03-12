@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.5');
+define('HAZAAR_VERSION', '2.6');
 
 /**
  * Constant containing the application environment current being used.
@@ -132,144 +132,163 @@ class Application {
      */
     function __construct($env) {
 
-        Application::$instance = $this;
+        try{
 
-        $this->environment = $env;
+            Application::$instance = $this;
 
-        if(!defined('HAZAAR_INIT_START'))
-            define('HAZAAR_INIT_START', microtime(TRUE));
+            $this->environment = $env;
 
-        /*
-         * Create a loader object and register it as the default autoloader
-         */
-        $this->loader = Loader::getInstance($this);
+            if(!defined('HAZAAR_INIT_START'))
+                define('HAZAAR_INIT_START', microtime(TRUE));
 
-        $this->loader->register();
+            /*
+            * Create a loader object and register it as the default autoloader
+            */
+            $this->loader = Loader::getInstance($this);
 
-        //Store the search paths in the GLOBALS container so they can be used in config includes.
-        $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
+            $this->loader->register();
 
-        /**
-         * Set up some default config properties.
-         */
-        $defaults = array(
-            'app' => array(
-                'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
-                'defaultController' => 'Index',
-                'useDefaultController' => false,
-                'favicon' => 'favicon.png',
-                'timezone' => 'UTC',
-                'rewrite' => true,
-                'files' => array(
-                    'bootstrap' => 'bootstrap.php',
-                    'shutdown' => 'shutdown.php',
-                    'route' => 'route.php',
-                    'media' => 'media.php'
+            //Store the search paths in the GLOBALS container so they can be used in config includes.
+            $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
+
+            /**
+             * Set up some default config properties.
+             */
+            $defaults = array(
+                'app' => array(
+                    'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
+                    'defaultController' => 'Index',
+                    'useDefaultController' => false,
+                    'favicon' => 'favicon.png',
+                    'timezone' => 'UTC',
+                    'rewrite' => true,
+                    'files' => array(
+                        'bootstrap' => 'bootstrap.php',
+                        'shutdown' => 'shutdown.php',
+                        'route' => 'route.php',
+                        'media' => 'media.php'
+                    ),
+                    'responseImageCache' => false,
+                    'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
                 ),
-                'responseImageCache' => false,
-                'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
-            ),
-            'paths' => array(
-                'model' => 'models',
-                'view' => 'views',
-                'controller' => 'controllers',
-                'service' => 'services',
-                'helper' => 'helpers'
-            ),
-            'view' => array(
-                'prepare' => false
-            )
-        );
+                'paths' => array(
+                    'model' => 'models',
+                    'view' => 'views',
+                    'controller' => 'controllers',
+                    'service' => 'services',
+                    'helper' => 'helpers'
+                ),
+                'view' => array(
+                    'prepare' => false
+                ),
+                'log' => array(
+                    'enable' => false,
+                    'level' => E_ERROR,
+                    'backend' => 'file'
+                )
+            );
 
-        Application\Config::$override_paths = array(
-            'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
-            'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
-            'local'
-        );
+            Application\Config::$override_paths = array(
+                'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
+                'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
+                'local'
+            );
 
-        /*
-         * Load it with a config object. if the file doesn't exist
-         * it will just be an empty object that will handle calls to
-         * it silently.
-         */
-        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
+            /*
+            * Load it with a config object. if the file doesn't exist
+            * it will just be an empty object that will handle calls to
+            * it silently.
+            */
+            $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
 
-        if(!$this->config->loaded())
-            die('Application is not configured!');
+            if(!$this->config->loaded())
+                die('Application is not configured!');
 
-        Application\Url::$base = $this->config->app->get('base');
+            Application\Url::$base = $this->config->app->get('base');
 
-        Application\Url::$rewrite = $this->config->app->get('rewrite');
+            Application\Url::$rewrite = $this->config->app->get('rewrite');
 
-        /*
-         * Create the request object
-         */
-        $this->request = Application\Request\Loader::load();
+            /*
+            * Create the request object
+            */
+            $this->request = Application\Request\Loader::load();
 
-        //Allow the root to be configured but the default absolutely has to be set so here we double
-        $this->config->app->addInputFilter(function($value){
-            Application::setRoot($value);
-        }, 'root');
+            //Allow the root to be configured but the default absolutely has to be set so here we double
+            $this->config->app->addInputFilter(function($value){
+                Application::setRoot($value);
+            }, 'root');
 
-        Application::setRoot($this->config->app['root']);
+            Application::setRoot($this->config->app['root']);
 
-        /*
-         * PHP root elements can be set directly with the PHP ini_set function
-         */
-        if($this->config->has('php')){
+            /*
+            * PHP root elements can be set directly with the PHP ini_set function
+            */
+            if($this->config->has('php')){
 
-            $php_values = $this->config->php->toDotNotation()->toArray();
+                $php_values = $this->config->php->toDotNotation()->toArray();
 
-            foreach($php_values as $directive => $php_value)
-                ini_set($directive, $php_value);
+                foreach($php_values as $directive => $php_value)
+                    ini_set($directive, $php_value);
+
+            }
+
+            /**
+             * Check the load average and protect ifneeded
+             */
+            if($this->config->app->has('maxload') && function_exists('sys_getloadavg')) {
+
+                $la = sys_getloadavg();
+
+                if($la[0] > $this->config->app['maxload'])
+                    throw new Application\Exception\ServerBusy();
+
+            }
+
+            /*
+            * Use the config to add search paths to the loader
+            */
+            $this->loader->addSearchPaths($this->config->get('paths'));
+
+            /*
+            * Create a new router object for evaluating routes
+            */
+            $this->router = new Application\Router($this->config);
+
+            /*
+            * Create a timer for performance measuring
+            */
+            if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
+
+                $this->timer = new Timer();
+
+                $this->timer->start('init', HAZAAR_INIT_START);
+
+                $this->timer->stop('init');
+
+            }
+
+            /*
+            * Enable application logging
+            */
+            if($this->config->has('log')  && $this->config->log['enable'] === true)
+                \Hazaar\Logger\Frontend::initialise($this->config->log->get('level'), $this->config->log->get('backend')); 
+
+            /*
+            * Check if we require SSL and if so, redirect here.
+            */
+            /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+
+            header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+
+            exit;
+
+            }*/
+
+        }catch(\Throwable $e){
+            
+            dieDieDie($e);
 
         }
-
-        /**
-         * Check the load average and protect ifneeded
-         */
-        if($this->config->app->has('maxload') && function_exists('sys_getloadavg')) {
-
-            $la = sys_getloadavg();
-
-            if($la[0] > $this->config->app['maxload'])
-                throw new Application\Exception\ServerBusy();
-
-        }
-
-        /*
-         * Use the config to add search paths to the loader
-         */
-        $this->loader->addSearchPaths($this->config->get('paths'));
-
-        /*
-         * Create a new router object for evaluating routes
-         */
-        $this->router = new Application\Router($this->config);
-
-        /*
-         * Create a timer for performance measuring
-         */
-        if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
-
-            $this->timer = new Timer();
-
-            $this->timer->start('init', HAZAAR_INIT_START);
-
-            $this->timer->stop('init');
-
-        }
-
-        /*
-         * Check if we require SSL and if so, redirect here.
-         */
-        /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
-
-        header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
-
-        exit;
-
-        }*/
 
     }
 
@@ -292,6 +311,11 @@ class Application {
                 include ($shutdown);
 
         }
+
+        \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
+            . http_response_code()
+            . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
+        ); 
 
     }
 
@@ -463,81 +487,89 @@ class Application {
      */
     public function bootstrap() {
 
-        if($this->timer) {
+        try{
 
-            $this->timer->start('_bootstrap', HAZAAR_EXEC_START);
+            if($this->timer) {
 
-            $this->timer->stop('_bootstrap');
+                $this->timer->start('_bootstrap', HAZAAR_EXEC_START);
 
-            $this->timer->start('bootstrap');
+                $this->timer->stop('_bootstrap');
 
-        }
-
-        $locale = NULL;
-
-        if($this->config->app->has('locale'))
-            $locale = $this->config->app['locale'];
-
-        //Fix locales on windows
-        if(substr(PHP_OS, 0, 3) == 'WIN'){
-
-            //Remove any charset specs
-            if(strpos($locale, '.'))
-                $locale = explode('.', $locale, 2)[0];
-
-            //Change underscroes to hyphens and set lowercase
-            $locale = strtolower(str_replace('_', '-', $locale));
-
-        }
-
-        if(setlocale(LC_ALL, $locale) === FALSE)
-            throw new \Hazaar\Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
-
-        $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
-
-        if(!date_default_timezone_set($tz))
-            throw new Application\Exception\BadTimezone($tz);
-
-        Application\Url::$aliases = $this->config->app->getArray('alias');
-
-        if(!$this->router->evaluate($this->request))
-            throw new Application\Exception\RouteNotFound($this->request->getPath());
-
-        if($this->router->getController() !== 'hazaar') {
-
-            if(!defined('RUNTIME_PATH')){
-
-                define('RUNTIME_PATH', $this->runtimePath(null, true));
-    
-                $this->GLOBALS['runtime'] = RUNTIME_PATH;
-    
-            }
-            
-            /*
-             * Check that all required modules are loaded
-             */
-            if($this->config->module->has('require')
-                && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
-                throw new Application\Exception\ModuleMissing($missing);
-
-            /*
-             * Check for an application bootstrap file and execute it
-             */
-            $bootstrap = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'bootstrap', 'bootstrap.php');
-
-            if(file_exists($bootstrap)) {
-
-                $this->bootstrap = include($bootstrap);
-
-                if($this->bootstrap === FALSE)
-                    throw new \Hazaar\Exception('The application failed to start!');
+                $this->timer->start('bootstrap');
 
             }
 
-        }
+            $locale = NULL;
 
-        if($this->timer)
-            $this->timer->stop('bootstrap');
+            if($this->config->app->has('locale'))
+                $locale = $this->config->app['locale'];
+
+            //Fix locales on windows
+            if(substr(PHP_OS, 0, 3) == 'WIN'){
+
+                //Remove any charset specs
+                if(strpos($locale, '.'))
+                    $locale = explode('.', $locale, 2)[0];
+
+                //Change underscroes to hyphens and set lowercase
+                $locale = strtolower(str_replace('_', '-', $locale));
+
+            }
+
+            if(setlocale(LC_ALL, $locale) === FALSE)
+                throw new \Hazaar\Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
+
+            $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
+
+            if(!date_default_timezone_set($tz))
+                throw new Application\Exception\BadTimezone($tz);
+
+            Application\Url::$aliases = $this->config->app->getArray('alias');
+
+            if(!$this->router->evaluate($this->request))
+                throw new Application\Exception\RouteNotFound($this->request->getPath());
+
+            if($this->router->getController() !== 'hazaar') {
+
+                if(!defined('RUNTIME_PATH')){
+
+                    define('RUNTIME_PATH', $this->runtimePath(null, true));
+        
+                    $this->GLOBALS['runtime'] = RUNTIME_PATH;
+        
+                }
+                
+                /*
+                * Check that all required modules are loaded
+                */
+                if($this->config->module->has('require')
+                    && count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0)
+                    throw new Application\Exception\ModuleMissing($missing);
+
+                /*
+                * Check for an application bootstrap file and execute it
+                */
+                $bootstrap = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'bootstrap', 'bootstrap.php');
+
+                if(file_exists($bootstrap)) {
+
+                    $this->bootstrap = include($bootstrap);
+
+                    if($this->bootstrap === FALSE)
+                        throw new \Hazaar\Exception('The application failed to start!');
+
+                }
+
+            }
+
+            if($this->timer)
+                $this->timer->stop('bootstrap');
+
+        }catch(\Exception $e){
+
+            dieDieDie($e);
+
+        }
 
         return $this;
 
@@ -564,17 +596,17 @@ class Application {
      */
     public function run(Controller $controller = NULL) {
 
-        if($this->timer){
-
-            $this->timer->start('_exec', HAZAAR_EXEC_START);
-
-            $this->timer->stop('_exec');
-
-            $this->timer->start('exec');
-
-        }
-
         try {
+
+            if($this->timer){
+
+                $this->timer->start('_exec', HAZAAR_EXEC_START);
+    
+                $this->timer->stop('_exec');
+    
+                $this->timer->start('exec');
+    
+            }
 
             if(!$controller instanceof Controller) {
 
@@ -627,7 +659,7 @@ class Application {
                 $this->response->setStatusCode($status);
 
             $this->response->setCompression($this->config->app->get('compress', false));
-
+            
             /*
              * Finally, write the response to the output buffer.
              */
@@ -638,13 +670,19 @@ class Application {
              */
             $controller->__shutdown();
 
-        }
-        catch(Controller\Exception\HeadersSent $e) {
+            if($this->timer) {
 
-            die("HEADERS SENT");
+                $this->timer->start('shutdown');
+    
+                $this->timer->stop('exec');
+    
+            }
 
-        }
-        catch(Exception $e) {
+        }catch(Controller\Exception\HeadersSent $e) {
+
+            dieDieDie("HEADERS SENT");
+
+        }catch(\Exception $e) {
 
             /*
              * Here we check if the controller we tried to execute was already an error
@@ -652,22 +690,10 @@ class Application {
              * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
              */
             if($controller instanceof Controller\Error)
-                die('<h1>' . $controller->getStatusMessage() . '</h1><pre>'
-                . (ini_get('display_errors') ? $controller->getErrorMessage() . "\n\nTrace:\n\n" . print_r($controller->getTrace(), TRUE) : $controller->getMessage())
-                . "</pre><hr/><i>Hazaar MVC/" . HAZAAR_VERSION 
-                . ' (' . php_uname('s') . ')'
-                . " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>");
+                dieDieDie($e->getErrorMessage());
 
             else
                 throw $e;
-
-        }
-
-        if($this->timer) {
-
-            $this->timer->start('shutdown');
-
-            $this->timer->stop('exec');
 
         }
 

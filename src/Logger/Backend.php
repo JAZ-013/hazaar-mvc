@@ -8,7 +8,15 @@ abstract class Backend implements Backend\_Interface {
 
     private $capabilities = array();
 
+    protected $levels;
+
+    protected const LOG_LEVEL_PREFIX = 'LOG_';
+
     function __construct($options) {
+
+        $this->levels = array_filter(get_defined_constants(), function($value){ 
+            return substr($value, 0, strlen(self::LOG_LEVEL_PREFIX)) === self::LOG_LEVEL_PREFIX; 
+        }, ARRAY_FILTER_USE_KEY);
 
         /*
          * Set the options we were given which will overwrite any defaults
@@ -61,27 +69,18 @@ abstract class Backend implements Backend\_Interface {
 
     public function getLogLevelId($level) {
 
-        $ids = array(
-            0         => 'none',
-            E_NOTICE  => 'notice',
-            E_WARNING => 'warn',
-            E_ERROR   => 'error',
-            E_ALL     => 'debug'
-        );
+        $level = strtoupper($level);
 
-        if(is_numeric($level)) {
+        if(substr($level, 0, strlen(self::LOG_LEVEL_PREFIX)) !== self::LOG_LEVEL_PREFIX)
+            $level = self::LOG_LEVEL_PREFIX . $level;
 
-            $ret = $ids[$level];
+        return defined($level) ? constant($level) : 0;
 
-        } else {
+    }
 
-            $name = coalesce(strtolower($level), 'notice');
+    public function getLogLevelName($level) {
 
-            $ret = array_search($name, $ids);
-
-        }
-
-        return $ret;
+        return substr(array_search($level, $this->levels), strlen(self::LOG_LEVEL_PREFIX));
 
     }
 

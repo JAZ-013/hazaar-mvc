@@ -52,7 +52,7 @@ class MongoDB extends \Hazaar\Logger\Backend {
             if($this->getOption('write_timestamp'))
                 $doc['timestamp'] = new \Hazaar\Date();
 
-            $doc['level'] = strtoupper($this->getLogLevelId($level));
+            $doc['level'] = strtoupper($this->getLogLevelName($level));
 
             if($this->getOption('write_uri'))
                 $doc['uri'] = $_SERVER['REQUEST_URI'];

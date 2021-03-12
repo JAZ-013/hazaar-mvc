@@ -228,11 +228,13 @@ class Error extends \Hazaar\Controller\Action {
             ));
 
             $response->setController($this);
+
         } elseif (method_exists($this, 'run')) {
 
             $response = $this->run();
 
             $response->setController($this);
+
         } else {
 
             switch ($this->response) {
@@ -297,11 +299,9 @@ class Error extends \Hazaar\Controller\Action {
 
     public function clean_output_buffer() {
 
-        while(count(ob_get_status()) > 0) {
-
+        while(count(ob_get_status()) > 0)
             ob_end_clean();
-        }
-
+            
     }
 
     public function json(){
