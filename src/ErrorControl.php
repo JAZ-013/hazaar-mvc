@@ -292,7 +292,8 @@ function errorAndDie() {
 
 function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
-    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $errno, $errfile, 'Line #' . $errline, $errstr)));
+    if($errno >= 500)
+        \Hazaar\Logger\Frontend::e('CORE', "Error #$errno on line $errline of file $errfile: $errstr");
 
     errorAndDie($errno, $errstr, $errfile, $errline, $errcontext, debug_backtrace());
 
@@ -300,7 +301,8 @@ function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errco
 
 function exception_handler($e) {
 
-    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $e->getCode(), $e->getFile(), 'Line #' . $e->getLine(), $e->getMessage())));
+    if($e->getCode() >= 500)
+        \Hazaar\Logger\Frontend::e('CORE', 'Error #' . $e->getCode() . ' on line ' . $e->getLine() . ' of file ' . $e->getFile() . ': ' . $e->getMessage());
 
     errorAndDie($e);
 
