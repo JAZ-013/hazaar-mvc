@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.5');
+define('HAZAAR_VERSION', '2.6');
 
 /**
  * Constant containing the application environment current being used.
