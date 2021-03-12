@@ -178,6 +178,11 @@ class Application {
             ),
             'view' => array(
                 'prepare' => false
+            ),
+            'log' => array(
+                'enable' => false,
+                'level' => E_ERROR,
+                'backend' => 'file'
             )
         );
 
@@ -261,6 +266,12 @@ class Application {
         }
 
         /*
+         * Enable application logging
+         */
+        if($this->config->has('log')  && $this->config->log['enable'] === true)
+            \Hazaar\Logger\Frontend::initialise($this->config->log->get('level'), $this->config->log->get('backend')); 
+
+        /*
          * Check if we require SSL and if so, redirect here.
          */
         /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
@@ -292,6 +303,11 @@ class Application {
                 include ($shutdown);
 
         }
+
+        \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
+            . http_response_code()
+            . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
+        ); 
 
     }
 
