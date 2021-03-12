@@ -8,21 +8,23 @@ class File extends \Hazaar\Logger\Backend {
 
     private $hErr;
 
+    private $level_padding = 0;
+
     public function init() {
 
         $this->addCapability('write_trace');
 
-        $this->setDefaultOption('write_ip', TRUE);
+        $this->setDefaultOption('write_ip', true);
 
-        $this->setDefaultOption('write_timestamp', TRUE);
+        $this->setDefaultOption('write_timestamp', true);
 
-        $this->setDefaultOption('write_uri', TRUE);
+        $this->setDefaultOption('write_pid', false);
 
         $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
 
         if(($log_file = $this->getOption('logfile')) && is_writable(dirname($log_file))){
 
-            if(($this->hLog = fopen($log_file, 'a')) == FALSE)
+            if(($this->hLog = fopen($log_file, 'a')) == false)
                 throw new Exception\OpenLogFileFailed($log_file);
 
         }
@@ -31,10 +33,12 @@ class File extends \Hazaar\Logger\Backend {
 
         if(($error_file = $this->getOption('errfile')) && is_writable(dirname($error_file))){
 
-            if(($this->hErr = fopen($error_file, 'a')) == FALSE)
+            if(($this->hErr = fopen($error_file, 'a')) == false)
                 throw new Exception\OpenLogFileFailed($error_file);
 
         }
+
+        $this->level_padding = max(array_map('strlen', array_keys($this->levels))) - strlen(self::LOG_LEVEL_PREFIX);
 
     }
 
@@ -63,12 +67,12 @@ class File extends \Hazaar\Logger\Backend {
         if($this->getOption('write_timestamp'))
             $line[] = date('Y-m-d H:i:s');
 
-        $line[] = str_pad(strtoupper($this->getLogLevelId($level)), 6, ' ', STR_PAD_RIGHT);
+        if($this->getOption('write_pid'))
+            $line[] = getmypid();
 
-        if($this->getOption('write_uri'))
-            $line[] = ake($_SERVER, 'REQUEST_URI');
+        $line[] = str_pad(strtoupper($this->getLogLevelName($level)), $this->level_padding, ' ', STR_PAD_RIGHT);
 
-        $line[] = $tag;
+        $line[] = str_pad($tag, 8, ' ', STR_PAD_RIGHT);
 
         $line[] = $message;
 
