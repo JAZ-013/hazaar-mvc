@@ -364,14 +364,7 @@ class Dir implements _Interface {
 
         }
 
-        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
-
-        $fullpath = $this->path . '/' . $file;
-
-        if($this->manager->is_dir($fullpath))
-            return new \Hazaar\File\Dir($fullpath, $this->manager, $relative_path);
-
-        return new \Hazaar\File($fullpath, $this->manager, $relative_path);
+        return $file;
 
     }
 
@@ -503,12 +496,16 @@ class Dir implements _Interface {
 
         $path = $this->path($child);
 
-        if($force_dir === true || (file_exists($path) && is_dir($path)))
-            return new \Hazaar\File\Dir($path, $this->manager);
+        if($force_dir === true)
+            return $this->getDir($child);
 
-        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+        return new \Hazaar\File($this->path($child), $this->manager, $this->relative_path ? $this->relative_path : $this->path);
 
-        return new \Hazaar\File($this->path($child), $this->manager, $relative_path);
+    }
+
+    public function getDir($child){
+
+        return new \Hazaar\File\Dir($this->path($path), $this->manager);
 
     }
 
@@ -658,7 +655,7 @@ class Dir implements _Interface {
 
                     $result = true;
 
-                    if($item instanceof Dir){
+                    if($item->is_dir()){
 
                         if($recursive === false)
                             continue 2;
@@ -719,5 +716,12 @@ class Dir implements _Interface {
         return true;
 
     }
+
+    public function write($file, $bytes, $content_type = null){
+
+        return $this->manager->write($this->manager->fixPath($this->path, $file), $bytes, $content_type);
+
+    }
+
 
 }

@@ -657,7 +657,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function write($path, $data, $content_type, $overwrite = FALSE) {
+    public function write($path, $data, $content_type = null, $overwrite = FALSE) {
 
         $request = new \Hazaar\Http\Request('https://api-content.dropbox.com/1/files_put/auto' . $path, 'POST');
 

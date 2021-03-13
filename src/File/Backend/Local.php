@@ -150,7 +150,7 @@ class Local implements _Interface {
 
     }
 
-    public function write($file, $data, $content_type, $overwrite = true) {
+    public function write($file, $data, $content_type = null, $overwrite = true) {
 
         $file = $this->resolvePath($file);
 
@@ -637,7 +637,8 @@ class Local implements _Interface {
 
         $fullpath = $this->resolvePath($path);
 
-        $db = $this->meta($fullpath);
+        if(!($db = $this->meta($fullpath)))
+            return false;
 
         $meta = $db->get($fullpath);
 

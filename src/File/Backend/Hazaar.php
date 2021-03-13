@@ -400,7 +400,7 @@ class Hazaar implements _Interface {
 
     }
 
-    public function write($path, $bytes, $content_type, $overwrite = FALSE) {
+    public function write($path, $bytes, $content_type = null, $overwrite = FALSE) {
 
         $parent = $this->info(dirname($path));
 

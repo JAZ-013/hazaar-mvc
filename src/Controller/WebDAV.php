@@ -146,7 +146,7 @@ abstract class WebDAV extends Basic {
 
         $type = $prop->add('lp1:resourcetype');
 
-        if($object instanceof Dir)
+        if($object->is_dir())
             $type->add('D:collection');
 
         $prop->add('lp1:creationdate', date('c', $object->ctime()));

@@ -77,7 +77,7 @@ interface _Interface {
     public function read($file);
 
     //Write the contents of a file
-    public function write($file, $data, $content_type, $overwrite = FALSE);
+    public function write($file, $data, $content_type = null, $overwrite = FALSE);
 
     //Upload a file that was uploaded with a POST
     public function upload($path, $file, $overwrite = FALSE);

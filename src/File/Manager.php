@@ -2,6 +2,11 @@
 
 namespace Hazaar\File;
 
+use \Hazaar\Application;
+
+use \Hazaar\File;
+use \Hazaar\File\Dir;
+
 class Manager implements Backend\_Interface {
 
     static private $backend_aliases = array(
@@ -36,7 +41,9 @@ class Manager implements Backend\_Interface {
 
     public         $name;
 
-    public         $failover = false;
+    private        $failover = false;
+
+    private        $in_failover = false;
 
     function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
 
@@ -77,9 +84,24 @@ class Manager implements Backend\_Interface {
 
     }
 
+    function __destruct(){
+
+        try{
+
+            if($this->failover && $this->in_failover === false)
+                $this->failoverSync();
+
+        }catch(\Exception $e){
+
+            //Silently make no difference to the world around you
+
+        }
+
+    }
+
     static public function getAvailableBackends(){
 
-        $composer = \Hazaar\Application::getInstance()->composer();
+        $composer = Application::getInstance()->composer();
 
         if(!property_exists($composer, 'require'))
             return false;
@@ -142,7 +164,7 @@ class Manager implements Backend\_Interface {
      */
     static public function select($name, $options = null){
 
-        $config = new \Hazaar\Application\Config('media');
+        $config = new Application\Config('media');
 
         if(!$config->has($name))
             return false;
@@ -154,7 +176,8 @@ class Manager implements Backend\_Interface {
 
         $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
 
-        $manager->failover = ($source->failover === true || $config->global->failover === true);
+        if($source->failover === true || $config->global->failover === true)
+            $manager->activateFailover();
 
         return $manager;
 
@@ -174,6 +197,52 @@ class Manager implements Backend\_Interface {
         Manager::$default_backend = $backend;
 
         Manager::$default_backend_options = $options;
+
+    }
+
+    public function activateFailover(){
+
+        $this->failover = new Manager('local', array(
+            'root' => Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name, true)
+        ));
+
+    }
+
+    public function failoverSync(){
+
+        if(!($this->failover && $this->backend->is_dir('/')))
+            return false;
+
+        $clean = array('dir' => array(), 'file' => array());
+
+        $names = $this->failover->find();
+
+        foreach($names as $name){
+
+            $item = $this->failover->get($name);
+
+            if($item->is_dir()){
+
+                if($this->backend->exists($name) || $this->backend->mkdir($name))
+                    $clean['dir'][] = $name;
+
+            }elseif($item instanceof \Hazaar\File){
+
+                $this->backend->write($name, $item->get_contents(), $item->mime_content_type(), true);
+
+                $clean['file'][] = $name;
+
+            }
+
+        }
+
+        foreach($clean['file'] as $file)
+            $this->failover->unlink($file);
+
+        foreach($clean['dir'] as $dir)
+            $this->failover->rmdir($dir);
+        
+        return true;
 
     }
 
@@ -282,24 +351,23 @@ class Manager implements Backend\_Interface {
 
     }
 
-    /*
-     * Files and Metadata
+    /**
+     * Return a file object for a given path.
+     * 
+     * @param mixed $path The path to a file object
+     * 
+     * @return File The File object.
      */
     public function get($path) {
 
-        $path = $this->fixPath($path);
-
-        if($this->backend->is_dir($path))
-            return new Dir($path, $this);
-
-        return new \Hazaar\File($path, $this);
+        return new \Hazaar\File($this->fixPath($path), $this);
 
     }
 
     /**
-     * Return a directory object for a pgiven path.
+     * Return a directory object for a given path.
      *
-     * @param mixed $path The path to create a directory object for
+     * @param mixed $path The path to a directory object
      *
      * @return Dir The directory object.
      */
@@ -364,13 +432,52 @@ class Manager implements Backend\_Interface {
 
     public function read($file, $offset = NULL, $maxlen = NULL) {
 
-        return $this->backend->read($this->fixPath($file), $offset, $maxlen);
+        $bytes = null;
+
+        if($this->failover && $this->failover->exists($file)){
+
+            $f = $this->failover->get($file); //Make the file as a directory to store logs
+
+            $bytes = $f->get_contents();
+
+        }else{
+
+            $bytes = $this->backend->read($this->fixPath($file), $offset, $maxlen);
+
+        }
+
+        return $bytes;
 
     }
 
-    public function write($file, $data, $content_type, $overwrite = FALSE) {
+    public function write($file, $data, $content_type = null, $overwrite = FALSE) {
 
-        return $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+        $result = false;
+
+        try{
+
+            $result = $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+
+        }catch(Backend\Exception\Offline $e){
+
+            if(!$this->failover)
+                throw $e;
+
+            $this->in_failover = true;
+
+            $f = $this->failover->get($file); //Make the file as a directory to store logs
+
+            if($f->is_dir())
+                throw new \Exception('File exists and is not a file!');
+
+            if(!$f->parent()->exists())
+                $f->parent()->create(true);
+
+            $result = $f->put_contents($data) > 0;
+
+        }
+
+        return $result;
 
     }
 
@@ -582,14 +689,27 @@ class Manager implements Backend\_Interface {
 
     public function uri($path = null){
 
-        return new \Hazaar\Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
+        return new Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
 
     }
 
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE){
 
-        return $this->backend->scandir($this->fixPath($path));
+        $items = $this->backend->scandir($this->fixPath($path));
+
+        foreach($items as &$item){
+
+            $fullpath = $this->fixPath($path, $item);
+
+            $item = ($this->is_dir($fullpath) ? new \Hazaar\File\Dir($fullpath, $this) : new \Hazaar\File($fullpath, $this));
+
+        }
+
+        if($this->failover && $this->failover->exists($path))
+            $items = array_merge($items, $this->failover->scandir($path, $regex_filter, $show_hidden));
+        
+        return $items;
         
     }
 

@@ -416,7 +416,7 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return mixed
      */
-    public function get_contents($offset = -1, $maxlen = NULL) {
+    public function get_contents($offset = null, $maxlen = NULL) {
 
         if($this->contents)
             return is_array($this->contents) ? implode("\n", $this->contents) : $this->contents;
