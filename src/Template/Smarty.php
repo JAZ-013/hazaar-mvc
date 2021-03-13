@@ -39,8 +39,6 @@ class Smarty {
         'call'
     );
 
-    static private $modifiers = array('date_format', 'capitalize');
-
     protected $__content = null;
 
     protected $__compiled_content = '';
@@ -403,12 +401,12 @@ class Smarty {
 
             foreach($modifiers as $modifier){
 
-                $params = explode(':', $modifier);
+                $params = str_getcsv($modifier, ':');
 
                 $func = array_shift($params);
 
                 if(Smarty\Modifier::has_function($func))
-                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', ' . implode(', ', $params) : '') . ')';
+                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) : '') . '")';
 
             }
 
