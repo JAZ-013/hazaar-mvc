@@ -362,21 +362,14 @@ function shutdown_handler() {
 
 function basic_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
-    echo "PHP Error #$errno: $errstr in file $errfile on line $errline";
-
-    debug_print_backtrace();
-
-    die();
+    dieDieDie("PHP Error #$errno: $errstr in file $errfile on line $errline");
 
 }
 
 if(function_exists('apache_get_modules')) {
 
-    if(! in_array('mod_rewrite', apache_get_modules())) {
-
+    if(! in_array('mod_rewrite', apache_get_modules()))
         throw new \Hazaar\Exception('mod_rewrite MUST be enabled to use Hazaar!');
-
-    }
 
 }
 

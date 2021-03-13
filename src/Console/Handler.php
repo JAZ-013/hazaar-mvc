@@ -19,7 +19,7 @@ class Handler {
         $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
 
         if(!file_exists($this->passwd))
-            die('Hazaar admin console is currently disabled!');
+            dieDieDie('Hazaar admin console is currently disabled!');
 
         session_start();
 

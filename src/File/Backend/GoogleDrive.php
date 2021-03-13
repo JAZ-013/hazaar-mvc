@@ -511,7 +511,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
     //TRUE if path is a symlink
     public function is_link($path) {
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -589,7 +589,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(! ($item = $this->resolvePath($path)))
             return FALSE;
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -598,7 +598,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(! ($item = $this->resolvePath($path)))
             return FALSE;
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -607,7 +607,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(! ($item = $this->resolvePath($path)))
             return FALSE;
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -616,7 +616,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(! ($item = $this->resolvePath($path)))
             return FALSE;
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -889,7 +889,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         var_dump($item);
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
@@ -900,7 +900,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         var_dump($item);
 
-        die(__METHOD__);
+        dieDieDie(__METHOD__);
 
     }
 
