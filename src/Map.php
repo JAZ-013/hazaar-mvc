@@ -1781,31 +1781,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function toDotNotation() {
 
-        $rows = array();
-
-        foreach($this->elements as $key => $value) {
-
-            if($value instanceof Map) {
-
-                $children = $value->todotnotation();
-
-                foreach($children as $childkey => $child) {
-
-                    $new_key = $key . '.' . $childkey;
-
-                    $rows[$new_key] = $child;
-
-                }
-
-            } else {
-
-                $rows[$key] = $value;
-
-            }
-
-        }
-
-        return new Map($rows);
+        return new Map(\array_to_dot_notation($this->toArray()));
 
     }
 
