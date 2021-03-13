@@ -936,7 +936,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host._date = function (date) {
             var d = new Date(date * 1000);
-            return d.toUTCString();
+            return d.toLocaleString();
         };
         host._size = function (bytes, type, precision, exclude_suffix) {
             var value = bytes, suffix = 'bytes', prec = 0;
@@ -1289,6 +1289,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             topbar: true
         }, arg1);
         host.settings.mode = host._mode(host.settings.mode);
+        if (typeof host.settings.root === 'string') host.settings.root = host.settings.root.split(':')
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
                 icon: host.settings.mode === 'grid' ? 'grid' : 'list',

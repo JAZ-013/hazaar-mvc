@@ -114,7 +114,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * Allows the map to be locked so that it's values are not accidentally changed.
      */
-    private $locked = FALSE;
+    protected $locked = FALSE;
 
     /**
      * @detail      The Map constructor sets up the default state of the Map.  You can pass an array or another Map
@@ -265,8 +265,24 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if($erase)
             $this->elements = $this->defaults;
 
-        return TRUE;
+        return $this;
 
+    }
+
+    /**
+     * Merge this Map and new values into a new Map
+     * 
+     * This is similar to Map::populate() except that the existing values will be removed first and 
+     * new values will be added and/or overwrite those existing values.
+     * 
+     * @param array|\Hazaar\Map $array The array being merged in.
+     */
+    public function merge($array){
+
+        $array = self::is_array($array) ? ($array instanceof Map ? $array->toArray() : $array) : [];
+
+        return new Map($this->toArray(), $array);
+        
     }
 
     /**
@@ -846,7 +862,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function addInputFilter($callback, $filter_field = NULL, $filter_type = NULL, $filter_recurse = FALSE) {
 
-        if(! $callback)
+        if(!is_callable($callback))
             throw new Exception\BadFilterDeclaration();
 
         $filter = array('callback' => $callback, 'field' => $filter_field);
@@ -1338,13 +1354,10 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return      string The Map as a JSON string
      */
-    public function toJSON($ignorenulls = FALSE, $args = NULL) {
+    public function toJSON($ignorenulls = FALSE, $flags = NULL, $depth = 512) {
 
-        if($array = $this->toArray($ignorenulls)) {
-
-            return json_encode($array, $args);
-
-        }
+        if($array = $this->toArray($ignorenulls))
+            return json_encode($array, $flags, $depth);
 
         return NULL;
 
@@ -1784,31 +1797,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function toDotNotation() {
 
-        $rows = array();
-
-        foreach($this->elements as $key => $value) {
-
-            if($value instanceof Map) {
-
-                $children = $value->todotnotation();
-
-                foreach($children as $childkey => $child) {
-
-                    $new_key = $key . '.' . $childkey;
-
-                    $rows[$new_key] = $child;
-
-                }
-
-            } else {
-
-                $rows[$key] = $value;
-
-            }
-
-        }
-
-        return new Map($rows);
+        return new Map(\array_to_dot_notation($this->toArray()));
 
     }
 

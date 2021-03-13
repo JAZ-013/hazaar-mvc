@@ -31,6 +31,8 @@ class Config extends \Hazaar\Map {
 
     private $loaded = false;
 
+    private $secure_keys = [];
+
     /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
      *              in the first parameter.  It will use the second parameter as the starting point and is intended to
@@ -156,6 +158,8 @@ class Config extends \Hazaar\Map {
 
         $cache_key = null;
 
+        $secure_keys = [];
+
         //Check if APCu is available for caching and load the config file from cache if it exists.
         if(in_array('apcu', get_loaded_extensions())){
 
@@ -179,16 +183,27 @@ class Config extends \Hazaar\Map {
 
                 }
 
-                if($mtime > filemtime($source))
-                    $source = apcu_fetch($cache_key);
+                if($mtime > filemtime($source)){
+
+                    $cache_data = apcu_fetch($cache_key);
+
+                    if(is_array($cache_data) && count($cache_data) === 2 && isset($cache_data[0]) && isset($cache_data[1]))
+                        list($secure_keys, $source) = apcu_fetch($cache_key);
+
+                }
 
             }
 
         }
 
         //If we have loaded this config file, continue on to the next
-        if(!is_string($source))
+        if($source && !is_string($source)){
+
+            $this->secure_keys = array_merge($this->secure_keys, $secure_keys);
+
             return $source;
+
+        }
 
         $file = new \Hazaar\File($source);
 
@@ -213,8 +228,11 @@ class Config extends \Hazaar\Map {
 
         }
 
+        if($file->isEncrypted())
+            $this->secure_keys = array_merge($this->secure_keys, $this->secure_keys += $secure_keys = array_keys($config));
+
         //Store the config file in cache
-        if($cache_key !== null) apcu_store($cache_key, $config);
+        if($cache_key !== null) apcu_store($cache_key, [$secure_keys, $config]);
 
         return $config;
 
@@ -468,6 +486,14 @@ class Config extends \Hazaar\Map {
         }
 
         return $elem;
+
+    }
+
+    public function toSecureArray(){
+
+        $config = parent::toArray(false);
+
+        return array_diff_key($config, array_flip($this->secure_keys));
 
     }
 

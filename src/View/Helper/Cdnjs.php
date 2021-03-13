@@ -198,7 +198,7 @@ class Cdnjs extends \Hazaar\View\Helper {
         if($force_reload === false && ($info = self::$cache->get($name)) !== null)
             return $info;
 
-        if($this->lock() === true){
+        if($this->lock() !== true){
 
             //Check again if we blocked getting the lock as someone else may have written the info
             if(($info = self::$cache->get($name)) !== null)

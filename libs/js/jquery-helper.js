@@ -163,6 +163,10 @@ dataBinderValue.prototype.valueOf = function () {
     return this.value;
 };
 
+dataBinderValue.prototype._node_name = function () {
+    return '[data-bind="' + this._parent._attr_name(this._name) + '"]' + (this._parent._namespace ? '[data-bind-ns="' + this._parent._namespace + '"]' : ':not([data-bind-ns])');
+};
+
 dataBinderValue.prototype.set = function (value, label, other, update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
@@ -199,7 +203,7 @@ dataBinderValue.prototype.enabled = function (value) {
 };
 
 dataBinderValue.prototype.find = function (selector) {
-    let o = jQuery('[data-bind="' + this._parent._attr_name(this._name) + '"]' + (this._parent._namespace ? '[data-bind-ns="' + this._parent._namespace + '"]' : ':not([data-bind-ns])'));
+    let o = jQuery(this._node_name());
     return selector ? o.filter(selector) : o;
 };
 
@@ -214,7 +218,7 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._attributes = {};
     this._watchers = {};
-    this._watchID = 0;
+    dataBinder._watchID = 0;
     this._enabled = true;
     this._data = {};
     if (Object.keys(data).length > 0)
@@ -241,6 +245,10 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
 dataBinder.prototype.__nullify = function (value) {
     if (typeof value === 'string' && value === '') value = null;
     return value;
+};
+
+dataBinder.prototype._node_name = function (key) {
+    return '[data-bind="' + this._attr_name(key) + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
 };
 
 dataBinder.prototype.__convert_type = function (key, value, parent) {
@@ -271,7 +279,6 @@ dataBinder.prototype.add = function (key, value) {
 };
 
 dataBinder.prototype._defineProperty = function (key) {
-    let attr_name = this._attr_name(key);
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
@@ -329,7 +336,7 @@ dataBinder.prototype._attr_name = function (attr_name) {
 dataBinder.prototype._update = function (key, do_update) {
     let attr_item = this._attributes[key], attr_name = this._attr_name(key);
     if (attr_item instanceof dataBinder || attr_item instanceof dataBinderArray) return;
-    let sel = '[data-bind="' + attr_name + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
+    let sel = this._node_name(key);
     jQuery(sel).each(function (index, item) {
         let o = jQuery(item);
         if (o.is("input, textarea, select")) {
@@ -402,14 +409,14 @@ dataBinder.prototype.save = function (no_label) {
     return attrs;
 };
 
-dataBinder.prototype.watch = function (key, callback, args) {
+dataBinder.prototype.watch = function (key, cb, args) {
+    if (typeof cb !== 'function') return null;
     if ((match = key.match(/(\w+)\.([\w\.]*)/)) !== null)
         return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
-            ? this._attributes[match[1]].watch(match[2], callback, args) : null;
-    if (!(key in this._watchers))
-        this._watchers[key] = {};
-    let id = "" + this._watchID++;
-    this._watchers[key][id] = [callback, args];
+            ? this._attributes[match[1]].watch(match[2], cb, args) : null;
+    if (!(key in this._watchers)) this._watchers[key] = {};
+    let id = "" + dataBinder._watchID++;
+    this._watchers[key][id] = [cb, args];
     return id;
 };
 
@@ -447,14 +454,14 @@ dataBinder.prototype.populate = function (items) {
     }
 };
 
-dataBinder.prototype.extend = function (items) {
+dataBinder.prototype.extend = function (items, dont_replace_with_nulls) {
     for (let x in items) {
         if (x in this._attributes) {
             if (this._attributes[x] instanceof dataBinder)
                 this[x].extend(items[x]);
             else if (this._attributes[x] instanceof dataBinderArray)
                 this[x].populate(items[x]);
-            else
+            else if (dont_replace_with_nulls !== true)
                 this[x] = items[x];
         } else
             this.add(x, items[x]);
@@ -491,7 +498,7 @@ dataBinder.prototype.compare = function (value) {
             || ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== (value._attributes[x] instanceof dataBinderValue ? value._attributes[x].value : value._attributes[x])))
             return false;
     }
-    for (x in this._attributes) if (!(x in value._attributes)) return false;
+    for (x in this._attributes) if (!(('_attributes' in value) && (x in value._attributes))) return false;
     return true;
 };
 
@@ -510,7 +517,7 @@ dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._elements = [];
     this._template = null;
-    this._watchers = [];
+    this._watchers = {};
     this._enabled = true;
     this._data = {};
     this.resync();
@@ -540,6 +547,10 @@ dataBinderArray.prototype._attr_name = function (attr_name) {
     return this._parent._attr_name(this._name) + (typeof attr_name === 'undefined' ? '' : '[' + attr_name + ']');
 };
 
+dataBinderArray.prototype._node_name = function (key) {
+    return '[data-bind="' + this._attr_name(key) + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
+};
+
 dataBinderArray.prototype.pop = function () {
     let index = this._elements.length - 1;
     let element = this._elements[index];
@@ -565,26 +576,26 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
 };
 
 dataBinderArray.prototype._update = function (key, attr_element, do_update) {
-    let remove = this.indexOf(attr_element) < 0, attr_name = this._attr_name(key);
-    let sel = '[data-bind="' + attr_name + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
-    jQuery(sel).each(function (index, item) {
+    let remove = this.indexOf(attr_element) < 0;
+    jQuery(this._node_name(key)).each(function (index, item) {
         let o = $(item);
         if (o.is('[data-toggle]')) {
             o.find('[data-bind-value="' + attr_element.value + '"]')
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
         }
-        if (do_update === true) o.trigger('update', [attr_name, attr_value]);
+        if (do_update === true) o.trigger('update', [this._attr_name(key), attr_value]);
     });
 };
 
 dataBinderArray.prototype._trigger = function (name, obj) {
     this._parent._trigger(this._attr_name(name), obj);
+    this._parent._trigger(this._name, obj);
 };
 
 dataBinderArray.prototype.push = function (element, no_update) {
     let key = this._elements.length;
-    let sel = '[data-bind="' + this._attr_name() + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
+    let sel = this._node_name();
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         Object.defineProperty(this, key, {
             set: function (value) {
@@ -595,15 +606,18 @@ dataBinderArray.prototype.push = function (element, no_update) {
             }
         });
     }
-    element = this.__convert_type(key, element);
-    this._elements[key] = element;
+    this._elements[key] = element = this.__convert_type(key, element);
     jQuery(sel).trigger('push', [this._attr_name(), element, key]);
-    if (no_update !== true && this._elements[key] instanceof dataBinder) {
-        let newitem = this._newitem(key, this._elements[key]);
-        jQuery(sel).append(newitem);
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
+    if (no_update !== true) {
+        let newitem = null;
+        if (element instanceof dataBinder) {
+            newitem = this._newitem(key, element);
+            jQuery(sel).append(newitem);
+        }
+        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](element, newitem, this._watchers[x][1]);
         this.resync();
-    } else this._update(this._attr_name(), this._elements[key], true);
+        this._trigger(key, element);
+    } else this._update(this._attr_name(), element, true);
     return key;
 };
 
@@ -626,14 +640,16 @@ dataBinderArray.prototype.remove = function (value, no_update) {
 };
 
 dataBinderArray.prototype.unset = function (index, no_update) {
-    if (index < 0 || typeof index !== 'number') return;
+    if (index < 0 || typeof index !== 'number' || typeof this._elements[index] === 'undefined') return false;
     let element = this._elements[index];
-    let sel = '[data-bind="' + this._attr_name() + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
+    let sel = this._node_name();
     if (typeof element === 'undefined') return;
     if (no_update !== true && element instanceof dataBinder) jQuery(sel).children().eq(index).remove();
     this._cleanupItem(index);
     jQuery(sel).trigger('pop', [this._attr_name(), element, index]);
+    if (no_update !== true && this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](null, null, this._watchers[x][1]);
     this._update(this._attr_name(), element, true);
+    this._trigger(key, element);
     return element;
 };
 
@@ -649,7 +665,7 @@ dataBinderArray.prototype.save = function (no_label) {
 };
 
 dataBinderArray.prototype.resync = function () {
-    let sel = '[data-bind="' + this._attr_name() + '"]' + (this._namespace ? '[data-bind-ns="' + this._namespace + '"]' : ':not([data-bind-ns])');
+    let sel = this._node_name();
     if (!this._template || this._template.length === 0) {
         let host = jQuery(sel);
         if (host.attr('data-bind-template') === 'o') {
@@ -668,7 +684,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](newitem, this._watchers[x][1]);
+                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](this._elements[x], newitem, this._watchers[x][1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
@@ -694,7 +710,7 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 };
 
 dataBinderArray.prototype.populate = function (elements) {
-    this._elements = [];
+    this.empty();
     if (!elements || typeof elements !== 'object') return;
     else if (!Array.isArray(elements))
         elements = Object.values(elements);
@@ -723,13 +739,17 @@ dataBinderArray.prototype.__nullify = function (value) {
 };
 
 dataBinderArray.prototype.watch = function (cb, args) {
-    if (typeof cb === 'function') this._watchers.push([cb, args]);
+    if (typeof cb !== 'function') return null;
+    let id = "" + dataBinder._watchID++;
+    this._watchers[id] = [cb, args];
+    return id;
 };
 
-dataBinderArray.prototype.empty = function () {
-    for (x in this._elements)
-        this._elements[x].empty();
+dataBinderArray.prototype.empty = function (no_update) {
+    if (this._elements.length === 0) return false;
+    while(this.unset(0) !== false);
     this._elements = [];
+    if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
 
 dataBinderArray.prototype.enabled = function (value) {
@@ -763,3 +783,14 @@ dataBinderArray.prototype.unwatchAll = function () {
 dataBinderArray.prototype.data = function (name, value) {
     return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
+
+dataBinderArray.prototype[Symbol.iterator] = function () {
+    return {
+        index: 0,
+        data: this._elements,
+        next: function () {
+            if (this.index < this.data.length) return { value: this.data[this.index++], done: false };
+            return { done: true };
+        }
+    }
+}

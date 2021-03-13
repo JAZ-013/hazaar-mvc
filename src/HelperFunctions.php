@@ -1128,7 +1128,7 @@ if(!function_exists('http_response_code')){
                 return TRUE;
             } else {
 
-                die('Missing Http_Status.dat file!');
+                dieDieDie('Missing Http_Status.dat file!');
             }
         } else {
 

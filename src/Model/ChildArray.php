@@ -33,7 +33,12 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      */
     function __construct($type, $values = array()){
 
-        if(!(is_array($type) || is_object($type) || in_array($type, DataTypeConverter::$known_types) || $type === 'any' || class_exists($type)))
+        if(!(is_array($type) 
+            || is_object($type) 
+            || in_array($type, DataTypeConverter::$known_types) 
+            || array_key_exists($type, DataTypeConverter::$type_aliases) 
+            || $type === 'any' 
+            || class_exists($type)))
             throw new \Hazaar\Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
@@ -121,6 +126,9 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
             }
 
             settype($criteriaValue, gettype($value));
+
+            if(is_string($criteriaValue))
+                $criteriaValue = trim($criteriaValue, ' "\'');
 
             if($value !== $criteriaValue)
                 return false;

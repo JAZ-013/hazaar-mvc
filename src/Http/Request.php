@@ -26,6 +26,10 @@ class Request extends \Hazaar\Map {
 
     private $dont_encode_uri = false;
 
+    private $json_encode_flags = null;
+
+    private $json_encode_depth = 512;
+
     /**
      * HTTP request constructor
      *
@@ -369,7 +373,7 @@ class Request extends \Hazaar\Map {
                             case 'text/json' :
                             case 'application/json' :
 
-                                $data = json_encode($part[1]);
+                                $data = json_encode($part[1], $this->json_encode_flags, $this->json_encode_depth);
 
                                 break;
 
@@ -407,7 +411,7 @@ class Request extends \Hazaar\Map {
 
                 $this->setHeader('Content-Type', 'application/json');
 
-                $body = json_encode($this->body);
+                $body = json_encode($this->body, $this->json_encode_flags, $this->json_encode_depth);
 
             } else { //Otherwise use the raw content body
 
@@ -429,7 +433,7 @@ class Request extends \Hazaar\Map {
                 case 'application/javascript' :
                 case 'application/x-javascript' :
 
-                    $body = $this->toJSON();
+                    $body = $this->toJSON(false, $this->json_encode_flags, $this->json_encode_depth);
 
                     break;
 
@@ -641,6 +645,22 @@ class Request extends \Hazaar\Map {
     public function setURIEncode($value = true){
 
         $this->dont_encode_uri = !boolify($value);
+
+    }
+
+    /**
+     * Set JSON encoding flags/depth used when request is encoded to JSON
+     * 
+     * Requests will automatically encode any data parameters to JSON encoded strings when generating the reqeust as a string.  If
+     * there are any JSON encoding flags required, this function will apply those flags to all JSON encoding methods used when
+     * rendering the request.  This includes requests sent with a mime content type of `application/json` as well as multipart
+     * encoded requests.
+     */
+    public function setJSONEncodeFlags($flags, $depth = 512){
+
+        $this->json_encode_flags = $flags;
+
+        $this->json_encode_depth = $depth;
 
     }
 

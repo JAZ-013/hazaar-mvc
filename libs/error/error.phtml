@@ -169,9 +169,11 @@
                         </thead>
                         <tbody>
                             <?php
-                      $config = $this->application->config->toDotNotation();
-                      foreach($config as $key => $value)
-                          echo $this->html->tr(array($this->html->td($key), $this->html->td($value)));
+                                $config = ake($this->err, 'config', []);
+
+                                foreach($config as $key => $value)
+                                    echo $this->html->tr(array($this->html->td($key), $this->html->td($value)));
+
                             ?>
                         </tbody>
                     </table>

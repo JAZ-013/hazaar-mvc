@@ -92,10 +92,9 @@ class Error extends \Hazaar\Controller\Action {
 
             while($line = fgets($h)) {
 
-                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-
+                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches))
                     $status_codes[$matches[1]] = $matches[2];
-                }
+                    
             }
         }
 
@@ -201,6 +200,12 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
+    public function getMessage(){
+
+        return $this->errstr;
+
+    }
+
     public function getErrorMessage() {
 
         return $this->errstr . ' on line ' . $this->errline . ' in file ' . $this->errfile;
@@ -223,11 +228,13 @@ class Error extends \Hazaar\Controller\Action {
             ));
 
             $response->setController($this);
+
         } elseif (method_exists($this, 'run')) {
 
             $response = $this->run();
 
             $response->setController($this);
+
         } else {
 
             switch ($this->response) {
@@ -292,11 +299,9 @@ class Error extends \Hazaar\Controller\Action {
 
     public function clean_output_buffer() {
 
-        while(count(ob_get_status()) > 0) {
-
+        while(count(ob_get_status()) > 0)
             ob_end_clean();
-        }
-
+            
     }
 
     public function json(){
@@ -321,7 +326,7 @@ class Error extends \Hazaar\Controller\Action {
 
             $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-            $error['config'] = $this->application->config->toArray();
+            $error['config'] = $this->application->config->toSecureArray();
 
         }
 
@@ -423,7 +428,8 @@ class Error extends \Hazaar\Controller\Action {
             'context' => $this->errcontext,
             'class' => $this->errclass,
             'type' => $this->errtype,
-            'short_message' => ($this->short_message ? $this->short_message : $this->status)
+            'short_message' => ($this->short_message ? $this->short_message : $this->status),
+            'config' => array_to_dot_notation($this->application->config->toSecureArray())
         );
 
         $view->trace = $this->callstack;

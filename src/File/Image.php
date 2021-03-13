@@ -35,7 +35,7 @@ class Image extends \Hazaar\File {
 
     public function set_contents($bytes) {
 
-        $this->renderer->load($bytes, $this->mime_content_type());
+        $this->renderer->load($bytes);
 
     }
 

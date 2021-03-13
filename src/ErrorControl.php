@@ -290,9 +290,41 @@ function errorAndDie() {
 
 }
 
+function dieDieDie($err){
+
+    while(count(ob_get_status()) > 0)
+        ob_end_clean();
+
+    $code = 500;
+
+    $err_string = 'An unknown error has occurred';
+
+    if($err instanceof \Exception || $err instanceof \Error){
+
+        $err_string = $err->getMessage();
+
+        if(boolify(ini_get('display_errors')))
+            $err_string .= "\n\non line " . $err->getLine() . " of file " . $err->getFile() . "\n\n" . $err->getTraceAsString();
+
+    }elseif(is_string($err)){
+
+        $err_string = $err;
+
+    }
+
+    http_response_code($code);
+
+    die('<h1>' . http_response_text(http_response_code()) . "</h1><pre>$err_string</pre>"
+        . "<hr/><i>Hazaar MVC/" . HAZAAR_VERSION 
+        . ' (' . php_uname('s') . ')'
+        . " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>");
+
+}
+
 function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
-    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $errno, $errfile, 'Line #' . $errline, $errstr)));
+    if($errno >= 500)
+        \Hazaar\Logger\Frontend::e('CORE', "Error #$errno on line $errline of file $errfile: $errstr");
 
     errorAndDie($errno, $errstr, $errfile, $errline, $errcontext, debug_backtrace());
 
@@ -300,7 +332,8 @@ function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errco
 
 function exception_handler($e) {
 
-    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $e->getCode(), $e->getFile(), 'Line #' . $e->getLine(), $e->getMessage())));
+    if($e->getCode() >= 500)
+        \Hazaar\Logger\Frontend::e('CORE', 'Error #' . $e->getCode() . ' on line ' . $e->getLine() . ' of file ' . $e->getFile() . ': ' . $e->getMessage());
 
     errorAndDie($e);
 
@@ -329,21 +362,14 @@ function shutdown_handler() {
 
 function basic_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
-    echo "PHP Error #$errno: $errstr in file $errfile on line $errline";
-
-    debug_print_backtrace();
-
-    die();
+    dieDieDie("PHP Error #$errno: $errstr in file $errfile on line $errline");
 
 }
 
 if(function_exists('apache_get_modules')) {
 
-    if(! in_array('mod_rewrite', apache_get_modules())) {
-
+    if(! in_array('mod_rewrite', apache_get_modules()))
         throw new \Hazaar\Exception('mod_rewrite MUST be enabled to use Hazaar!');
-
-    }
 
 }
 

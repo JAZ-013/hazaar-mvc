@@ -41,7 +41,7 @@ class Chain extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($message, $level = E_NOTICE) {
+    public function write($message, $level = LOG_NOTICE) {
 
         foreach($this->backends as $backend) {
 
@@ -71,4 +71,3 @@ class Chain extends \Hazaar\Logger\Backend {
     }
 
 }
-

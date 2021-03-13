@@ -192,46 +192,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function loadDefinition(array $field_definition) {
 
-        $this->fields = $field_definition;
+        $this->fields = [];
 
-        $this->values = array();
+        $this->values = [];
 
-        if (is_array($this->fields) && count($this->fields) > 0) {
+        if (is_array($field_definition) && count($field_definition) > 0) {
 
-            foreach($this->fields as $field => &$def) {
+            foreach($field_definition as $field => $def) {
 
                 if ($field == '*')
                     continue;
 
-                if (!is_array($def))
-                    $def = array('type' => $def);
-
-                $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
-
-                if ($type = ake($def, 'type')){
-
-                    /*
-                     * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
-                     */
-                    if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
-
-                        $value = new ChildArray($def['arrayOf'], $value);
-
-                        //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model') {
-
-                        $value = new ChildModel(ake($def, 'items', 'any'), $value);
-
-                        //Otherwise, just convert the type
-                    } elseif($value !== null) {
-
-                        DataTypeConverter::convertType($value, $type);
-
-                    }
-
-                }
-
-                $this->values[$field] = $value;
+                self::add($field, $def);
 
             }
 
@@ -248,12 +220,75 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function getDefinition($key){
 
+        if(strpos($key, '.') !== false){
+
+            $item = ['items' => $this->fields];
+
+            $parts = explode('.', $key);
+
+            foreach($parts as $part){
+
+                if(!(array_key_exists('items', $item) && array_key_exists($part, $item['items'])))
+                    return null;
+
+                $item = ake($item['items'], $part);
+
+            }
+
+            return $item;
+
+        }
+
         $def = ake($this->fields, $key);
 
         if(is_string($def))
             $def = array('type' => $def);
 
         return $def;
+
+    }
+
+    public function add($field, $def = 'string', $value = null){
+
+        if(array_key_exists($field, $this->fields))
+            throw new \Exception('Trying to add field that already exists: ' . $field);
+
+        if (!is_array($def))
+            $def = array('type' => $def);
+
+        $this->fields[$field] = $def;
+
+        if($value !== null)
+            $def['value'] = $value;
+
+        $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
+
+        if ($type = ake($def, 'type')){
+
+            /*
+                * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
+                */
+            if (($type == 'array' || $type == 'list' ) && array_key_exists('arrayOf', $def)){
+
+                $value = new ChildArray($def['arrayOf'], $value);
+
+                //If the type is a model then we use the ChildModel class
+            }elseif($type == 'model') {
+
+                $value = new ChildModel(ake($def, 'items', 'any'), $value);
+
+                //Otherwise, just convert the type
+            } elseif($value !== null) {
+
+                DataTypeConverter::convertType($value, $type);
+
+            }
+
+        }
+
+        $this->values[$field] = $value;
+
+        return true;
 
     }
 
@@ -344,17 +379,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = $this;
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^(]*\))/', $key);
 
             end($parts);
 
             $lastKey = key($parts);
 
-            foreach($parts as $key => $part){
+            foreach($parts as $part_key => $part){
 
                 if($value instanceof Strict){
 
-                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
+
+                        $value = $value->find($matches[1], array_unflatten($matches[2]));
+
+                    }else{
+
+                        $value = $value->get($part, (($lastKey === $part_key) ? $exec_filters : false));
+
+                    }
 
                 }elseif($value instanceof DataBinderValue){
 
@@ -402,7 +445,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if ($exec_filters && is_array($def) && array_key_exists('read', $def))
-            $value = $this->execCallback($def['read'], $value, $key);
+            $value = $this->execCallback($def['read'], $value, $key, $def);
 
         return $value;
 
@@ -446,18 +489,33 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $item = $this;
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^(]*\))/', $key);
 
-            $key = array_pop($parts);
+            end($parts);
 
-            foreach($parts as $part){
+            $lastKey = key($parts);
 
-                if(!($item = $item->get($part, false)) instanceof Strict)
-                    return false;
+            foreach($parts as $part_key => $part){
+
+                if($item instanceof Strict){
+
+                    if($lastKey === $part_key){
+
+                        return $item->set($part, $value, $exec_filters);
+
+                    }elseif(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
+
+                        $item = $item->find($matches[1], array_unflatten($matches[2]));
+
+                    }
+
+                    $item = $item->get($part, false);
+
+                }
 
             }
 
-            return $item->set($key, $value, $exec_filters);
+            return false;
 
         }
 
@@ -503,7 +561,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             return false;
 
         if(array_key_exists('prepare', $def))
-            $value = $this->execCallback($def['prepare'], $value, $key);
+            $value = $this->execCallback($def['prepare'], $value, $key, $def);
 
         /*
          * Run any pre-update callbacks
@@ -512,7 +570,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('pre', $def['update']))
-            $value = $this->execCallback($def['update']['pre'], $value, $key);
+            $value = $this->execCallback($def['update']['pre'], $value, $key, $def);
 
         /*
          * Type check
@@ -537,7 +595,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * null value check.
          */
-        if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false && !array_key_exists('value', $def)) {
+        if ($value === null 
+            && ((array_key_exists('nulls', $def) && $def['nulls'] === false) || (array_key_exists('notnull', $def) && $def['notnull'] === true)) 
+            && !array_key_exists('value', $def)) {
 
             if (array_key_exists('default', $def))
                 $value = $def['default'];
@@ -561,7 +621,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
-        }
+        }elseif($value instanceof \Hazaar\Date && ($format = ake($def, 'format')))
+            $value->setFormat($format);
 
         /*
          * Field validation
@@ -695,7 +756,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('post', $def['update']))
-            $this->execCallback($def['update']['post'], $old_value, $key);
+            $this->execCallback($def['update']['post'], $old_value, $key, $def);
 
         return $value;
 
@@ -789,7 +850,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @return mixed
      */
-    private function execCallback($cb_def, $value, $key) {
+    private function execCallback($cb_def, $value, $key, $def) {
 
         if (is_array($cb_def)) {
 
@@ -797,7 +858,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $params = array(
                 $value,
-                $key
+                $key,
+                $def
             );
 
             if (array_key_exists(2, $cb_def) && is_array($cb_def[2]))
@@ -807,11 +869,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         } elseif (is_callable($cb_def)) {
 
-            $value = call_user_func($cb_def, $value, $key);
+            $value = call_user_func($cb_def, $value, $key, $def);
 
         } elseif (method_exists($this, $cb_def)){
             
-            $value = call_user_func(array($this, $cb_def), $value, $key);
+            $value = call_user_func(array($this, $cb_def), $value, $key, $def);
 
         }
 
@@ -971,7 +1033,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * Run any toArray callbacks
              */
             if (!$disable_callbacks && array_key_exists('toArray', $def))
-                $value = $this->execCallback($def['toArray'], $value, $key);
+                $value = $this->execCallback($def['toArray'], $value, $key, $def);
 
             if ($depth === null || $depth > 0) {
 
@@ -1069,7 +1131,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Run any pre-read callbacks
          */
         if (!$this->disable_callbacks && is_array($def) && array_key_exists('read', $def))
-            return $def['read']($value, $key);
+            return $def['read']($value, $key, $def);
 
         return $value;
 

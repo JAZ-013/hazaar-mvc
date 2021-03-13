@@ -39,8 +39,6 @@ class Smarty {
         'call'
     );
 
-    static private $modifiers = array('date_format', 'capitalize');
-
     protected $__content = null;
 
     protected $__compiled_content = '';
@@ -122,7 +120,7 @@ class Smarty {
 
         $default_params = array(
             'hazaar' => array('version' => HAZAAR_VERSION),
-            'application' => \Hazaar\Application::getInstance(),
+            'application' => $app,
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
@@ -197,6 +195,10 @@ class Smarty {
 
         }";
 
+        $errors = error_reporting();
+
+        error_reporting(0);
+
         eval($code);
 
         $obj = new $id;
@@ -207,6 +209,10 @@ class Smarty {
 
         $obj->render($params);
 
+        error_clear_last();
+
+        error_reporting($errors);
+        
         return ob_get_clean();
 
     }
@@ -395,12 +401,12 @@ class Smarty {
 
             foreach($modifiers as $modifier){
 
-                $params = explode(':', $modifier);
+                $params = str_getcsv($modifier, ':');
 
                 $func = array_shift($params);
 
                 if(Smarty\Modifier::has_function($func))
-                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', ' . implode(', ', $params) : '') . ')';
+                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) : '') . '")';
 
             }
 

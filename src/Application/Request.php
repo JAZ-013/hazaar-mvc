@@ -82,13 +82,13 @@ abstract class Request implements Request\_Interface {
     }
 
     /**
-     * Pop a part off the path.
+     * Shift a part off the front of the path.
      *
      * A "part" is simple anything delimited by '/' in the path section of the URL.
      *
      * @return string
      */
-    public function popPath(){
+    public function shiftPath(){
 
         if(!$this->path)
             return null;
@@ -111,6 +111,44 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Add a part to the start of the path
+     */
+    public function unshiftPath($part){
+
+        $this->path = '/' . $part . ((strlen($this->path) > 0) ? '/' . $this->path : '');
+        
+    }
+
+    /**
+     * Pop a part off the end of the path
+     */
+    public function popPath(){
+
+        if(!$this->path)
+            return null;
+
+        if(($pos = strrpos($this->path, '/')) === false){
+
+            $part = $this->path;
+
+            $this->path = null;
+
+        }else{
+
+            $part = substr($this->path, $pos + 1);
+
+            $this->path = substr($this->path, 0, $pos);
+
+        }
+
+        return $part;
+
+    }
+
+    /**
+     * Push a part on to the end of the path
+     */
     public function pushPath($part){
 
         $this->path .= ((strlen($this->path) > 0) ? '/' : '') . $part;

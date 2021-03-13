@@ -258,13 +258,13 @@ class RRD {
 
                 case 0x84: //Datapoint
 
-                    die('THIS SHOULD NOT HAPPEN AT FILE POSITION ' . ftell($h) . "\n");
+                    dieDieDie('THIS SHOULD NOT HAPPEN AT FILE POSITION ' . ftell($h) . "\n");
 
                     break;
 
                 default:
 
-                    die('Unexpected block type! TYPE=' . dechex(ord($type)) . "\n");
+                    dieDieDie('Unexpected block type! TYPE=' . dechex(ord($type)) . "\n");
 
                     break;
 
@@ -293,7 +293,7 @@ class RRD {
         $len = strlen($line) - strlen($ds['name']) - strlen($ds['desc']);
 
         if($len != RRD_DSDEF_LEN)
-            die('dataSource header length is not RRD_DSDEF_LEN(' . RRD_DSDEF_LEN . ") LENGTH=$len\n");
+            dieDieDie('dataSource header length is not RRD_DSDEF_LEN(' . RRD_DSDEF_LEN . ") LENGTH=$len\n");
 
         return fwrite($h, $line);
 
@@ -310,7 +310,7 @@ class RRD {
         $len = strlen($header) - strlen($archive['id']) - strlen($archive['desc']);
 
         if($len != RRD_ARCHIVE_HDR_LEN)
-            die('archive header length is not RRD_ARCHIVE_HDR_LEN(' . RRD_ARCHIVE_HDR_LEN . ") LENGTH=$len\n");
+            dieDieDie('archive header length is not RRD_ARCHIVE_HDR_LEN(' . RRD_ARCHIVE_HDR_LEN . ") LENGTH=$len\n");
 
         return fwrite($h, $header);
 
@@ -321,7 +321,7 @@ class RRD {
         $row = pack('vV', 0x84, $tick);
 
         if(strlen($row) != RRD_ROW_HEADER_LEN)
-            die('Archive row length is not RRD_ROW_HEADER_LEN(' . RRD_ROW_HEADER_LEN . ') LENGTH=' . strlen($row));
+            dieDieDie('Archive row length is not RRD_ROW_HEADER_LEN(' . RRD_ROW_HEADER_LEN . ') LENGTH=' . strlen($row));
 
         foreach($values as $value)
             $row .= pack('f', $value);
@@ -535,7 +535,7 @@ class RRD {
                 foreach($rows as $tick => $values) {
 
                     if(count($values) != count($this->dataSources))
-                        die('All dataSources must be written in an update!');
+                        dieDieDie('All dataSources must be written in an update!');
 
                     //Get the current row we are working on
                     $row = $archive['last'] + 1;

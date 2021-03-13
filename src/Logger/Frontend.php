@@ -4,7 +4,7 @@ namespace Hazaar\Logger;
 
 class Frontend {
 
-    private        $level          = E_NOTICE;
+    private        $level          = E_ERROR;
 
     private        $backend;
 
@@ -25,16 +25,19 @@ class Frontend {
 
         $backend_class = 'Hazaar\\Logger\\Backend\\' . ucfirst($backend);
 
-        if(! $this->backend = new $backend_class($backend_options))
+        if(!class_exists($backend_class))
+            throw new Exception\NoBackend();
+
+        if(!($this->backend = new $backend_class($backend_options)))
             throw new Exception\NoBackend();
 
         if(is_numeric($level)) {
 
             $this->level = $level;
 
-        } else {
+        } elseif(($this->level = $this->backend->getLogLevelId($level)) === false){
 
-            $this->level = $this->backend->getLogLevelId($level);
+            $this->level = E_ERROR;
 
         }
 
@@ -54,6 +57,8 @@ class Frontend {
     static public function initialise($level = NULL, $backend = NULL, $backend_options = array()) {
 
         Frontend::$logger = new Frontend($level, $backend, $backend_options);
+
+        eval('class log extends \Hazaar\Logger\Frontend{};');
 
     }
 
@@ -82,21 +87,48 @@ class Frontend {
 
     }
 
-    static public function i($tag, $message){
-
-        Frontend::write($tag, $message, E_NOTICE);
-
-    }
-
-    static public function w($tag, $message){
-
-        Frontend::write($tag, $message, E_WARNING);
-
-    }
-
+    /**
+     * Log an ERROR message
+     */
     static public function e($tag, $message){
 
-        Frontend::write($tag, $message, E_ERROR);
+        Frontend::write($tag, $message, LOG_ERR);
+
+    }
+
+    /**
+     * Log a WARNING message
+     */
+    static public function w($tag, $message){
+
+        Frontend::write($tag, $message, LOG_WARNING);
+
+    }
+
+    /**
+     * Log a NOTICE message
+     */
+    static public function n($tag, $message){
+
+        Frontend::write($tag, $message, LOG_NOTICE);
+
+    }
+
+    /**
+     * Log a INFO message
+     */
+    static public function i($tag, $message){
+
+        Frontend::write($tag, $message, LOG_INFO);
+
+    }
+
+    /**
+     * Log a DEBUG message
+     */
+    static public function d($tag, $message){
+
+        Frontend::write($tag, $message, LOG_DEBUG);
 
     }
 

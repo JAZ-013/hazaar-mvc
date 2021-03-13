@@ -24,16 +24,15 @@ class FileBrowser {
      *
      * @param       string $connect The URL to connect to
      */
-    function __construct($name, $connect, $params = array()) {
+    function __construct($name, $settings, $params = array()) {
 
         $this->div = new \Hazaar\Html\Div(NULL, $params);
 
         $this->div->id($this->name = $name);
 
-        if(! $connect)
-            $connect = new \Hazaar\Application\Url('hazaarBrowser');
-
-        $this->settings = new \Hazaar\Map(array('connect' => (string)$connect));
+        $this->settings = new \Hazaar\Map([
+            'connect' => (string) new \Hazaar\Application\Url('media')
+        ], $settings);
 
         $this->jquery = \Hazaar\Html\jQuery::getInstance();
 
