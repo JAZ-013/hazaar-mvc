@@ -1289,6 +1289,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             topbar: true
         }, arg1);
         host.settings.mode = host._mode(host.settings.mode);
+        if (typeof host.settings.root === 'string') host.settings.root = host.settings.root.split(':')
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
                 icon: host.settings.mode === 'grid' ? 'grid' : 'list',

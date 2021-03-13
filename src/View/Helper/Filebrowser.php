@@ -29,8 +29,7 @@ class Filebrowser extends \Hazaar\View\Helper {
         $this->requires('jQuery', array('ui' => TRUE));
 
         $this->options = new \Hazaar\Map(array(
-            'connect'    => $this->application->url('media'),
-            'stylesheet' => TRUE
+            'stylesheet' => true
         ));
 
     }
@@ -51,9 +50,9 @@ class Filebrowser extends \Hazaar\View\Helper {
 
     }
 
-    public function get($name, $connect = NULL, $params = array()) {
+    public function get($name, $settings = null, $params = array()) {
 
-        return new \Hazaar\View\Widgets\FileBrowser($name, $this->options->connect, $params);
+        return new \Hazaar\View\Widgets\FileBrowser($name, $this->options->merge($settings), $params);
 
     }
 
