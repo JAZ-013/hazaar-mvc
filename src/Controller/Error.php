@@ -326,7 +326,7 @@ class Error extends \Hazaar\Controller\Action {
 
             $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-            $error['config'] = $this->application->config->toArray();
+            $error['config'] = $this->application->config->toSecureArray();
 
         }
 
@@ -428,7 +428,8 @@ class Error extends \Hazaar\Controller\Action {
             'context' => $this->errcontext,
             'class' => $this->errclass,
             'type' => $this->errtype,
-            'short_message' => ($this->short_message ? $this->short_message : $this->status)
+            'short_message' => ($this->short_message ? $this->short_message : $this->status),
+            'config' => array_to_dot_notation($this->application->config->toSecureArray())
         );
 
         $view->trace = $this->callstack;
