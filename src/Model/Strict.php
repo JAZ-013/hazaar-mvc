@@ -1332,7 +1332,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if(empty($value) && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
 
-                $values[$key]['value'] = $value;
+                $values[$key]['value'] = (string)$value;
 
             }
 
