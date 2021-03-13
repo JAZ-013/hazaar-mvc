@@ -2,6 +2,11 @@
 
 namespace Hazaar\File;
 
+use \Hazaar\Application;
+
+use \Hazaar\File;
+use \Hazaar\File\Dir;
+
 class Manager implements Backend\_Interface {
 
     static private $backend_aliases = array(
@@ -37,6 +42,8 @@ class Manager implements Backend\_Interface {
     public         $name;
 
     private        $failover = false;
+
+    private        $in_failover = false;
 
     function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
 
@@ -77,9 +84,24 @@ class Manager implements Backend\_Interface {
 
     }
 
+    function __destruct(){
+
+        try{
+
+            if($this->failover && $this->in_failover === false)
+                $this->failoverSync();
+
+        }catch(\Exception $e){
+
+            //Silently make no difference to the world around you
+
+        }
+
+    }
+
     static public function getAvailableBackends(){
 
-        $composer = \Hazaar\Application::getInstance()->composer();
+        $composer = Application::getInstance()->composer();
 
         if(!property_exists($composer, 'require'))
             return false;
@@ -142,7 +164,7 @@ class Manager implements Backend\_Interface {
      */
     static public function select($name, $options = null){
 
-        $config = new \Hazaar\Application\Config('media');
+        $config = new Application\Config('media');
 
         if(!$config->has($name))
             return false;
@@ -180,10 +202,9 @@ class Manager implements Backend\_Interface {
 
     public function activateFailover(){
 
-        $this->failover = new Manager('local', array('root' => \Hazaar\Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name)));
-
-        if(!$this->failover->exists('/'))
-            $this->failover->create(true);
+        $this->failover = new Manager('local', array(
+            'root' => Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name, true)
+        ));
 
     }
 
@@ -200,7 +221,7 @@ class Manager implements Backend\_Interface {
 
             $item = $this->failover->get($name);
 
-            if($item instanceof Dir){
+            if($item->is_dir()){
 
                 if($this->backend->exists($name) || $this->backend->mkdir($name))
                     $clean['dir'][] = $name;
@@ -330,24 +351,23 @@ class Manager implements Backend\_Interface {
 
     }
 
-    /*
-     * Files and Metadata
+    /**
+     * Return a file object for a given path.
+     * 
+     * @param mixed $path The path to a file object
+     * 
+     * @return File The File object.
      */
     public function get($path) {
 
-        $path = $this->fixPath($path);
-
-        if($this->backend->is_dir($path))
-            return new Dir($path, $this);
-
-        return new \Hazaar\File($path, $this);
+        return new \Hazaar\File($this->fixPath($path), $this);
 
     }
 
     /**
-     * Return a directory object for a pgiven path.
+     * Return a directory object for a given path.
      *
-     * @param mixed $path The path to create a directory object for
+     * @param mixed $path The path to a directory object
      *
      * @return Dir The directory object.
      */
@@ -440,16 +460,20 @@ class Manager implements Backend\_Interface {
 
         }catch(Backend\Exception\Offline $e){
 
-            if($this->failover){
+            if(!$this->failover)
+                throw $e;
 
-                $f = $this->failover->get($file); //Make the file as a directory to store logs
+            $this->in_failover = true;
 
-                if($f->is_dir())
-                    throw new \Exception('File exists and is not a file!');
+            $f = $this->failover->get($file); //Make the file as a directory to store logs
 
-                $result = $f->put_contents($data) > 0;
+            if($f->is_dir())
+                throw new \Exception('File exists and is not a file!');
 
-            }
+            if(!$f->parent()->exists())
+                $f->parent()->create(true);
+
+            $result = $f->put_contents($data) > 0;
 
         }
 
@@ -665,7 +689,7 @@ class Manager implements Backend\_Interface {
 
     public function uri($path = null){
 
-        return new \Hazaar\Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
+        return new Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
 
     }
 

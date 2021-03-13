@@ -150,7 +150,7 @@ class BrowserConnector {
 
             while(($file = $dir->read()) != FALSE) {
 
-                if($file instanceof Dir)
+                if($file->is_dir())
                     $info['dirs']++;
 
             }
@@ -185,7 +185,7 @@ class BrowserConnector {
 
                 while(($file = $dir->read()) !== FALSE) {
 
-                    if(! $file instanceof Dir)
+                    if(!$file->is_dir())
                         continue;
 
                     $tree[] = $this->info($source, $file);

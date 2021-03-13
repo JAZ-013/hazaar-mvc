@@ -60,7 +60,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         $this->host_info = parse_url($this->options['webURL']);
 
         //Forces loading the root folder
-        $this->info('/');
+        //$this->info('/');
 
     }
 
@@ -224,28 +224,36 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         for($i = 0; $i <$retries; $i++){
 
-            $this->authorise();
+            try{
 
-            if($method === 'POST' || $method === 'PUT')
-                $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
+                $this->authorise();
 
-            $request = new Request($url, $method, 'application/json; OData=verbose');
+                if($method === 'POST' || $method === 'PUT')
+                    $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
 
-            $request->setURIEncode(false);
+                $request = new Request($url, $method, 'application/json; OData=verbose');
 
-            $request->setHeader('Accept', 'application/json; OData=verbose');
+                $request->setURIEncode(false);
 
-            if(is_array($extra_headers)){
+                $request->setHeader('Accept', 'application/json; OData=verbose');
 
-                foreach($extra_headers as $key => $value)
-                    $request->setHeader($key, $value);
+                if(is_array($extra_headers)){
+
+                    foreach($extra_headers as $key => $value)
+                        $request->setHeader($key, $value);
+
+                }
+
+                if($body !== null)
+                    $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
+
+                $response = $this->send($request);
+
+            }catch(\Exception $e){
+
+                throw new Exception\Offline();
 
             }
-
-            if($body !== null)
-                $request->setBody((($body instanceof \stdClass || is_array($body) ? json_encode($body) : $body)));
-
-            $response = $this->send($request);
 
             if(in_array($response->status, array(200, 201)))
                 return $response->body();
@@ -793,8 +801,6 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Write the contents of a file
     public function write($file, $data, $content_type = null, $overwrite = FALSE) {
 
-        //throw new Exception\Offline();
-        
         $url = $this->_folder(dirname($file), "Files/add(url='" . $this->encodePath($file) . "',overwrite=" . strbool($overwrite) . ")");
 
         $result = $this->_query($url, 'POST', $data, null, $response);

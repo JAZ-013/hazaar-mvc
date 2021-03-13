@@ -655,7 +655,7 @@ class Dir implements _Interface {
 
                     $result = true;
 
-                    if($item instanceof Dir){
+                    if($item->is_dir()){
 
                         if($recursive === false)
                             continue 2;
