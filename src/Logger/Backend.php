@@ -30,6 +30,10 @@ abstract class Backend implements Backend\_Interface {
 
     }
 
+    public function init(){
+
+    }
+
     public function postRun() {
 
         //do nothing

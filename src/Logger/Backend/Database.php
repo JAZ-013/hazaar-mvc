@@ -38,7 +38,7 @@ class Database extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($message, $level = E_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE) {
 
         if($this->failed)
             return null;
@@ -46,6 +46,7 @@ class Database extends \Hazaar\Logger\Backend {
         try {
 
             $row = array(
+                'tag' => $tag,
                 'message' => $message,
                 'level'   => $level
             );
@@ -78,5 +79,3 @@ class Database extends \Hazaar\Logger\Backend {
     }
 
 }
-
-

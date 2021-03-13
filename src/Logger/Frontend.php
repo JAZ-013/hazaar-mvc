@@ -25,7 +25,10 @@ class Frontend {
 
         $backend_class = 'Hazaar\\Logger\\Backend\\' . ucfirst($backend);
 
-        if(! $this->backend = new $backend_class($backend_options))
+        if(!class_exists($backend_class))
+            throw new Exception\NoBackend();
+
+        if(!($this->backend = new $backend_class($backend_options)))
             throw new Exception\NoBackend();
 
         if(is_numeric($level)) {

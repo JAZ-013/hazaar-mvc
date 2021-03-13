@@ -299,7 +299,7 @@ function dieDieDie($err){
 
     $err_string = 'An unknown error has occurred';
 
-    if($err instanceof \Exception){
+    if($err instanceof \Exception || $err instanceof \Error){
 
         $err_string = $err->getMessage();
 

@@ -144,6 +144,7 @@ Currently we only have an example for PostgreSQL but you can easily create the s
 CREATE TABLE log
 (
   id serial NOT NULL,
+  tag text,
   message text,
   remote inet,
   "timestamp" timestamp with time zone,

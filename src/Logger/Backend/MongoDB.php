@@ -35,14 +35,14 @@ class MongoDB extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($message, $level = E_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE) {
 
         if($this->failed)
             return null;
 
         try {
 
-            $doc = array('message' => $message);
+            $doc = array('tag' => $tag, 'message' => $message);
 
             $remote = $_SERVER['REMOTE_ADDR'];
 
@@ -74,5 +74,3 @@ class MongoDB extends \Hazaar\Logger\Backend {
     }
 
 }
-
-
