@@ -265,8 +265,24 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if($erase)
             $this->elements = $this->defaults;
 
-        return TRUE;
+        return $this;
 
+    }
+
+    /**
+     * Merge this Map and new values into a new Map
+     * 
+     * This is similar to Map::populate() except that the existing values will be removed first and 
+     * new values will be added and/or overwrite those existing values.
+     * 
+     * @param array|\Hazaar\Map $array The array being merged in.
+     */
+    public function merge($array){
+
+        $array = self::is_array($array) ? ($array instanceof Map ? $array->toArray() : $array) : [];
+
+        return new Map($this->toArray(), $array);
+        
     }
 
     /**
