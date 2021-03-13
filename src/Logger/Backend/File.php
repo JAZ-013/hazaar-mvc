@@ -52,7 +52,7 @@ class File extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($tag, $message, $level = E_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE) {
 
         if(!$this->hLog)
             return false;
@@ -78,7 +78,7 @@ class File extends \Hazaar\Logger\Backend {
 
         fwrite($this->hLog, implode(' | ', $line) . "\r\n");
 
-        if($this->hErr && $level == E_ERROR)
+        if($this->hErr && $level == LOG_NOTICE)
             fwrite($this->hErr, implode(' | ', $line) . "\r\n");
 
         return true;

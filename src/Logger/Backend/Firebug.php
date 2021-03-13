@@ -1,35 +1,7 @@
 <?php
-/**
- * Hazaar! Framework
- *
- * LICENSE
- *
- * This source file is subject to the Apache Licence, Version 2.0 that is bundled
- * with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://www.hazaarmvc.com/docs/introduction/licence
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@hazaarmvc.com so we can send you a copy immediately.
- *
- * @category    File
- * @package     Hazaar
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
- * @license     http://www.hazaarmvc.com/docs/introduction/licence Apache Licence, Version 2.0
- * @version     $Id: Application.php 24593 2012-08-29 20:35:02Z jamie $
- */
 
 namespace Hazaar\Logger\Backend;
 
-/**
- * File Upload Class
- *
- * @category    File
- * @package     Hazaar
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
- * @license     http://www.hazaarmvc.com/docs/introduction/licence Apache Licence, Version 2.0
- * @since       1.0.0
- */
 class Firebug extends \Hazaar\Logger\Backend {
 
     private $fb;
@@ -42,21 +14,21 @@ class Firebug extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($msg, $level = E_NOTICE) {
+    public function write($tag, $msg, $level = LOG_NOTICE) {
 
         switch($level) {
 
-            case E_ERROR:
+            case LOG_ERR:
                 $this->fb->error($msg);
 
                 break;
 
-            case E_WARNING:
+            case LOG_WARNING:
                 $this->fb->warn($msg);
 
                 break;
 
-            case E_NOTICE:
+            case LOG_NOTICE:
                 $this->fb->info($msg);
 
                 break;
