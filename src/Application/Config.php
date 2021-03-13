@@ -183,15 +183,21 @@ class Config extends \Hazaar\Map {
 
                 }
 
-                if($mtime > filemtime($source))
-                    list($secure_keys, $source) = apcu_fetch($cache_key);
+                if($mtime > filemtime($source)){
+
+                    $cache_data = apcu_fetch($cache_key);
+
+                    if(is_array($cache_data) && count($cache_data) === 2 && isset($cache_data[0]) && isset($cache_data[1]))
+                        list($secure_keys, $source) = apcu_fetch($cache_key);
+
+                }
 
             }
 
         }
 
         //If we have loaded this config file, continue on to the next
-        if(!is_string($source)){
+        if($source && !is_string($source)){
 
             $this->secure_keys = array_merge($this->secure_keys, $secure_keys);
 
