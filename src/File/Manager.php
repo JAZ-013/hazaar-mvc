@@ -696,7 +696,8 @@ class Manager implements Backend\_Interface {
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE){
 
-        $items = $this->backend->scandir($this->fixPath($path));
+        if(!($items = $this->backend->scandir($this->fixPath($path))))
+            return false;
 
         foreach($items as &$item){
 

@@ -350,9 +350,12 @@ class Dir implements _Interface {
 
     public function read($regex_filter = NULL) {
 
-        if(! is_array($this->files)) {
+        if(!is_array($this->files)) {
 
-            $this->files = $this->manager->scandir($this->path, $regex_filter, $this->allow_hidden);
+            if(!($files = $this->manager->scandir($this->path, $regex_filter, $this->allow_hidden)))
+                return false;
+
+            $this->files = $files;
 
             if(($file = $this->rewind()) == FALSE)
                 return FALSE;
