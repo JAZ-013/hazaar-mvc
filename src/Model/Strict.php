@@ -509,6 +509,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     }
 
+                    if(!$item)
+                        return false;
+
                     $item = $item->get($part, false);
 
                 }
