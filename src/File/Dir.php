@@ -300,9 +300,7 @@ class Dir implements _Interface {
 
     public function isEmpty(){
 
-        $files = $this->manager->scandir($this->path);
-
-        return (count($files) === 0);
+        return $this->manager->isEmpty($this->path);
 
     }
 

@@ -624,6 +624,14 @@ class Manager implements Backend\_Interface {
 
     }
 
+    public function isEmpty($path){
+
+        $files = $this->backend->scandir($this->fixPath($path));
+
+        return (count($files) === 0);
+
+    }
+
     public function filesize($path) {
 
         return $this->backend->filesize($this->fixPath($path));
