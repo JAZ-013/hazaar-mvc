@@ -360,7 +360,10 @@ class Local implements _Interface {
         if(file_exists($path))
             return false;
 
-        return mkdir($path);
+        if(!($result = @mkdir($path)))
+            throw new \Exception('Permission denied creating directory: ' . $path);
+
+        return true;
 
     }
 

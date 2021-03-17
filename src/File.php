@@ -1436,4 +1436,16 @@ class File implements File\_Interface, \JsonSerializable {
 
     }
 
+    public function perms(){
+
+        return $this->manager->fileperms($this->source_file);
+
+    }
+
+    public function chmod($mode){
+
+        return $this->manager->chmod($this->source_file, $mode);
+        
+    }
+
 }

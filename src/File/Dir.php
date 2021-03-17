@@ -437,49 +437,45 @@ class Dir implements _Interface {
             if(! $this->manager->is_dir($target))
                 return FALSE;
 
-        } else if(! $this->manager->mkdir($target))
+        } else if(!$this->manager->mkdir($target))
             return FALSE;
 
-        $dir = $this->manager->scandir($this->path, NULL, TRUE);
+        $dir = $this->manager->scandir($this->path, null, true);
 
         foreach($dir as $cur) {
 
-            if($cur == '.' || $cur == '..')
+            if($cur->name() === '.' || $cur->name() === '..')
                 continue;
 
-            $sourcePath = $this->path . '/' . $cur;
-
-            $targetPath = $target . '/' . $cur;
-
-            if(is_array($transport_callback) && count($transport_callback) == 2) {
+            if(is_array($transport_callback) && count($transport_callback) === 2) {
 
                 /*
                  * Call the transport callback.  If it returns true, do the copy.  False means do not copy this file.
                  * This gives the callback a chance to perform the copy itself in a special way, or ignore a
                  * file/directory
                  */
-                if(! call_user_func_array($transport_callback, array($sourcePath, $targetPath)))
+                if(!call_user_func_array($transport_callback, array($cur->fullpath(), $target . '/' . $cur->basename())))
                     continue;
 
             }
 
-            if($this->manager->is_dir($sourcePath)) {
+            if($cur->is_dir()) {
 
                 if($recursive) {
 
-                    $dir = new Dir($sourcePath, $this->manager);
+                    $dir = new Dir($cur, $this->manager);
 
-                    $dir->copyTo($targetPath, $recursive, $transport_callback);
+                    $dir->copyTo($target, $recursive, $transport_callback);
 
                 }
 
             } else {
 
-                $perms = $this->manager->fileperms($sourcePath);
+                $perms = $cur->perms();
 
-                $this->manager->copy($sourcePath, $targetPath);
+                $new = $cur->copyTo($target);
 
-                $this->manager->chmod($targetPath, $perms);
+                $new->chmod($perms);
 
             }
 
@@ -522,7 +518,7 @@ class Dir implements _Interface {
 
     public function toArray(){
 
-        return $this->manager->scandir($this->path, null, $this->allow_hidden);
+        return $this->manager->toArray($this->path, null, $this->allow_hidden);
 
     }
 

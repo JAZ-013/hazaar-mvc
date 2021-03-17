@@ -377,6 +377,12 @@ class Manager implements Backend\_Interface {
 
     }
 
+    public function toArray($path, $sort = SCANDIR_SORT_ASCENDING, $allow_hidden = false){
+
+        return $this->backend->scandir($this->fixPath($path), $sort, $allow_hidden);
+
+    }
+
     public function find($search = NULL, $path = '/', $case_insensitive = false) {
 
         if(method_exists($this->backend, 'find'))
