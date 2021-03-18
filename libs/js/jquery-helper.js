@@ -712,6 +712,7 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 dataBinderArray.prototype.populate = function (elements) {
     this.empty();
     if (!elements || typeof elements !== 'object') return;
+    else if (elements instanceof dataBinderArray) elements = elements.save();
     else if (!Array.isArray(elements))
         elements = Object.values(elements);
     for (let x in elements) {
