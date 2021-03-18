@@ -496,7 +496,7 @@ class Dir implements _Interface {
 
     }
 
-    public function getDir($child){
+    public function getDir($path){
 
         return new \Hazaar\File\Dir($this->path($path), $this->manager);
 
