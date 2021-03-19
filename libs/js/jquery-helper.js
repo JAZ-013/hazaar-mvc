@@ -167,15 +167,15 @@ dataBinderValue.prototype._node_name = function () {
     return '[data-bind="' + this._parent._attr_name(this._name) + '"]' + (this._parent._namespace ? '[data-bind-ns="' + this._parent._namespace + '"]' : ':not([data-bind-ns])');
 };
 
-dataBinderValue.prototype.set = function (value, label, other, update) {
+dataBinderValue.prototype.set = function (value, label, other, no_update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
-        || (value === this._value && update !== true) && label === this._label
+        || (value === this._value && no_update === true) && label === this._label
         && (typeof other === 'undefined' || other === this._other)) return;
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
-    if (update !== false) {
+    if (no_update !== true) {
         this._parent._update(this._name, true);
         this._parent._trigger(this._name, this);
     }
@@ -188,8 +188,8 @@ dataBinderValue.prototype.save = function (no_label) {
     return this.value;
 };
 
-dataBinderValue.prototype.empty = function (update) {
-    return this.set(null, null, null, update);
+dataBinderValue.prototype.empty = function (no_update) {
+    return this.set(null, null, null, no_update);
 };
 
 dataBinderValue.prototype.update = function () {
@@ -222,7 +222,7 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._enabled = true;
     this._data = {};
     if (Object.keys(data).length > 0)
-        for (let key in data) this.add(key, data[key]);
+        for (let key in data) this.set(key, data[key]);
     Object.defineProperties(this, {
         "length": {
             get: function () {
@@ -272,10 +272,14 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     return value;
 };
 
-dataBinder.prototype.add = function (key, value) {
+dataBinder.prototype.set = function (key, value) {
+    if (!(key in this._attributes)) this._defineProperty(key);
     this._attributes[key] = this.__convert_type(key, value);
     this._update(key, false);
-    this._defineProperty(key);
+};
+
+dataBinder.prototype.add = function (key, value) {
+    return this.set(key, value);
 };
 
 dataBinder.prototype._defineProperty = function (key) {
@@ -457,6 +461,7 @@ dataBinder.prototype.populate = function (items) {
 dataBinder.prototype.extend = function (items, dont_replace_with_nulls) {
     for (let x in items) {
         if (x in this._attributes) {
+            if (this._attributes[x] === items[x]) continue;
             if (this._attributes[x] instanceof dataBinder)
                 this[x].extend(items[x]);
             else if (this._attributes[x] instanceof dataBinderArray)
@@ -473,14 +478,14 @@ dataBinder.prototype.get = function (key) {
         return this._attributes[key];
 };
 
-dataBinder.prototype.empty = function (exclude) {
+dataBinder.prototype.empty = function (exclude, no_update) {
     if (typeof exclude !== 'undefined' && !Array.isArray(exclude)) exclude = [exclude];
     for (x in this._attributes) {
         if (exclude && exclude.indexOf(x) >= 0) continue;
         if (this._attributes[x] instanceof dataBinder
             || this._attributes[x] instanceof dataBinderArray
             || this._attributes[x] instanceof dataBinderValue)
-            this._attributes[x].empty();
+            this._attributes[x].empty(no_update);
         else this._attributes[x] = null;
     }
 };
@@ -748,7 +753,7 @@ dataBinderArray.prototype.watch = function (cb, args) {
 
 dataBinderArray.prototype.empty = function (no_update) {
     if (this._elements.length === 0) return false;
-    while(this.unset(0) !== false);
+    while(this.unset(0, no_update) !== false);
     this._elements = [];
     if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
