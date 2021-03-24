@@ -348,7 +348,7 @@ dataBinder.prototype._update = function (key, do_update) {
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
             else if (o.attr('type') === 'radio') {
-                o.prop('checked', do_update = (o.attr('value') === attr_value));
+                o.prop('checked', (o.attr('value') === attr_value));
             } else if (o.attr('data-bind-label') === 'true')
                 o.val(attr_item ? attr_item.label : null);
             else if (o.attr('data-bind-other') === 'true')
@@ -753,7 +753,7 @@ dataBinderArray.prototype.watch = function (cb, args) {
 
 dataBinderArray.prototype.empty = function (no_update) {
     if (this._elements.length === 0) return false;
-    while(this.unset(0, no_update) !== false);
+    while (this.unset(0, no_update) !== false);
     this._elements = [];
     if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
