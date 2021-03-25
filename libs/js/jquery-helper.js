@@ -790,13 +790,15 @@ dataBinderArray.prototype.data = function (name, value) {
     return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
 
-dataBinderArray.prototype[Symbol.iterator] = function () {
-    return {
-        index: 0,
-        data: this._elements,
-        next: function () {
-            if (this.index < this.data.length) return { value: this.data[this.index++], done: false };
-            return { done: true };
+if (typeof Symbol === 'function') {
+    dataBinderArray.prototype[Symbol.iterator] = function () {
+        return {
+            index: 0,
+            data: this._elements,
+            next: function () {
+                if (this.index < this.data.length) return { value: this.data[this.index++], done: false };
+                return { done: true };
+            }
         }
     }
 }
