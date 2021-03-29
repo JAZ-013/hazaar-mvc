@@ -170,8 +170,7 @@ dataBinderValue.prototype._node_name = function () {
 dataBinderValue.prototype.set = function (value, label, other, no_update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
-        || (value === this._value && no_update === true) && label === this._label
-        && (typeof other === 'undefined' || other === this._other)) return;
+        || (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other))) return;
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
