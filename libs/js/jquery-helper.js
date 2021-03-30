@@ -353,7 +353,7 @@ dataBinder.prototype._update = function (key, do_update) {
             else if (o.attr('data-bind-other') === 'true')
                 o.val(attr_item ? attr_item.other : null);
             else if (o.is("select")) {
-                if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
+                if (!attr_item.other && o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else if (o.is("img")) {
