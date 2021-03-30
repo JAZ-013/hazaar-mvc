@@ -379,7 +379,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = $this;
 
-            $parts = preg_split('/\.(?![^(]*\))/', $key);
+            $parts = preg_split('/\.(?![^([]*[\)\]])/', $key);
 
             end($parts);
 
@@ -389,9 +389,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if($value instanceof Strict){
 
-                    if(preg_match('/^(\w+)\(([\w\d\.=\s"]+)\)$/', $part, $matches)){
+                    if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"]+)[\)\]]$/', $part, $matches)){
 
-                        $value = $value->find($matches[1], array_unflatten($matches[2]));
+                        $exec_filters = ($matches[2] === '[') ? false : true;
+
+                        $value = $value->find($matches[1], array_unflatten($matches[3]));
 
                     }else{
 
