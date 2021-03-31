@@ -398,29 +398,27 @@ class Dir implements _Interface {
 
         $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
-        foreach($dir as $file) {
+        foreach($dir as $item) {
 
-            if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
+            if(($show_hidden === FALSE && substr($item->name(), 0, 1) == '.'))
                 continue;
 
-            if($file->is_dir() && ($depth === null || $depth > 0)) {
+            if($item->is_dir() && ($depth === null || $depth > 0)) {
 
-                $subdir = new \Hazaar\File\Dir($file, $this->manager, $relative_path);
-
-                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
+                if($subdiritems = $item->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
                     $list = array_merge($list, $subdiritems);
 
             }else{
 
                 if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
 
-                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
+                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $item) == 0)
                         continue;
 
-                } elseif(! fnmatch($pattern, $file->basename(), $case_sensitive ? 0 : FNM_CASEFOLD))
+                } elseif(! fnmatch($pattern, $item->basename(), $case_sensitive ? 0 : FNM_CASEFOLD))
                     continue;
 
-                $list[] = $file;
+                $list[] = $item;
 
             }
 
