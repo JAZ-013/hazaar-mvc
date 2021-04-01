@@ -259,6 +259,12 @@ class File implements File\_Interface, \JsonSerializable {
         return ($path ? $path . '/' : '') . $this->basename();
 
     }
+    
+    public function setRelativePath($path){
+
+        $this->relative_path = $path;
+        
+    }
 
     public function extension() {
 

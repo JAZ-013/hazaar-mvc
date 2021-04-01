@@ -16,19 +16,19 @@ define('HZ_SYNC_ERROR', 6);
 
 class Dir implements _Interface {
 
-    private $path;
+    protected $path;
 
-    private $backend;
+    protected $backend;
 
-    private $manager;
+    protected $manager;
 
-    private $files;
+    protected $files;
 
-    private $allow_hidden = FALSE;
+    protected $allow_hidden = FALSE;
 
-    private $__media_uri;
+    protected $__media_uri;
 
-    private $relative_path;
+    protected $relative_path;
 
     function __construct($path, Manager $manager = null, $relative_path = null) {
 
@@ -95,6 +95,82 @@ class Dir implements _Interface {
     public function fullpath($suffix = null){
 
         return $this->path($suffix);
+
+    }
+
+    /**
+     * Get the relative path of the directory.
+     *
+     * If the file was returned from a [[Hazaar\File\Dir]] object, then it will have a stored
+     * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File\\
+     * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
+     * be returned.
+     *
+     * @param mixed $path Optional path to use as the relative path.
+     *
+     * @return boolean|string The relative path.  False when $path is not valid
+     */
+    public function relativepath($path = null){
+
+        if($path !== null){
+
+            if($path instanceof File)
+                $path = $path->dirname();
+            if($path instanceof File\Dir)
+                $path = $path->fullpath();
+            elseif(!is_string($path))
+                return false;
+
+            $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->path)), '/'));
+
+            $path = explode('/', trim(str_replace('\\', '/', $path), '/'));
+
+            $index = 0;
+
+            while (isset($source_path[$index])
+                && isset($path[$index])
+                && $source_path[$index] === $path[$index])
+                $index++;
+
+            $diff = count($source_path) - $index;
+
+            return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
+
+        }
+
+
+        if(!$this->relative_path)
+            return $this->fullpath();
+
+        $dir_parts = explode('/', $this->dirname());
+
+        $rel_parts = explode('/', $this->relative_path);
+
+        $path = null;
+
+        foreach($dir_parts as $index => $part){
+
+            if(array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
+                continue;
+
+            $dir_parts =  array_slice($dir_parts, $index);
+
+            if(($count = count($rel_parts) - $index) > 0)
+                $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
+
+            $path = implode('/', $dir_parts);
+
+            break;
+
+        }
+
+        return ($path ? $path . '/' : '') . $this->basename();
+
+    }
+
+    public function setRelativePath($path){
+
+        $this->relative_path = $path;
 
     }
 
@@ -393,10 +469,8 @@ class Dir implements _Interface {
 
         $list = array();
 
-        if(!($dir = $this->manager->scandir($this->path, NULL, TRUE)))
+        if(!($dir = $this->manager->scandir($this->path, NULL, TRUE, $this->relative_path)))
             return null;
-
-        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
 
         foreach($dir as $item) {
 
