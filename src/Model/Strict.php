@@ -389,7 +389,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if($value instanceof Strict){
 
-                    if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"]+)[\)\]]$/', $part, $matches)){
+                    if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"\']+)[\)\]]$/', $part, $matches)){
 
                         $exec_filters = ($matches[2] === '[') ? false : true;
 
