@@ -656,7 +656,7 @@ class Application {
              * If the controller has specifically requested a return status code, set it now.
              */
             if($status = $controller->getStatus())
-                $this->response->setStatusCode($status);
+                $this->response->setStatus($status);
 
             $this->response->setCompression($this->config->app->get('compress', false));
             
