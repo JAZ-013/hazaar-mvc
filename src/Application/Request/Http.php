@@ -44,12 +44,6 @@ class Http extends \Hazaar\Application\Request {
     public $body;
 
     /**
-     * In the case where the request is of content-type application/json this is the decoded JSON body.
-     * @var object|array Body decoded with json_decode()
-     */
-    public $bodyJSON;
-
-    /**
      * @detail      The HTTP init method takes only a single optional argument which is the
      *              request array provided by PHP ($_REQUEST).
      *
@@ -337,6 +331,20 @@ class Http extends \Hazaar\Application\Request {
     public function getRequestBody() {
 
         return $this->body;
+
+    }
+
+    /**
+     * @detail      Returns the JSON decoded body of the request.  This will normally be null unless the request is
+     *              a POST or PUT and content-type is application/json.  
+     * 
+     * 
+     *
+     * @return      string The request body.
+     */
+    public function getJSONBody() {
+
+        return ($this->getContentType() === 'application/json') ? json_decode($this->body) : null;
 
     }
 
