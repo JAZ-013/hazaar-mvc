@@ -239,15 +239,6 @@ abstract class REST extends \Hazaar\Controller {
 
         $request_method = $this->request->method();
 
-        if($full_path == '/'){
-
-            if(!$this->allow_directory)
-                throw new \Hazaar\Exception('Directory listing is not allowed', 403);
-
-            return new \Hazaar\Controller\Response\Json($this->__describe_api());
-
-        }
-
         foreach($this->__rest_endpoints as $endpoint){
 
             foreach($endpoint['routes'] as $target => $route){
@@ -279,8 +270,20 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        if(!$this->__endpoint)
+        if(!$this->__endpoint){
+
+            if($full_path == '/'){
+
+                if(!$this->allow_directory)
+                    throw new \Hazaar\Exception('Directory listing is not allowed', 403);
+    
+                return new \Hazaar\Controller\Response\Json($this->__describe_api());
+    
+            }
+
             throw new \Hazaar\Exception('REST API Endpoint not found: ' . $full_path, 404);
+
+        }
 
         if(method_exists($this, 'init'))
             $this->init($this->request);
@@ -353,7 +356,7 @@ abstract class REST extends \Hazaar\Controller {
 
         $route = explode('/', ltrim($route, '/'));
 
-        if(count($path) != count($route))
+        if(count($path) !== count($route))
             return false;
 
         for($i = 0; $i < count($path); $i++){
@@ -382,6 +385,8 @@ abstract class REST extends \Hazaar\Controller {
                 else
                     settype($value, $matches[1]);
 
+                if($matches[1] === 'string' && $value === '')
+                    return false;
 
             }else{
 
