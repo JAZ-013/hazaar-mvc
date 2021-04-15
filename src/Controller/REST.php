@@ -285,8 +285,14 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        if(method_exists($this, 'init'))
-            $this->init($this->request);
+        if(method_exists($this, 'init')){
+
+            $response = $this->init($this->request);
+
+            if($response instanceof \Hazaar\Controller\Response)
+                return $response;
+
+        }
 
         return $this->__exec_endpoint($this->__endpoint, $this->request->getParams());
 
