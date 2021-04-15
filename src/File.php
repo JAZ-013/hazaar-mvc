@@ -503,17 +503,39 @@ class File implements File\_Interface, \JsonSerializable {
             if(($pos = strpos($bytes, ',', 5)) === false)
                 return false;
 
-            $info = explode(';', substr($bytes, 5, $pos - 5), 2);
+            $info = explode(';', $bytes);
 
-            list($content_type, $encoding) = ((count($info) > 1) ? $info : array($info, null));
+            if(!count($info) >= 2)
+                return false;
 
-            if($encoding == 'base64')
-                $this->contents = base64_decode(substr($bytes, $pos));
-            else
-                $this->contents = substr($bytes, $pos);
+            list($header, $content_type) = explode(':', array_shift($info));
+
+            if(!($header === 'data' && $content_type))
+                return false;
+
+            $content = array_pop($info);
+
+            if(($pos = strpos($content, ',')) !== false){
+
+                $encoding = substr($content, 0, $pos);
+
+                $content = substr($content, $pos + 1);
+
+            }
+
+            $this->contents = ($encoding == 'base64') ? base64_decode($content) : $content;
 
             if($content_type)
-                $this->mime_content_type($content_type);
+                $this->set_mime_content_type($content_type);
+
+            if(count($info) > 0){
+
+                $attributes = array_unflatten($info);
+
+                if(array_key_exists('name', $attributes))
+                    $this->source_file = $attributes['name'];
+
+            }
 
             return true;
 
