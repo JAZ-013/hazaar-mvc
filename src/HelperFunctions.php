@@ -1609,12 +1609,12 @@ function array_diff_assoc_recursive() {
  * This is basically a recursive version of PHP's get_object_vars().
  *
  * @param object $object The object to convert.
- * @return array|boolean Returns the converted object as an array or false on failure.
+ * @return array Returns the converted object as an array or the $object parameter if it is not an object.
  */
 function object_to_array($object){
 
     if(!is_object($object))
-        return false;
+        return $object;
 
     $array = get_object_vars($object);
 
