@@ -555,7 +555,14 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function get_encoded_contents(){
 
-        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->get_contents());
+        $data = 'data:' . $this->mime_content_type() . ';';
+        
+        if($this->source_file)
+            $data .= 'name=' . basename($this->source_file) . ';';
+
+        $data .= 'base64,' . \base64_encode($this->get_contents());
+
+        return $data;
 
     }
 
