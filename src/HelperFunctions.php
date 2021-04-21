@@ -1613,15 +1613,16 @@ function array_diff_assoc_recursive() {
  */
 function object_to_array($object){
 
-    if(!is_object($object))
-        return $object;
+    $array = is_object($object) ? get_object_vars($object) : $object;
 
-    $array = get_object_vars($object);
+    if(is_array($array)){
 
-    foreach($array as &$value) {
+        foreach($array as &$value) {
 
-        if(is_object($value))
-            $value = object_to_array($value);
+            if(is_object($value) || is_array($value))
+                $value = object_to_array($value);
+
+        }
 
     }
 
