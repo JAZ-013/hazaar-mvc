@@ -77,9 +77,16 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
                     list($item, $criteria) = explode('=', $matches[3]);
 
+                    if(($criteria[0] === '"' || $criteria[0] === "'") && $criteria[0] === substr($criteria, -1))
+                        $criteria = trim($criteria, '"\'');
+                    elseif(strpos($criteria, '.'))
+                        $criteria = floatval($criteria);
+                    elseif(is_numeric($criteria))
+                        $criteria = intval($criteria);
+
                     foreach($array as $elem){
 
-                        if((ake($elem, $item)) == $criteria){
+                        if((ake($elem, $item)) === $criteria){
 
                             $array = $elem;
 
