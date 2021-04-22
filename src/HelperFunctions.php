@@ -72,7 +72,8 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
                 
                 if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"\']+)[\)\]]$/', $part, $matches)){
 
-                    if(!(($array = ake($array, $matches[1], $default, $non_empty)) && (is_array($array) || $array instanceof \stdClass)) 
+                    if(!(($array = ake($array, $matches[1], $default, $non_empty)) 
+                        && (is_array($array) || $array instanceof \stdClass || $array instanceof \ArrayAccess)) 
                         || $array === $default) break;
 
                     list($item, $criteria) = explode('=', $matches[3]);
