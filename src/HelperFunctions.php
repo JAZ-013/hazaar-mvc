@@ -11,16 +11,23 @@
 /**
  * @brief Array/Object value normalizer
  *
- * @detail Returns a value from an arraym or a property from an object, if it exists. If it doesn't exist a default
+ * @detail Returns a value from an array or a property from an object, if it exists. If it doesn't exist a default
  * value can be specified.  Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
  *
- * Keys may be specified using dot-notation.  This allows ake to called only once instead of for each
+ * Keys may be specified using dot-notation.  This allows ake to be called only once instead of for each
  * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
  * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if
  * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
  * if the child is not an array or object.
+ * 
+ * If the key contains round or square brackets, then this is taken as a search parameter, allowing the specified
+ * element to be search for child elements that match the search criteria.  This search parameter can, and is
+ * actually designed to, be used with dot-notation.  So for example, you can call `ake($myarray, 'items(type.id=1).name')
+ * to find an element in the `items` sub-element of `$myarray` that has it's own `type` element with another 
+ * sub-element of `id` with a value that matches `1`.  As you can imagine, this allows quite a power way of accessing
+ * sub-elements of arrays/objects using a simple dot-notation search parameter.
  * 
  * The `$key` parameter can also be an array of keys.  In this case, the array will be searched for each key
  * and the first value found will be returned.  This is handy if you need a value that could be stored under
@@ -50,18 +57,49 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
         if(is_object($array)){
 
-            if(property_exists($array, $key) && ($non_empty === false || is_string($array->$key) === false || ($non_empty === true && trim($array->$key) !== NULL)))
+            if(isset($array->$key) && ($non_empty === false || is_string($array->$key) === false || ($non_empty === true && trim($array->$key) !== NULL)))
                 return $array->$key;
             elseif($array instanceof \ArrayAccess && isset($array[$key]))
                 return $array[$key];
 
         }
 
-        if(strpos($key, '.') !== false){
+        if(strpos($key, '.') !== false || strpos($key, '(') !== false || strpos($key, '[') !== false){
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^([]*[\)\]])/', $key);
 
-            foreach($parts as $part) if(($array = ake($array, $part, $default, $non_empty)) === $default) break;
+            foreach($parts as $part) {
+                
+                if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"\']+)[\)\]]$/', $part, $matches)){
+
+                    if(!(($array = ake($array, $matches[1], $default, $non_empty)) 
+                        && (is_array($array) || $array instanceof \stdClass || $array instanceof \ArrayAccess)) 
+                        || $array === $default) break;
+
+                    list($item, $criteria) = explode('=', $matches[3]);
+
+                    if(($criteria[0] === '"' || $criteria[0] === "'") && $criteria[0] === substr($criteria, -1))
+                        $criteria = trim($criteria, '"\'');
+                    elseif(strpos($criteria, '.'))
+                        $criteria = floatval($criteria);
+                    elseif(is_numeric($criteria))
+                        $criteria = intval($criteria);
+
+                    foreach($array as $elem){
+
+                        if((ake($elem, $item)) === $criteria){
+
+                            $array = $elem;
+
+                            break;
+
+                        }
+
+                    }
+
+                }elseif(($array = ake($array, $part, $default, $non_empty)) === $default) break;
+
+            }
 
             return $array;
 
