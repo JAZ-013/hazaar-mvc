@@ -338,5 +338,63 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
+    /**
+     * Returns the content of the element as a string containing all inner HTML
+     * 
+     * If the element has only text content, then this content is returned as is.  If the element contains
+     * other elements, then these elements are rendered into HTML and returned.
+     * 
+     * This differs from Block::text() in that it renders the HTML instead of just returning the text.
+     */
+    public function html(){
+
+        $out = '';
+
+        if(is_array($this->content)){
+
+            foreach($this->content as $element)
+                $out .= (string)$element;
+
+        }else $out = $this->content;
+            
+        return $out;
+
+    }
+
+    /**
+     * Returns the contents of the element as plain text
+     * 
+     * If the element has only text content, then this content is returned as is.  If the element contains
+     * other elements, then the same text() function is called on these elements to return their plain text
+     * content.
+     * 
+     * Child block elements are appended with <cr><cr> to aid with formatting and potentially parsing with 
+     * other industry standard markup language processors.
+     * 
+     * This differs from Block::html() in that it does not render any HTML and instead just returns the plain
+     * text contents.
+     * 
+     */
+    public function text(){
+
+        $out = '';
+
+        if(is_array($this->content)){
+
+            foreach($this->content as $element){
+
+                if($element instanceof Inline)
+                    continue;
+
+                $out .= (string)trim((($element instanceof Block) ? $element->text() : $element), "\n") . "\n\n";
+
+            }
+
+        }
+
+        return $out;
+
+    }
+
 }
 
