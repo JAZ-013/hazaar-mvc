@@ -1543,6 +1543,42 @@ function replace_recursive(){
 }
 
 /**
+ * Replaces a property in an object at key with another value
+ * 
+ * This allows a property in am object to be replaced.  Normally this would not be 
+ * difficult, unless the target property is an nth level deep object.  This function
+ * allows that property to be targeted with a key name in dot-notation.
+ * 
+ * @param $target object The target in which the property will be replaced.
+ * @param $key string|array A key in either an array or dot-notation
+ * @param $value mixed The value that will be used as the replacement.
+ * 
+ * @return boolean True if the value was found and replaced.  False otherwise. 
+ */
+function replace_property(&$target, $key, $value){
+
+    $cur =& $target;
+
+    $parts = is_array($key) ? $key : explode('.', $key);
+
+    $last = array_pop($parts);
+
+    foreach($parts as $part){
+
+        if(!property_exists($cur, $part))
+            return false;
+
+        $cur =& $cur->$part;
+
+    }
+
+    $cur->$last = $value;
+
+    return true;
+
+}
+
+/**
  * Recrusively convert a traversable object into a normal array
  *
  * This is the same as the built-in PHP iterator_to_array() function except it will recurse into any \Traversable objects it contains.
