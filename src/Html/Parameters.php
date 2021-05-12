@@ -19,6 +19,8 @@ class Parameters implements \Countable {
 
     private $quote_params = TRUE;
 
+    private $multi_value = [];
+
     /**
      * @detail      HTML parameter class constructor
      *
@@ -102,16 +104,42 @@ class Parameters implements \Countable {
 
         }
 
+        if(array_key_exists($key, $this->multi_value)){
+
+            if(!(array_key_exists($key, $this->params) && is_array($this->params[$key])))
+                $this->params[$key] = [];
+
+            $this->params[$key] = array_unique(array_merge($this->params[$key], explode($this->multi_value[$key], trim($value, $this->multi_value[$key]))));
+
+            return $value;
+
+        }
+
         return $this->params[$key] = $value;
 
     }
 
-    public function remove($key){
+    /**
+     * Remove a parameter, optionally for only a specific value
+     * 
+     * If only $key is specified, then the entire parameter is removed.  If the $value is specified and the parameter
+     * is a multi-value enabled parameter, then only the specified value in the parameter is removed.
+     * 
+     * @param string $key The name of the parameter.
+     * 
+     * @param string $value The optional parameter value to be removed.
+     */
+    public function remove($key, $value = null){
 
         if(!array_key_exists($key, $this->params))
             return false;
 
-        unset($this->params[$key]);
+        if(is_array($this->params[$key]) && array_key_exists($key, $this->multi_value) && ($delimeter = $this->multi_value[$key])){
+
+            if (($index = array_search(trim($value, $delimeter), $this->params[$key])) !== false)
+                unset($this->params[$key][$index]);
+
+        }else unset($this->params[$key]);
 
         return true;
 
@@ -154,6 +182,9 @@ class Parameters implements \Countable {
 
             } else {
 
+                if(is_array($value))
+                    $value = implode((array_key_exists($key, $this->multi_value) ? $this->multi_value[$key] : ''), $value);
+
                 if($this->quote_params)
                     $value = '"' . htmlspecialchars($value) . '"';
 
@@ -189,6 +220,12 @@ class Parameters implements \Countable {
     public function toArray(){
 
         return $this->params;
+
+    }
+
+    public function setMultiValue($key, $delimeter = ','){
+
+        $this->multi_value[$key] = $delimeter;
 
     }
 
