@@ -206,6 +206,8 @@ abstract class Element implements _Interface {
 
         if($boolean)
             $this->addClass($class);
+        else
+            $this->removeClass($class);
 
         return $this;
 
