@@ -106,10 +106,7 @@ class Parameters implements \Countable {
 
         if(array_key_exists($key, $this->multi_value)){
 
-            if(!(array_key_exists($key, $this->params) && is_array($this->params[$key])))
-                $this->params[$key] = [];
-
-            $this->params[$key] = array_unique(array_merge($this->params[$key], explode($this->multi_value[$key], trim($value, $this->multi_value[$key]))));
+            $this->params[$key] = explode($this->multi_value[$key], trim($value, $this->multi_value[$key]));
 
             return $value;
 
@@ -145,14 +142,52 @@ class Parameters implements \Countable {
 
     }
 
+    /**
+     * Adds or appends a value to a parameter
+     * 
+     * If the value is a multi-value parameter, then this value is added as an entirely new value.
+     * 
+     * If the value is a standard string value, then this value is concatenated to any existing value (legacy behaviour).
+     * 
+     * @param string $key The parameter to add/append to.
+     * 
+     * @param string $value The value to add/append.
+     * 
+     * @return boolean
+     */
+    public function append($key, $value) {
+
+        if(array_key_exists($key, $this->multi_value)){
+
+            if(!(array_key_exists($key, $this->params) && is_array($this->params[$key])))
+                $this->params[$key] = [];
+
+            $this->params[$key] = array_unique(array_merge($this->params[$key], explode($this->multi_value[$key], trim($value, $this->multi_value[$key]))));
+
+        }elseif(array_key_exists($key, $this->params))
+            $this->params[$key] .= $value;
+        else
+            $this->params[$key] = $value;
+
+        return true;
+
+    }
+
+    /**
+     * Appends a value to a parameter but only if the parameter already exists
+     * 
+     * @param string $key The parameter to add/append to.
+     * 
+     * @param string $value The value to add/append.
+     * 
+     * @return boolean
+     */
     public function appendTo($key, $value) {
 
         if(! array_key_exists($key, $this->params))
-            return FALSE;
+            return false;
 
-        $this->params[$key] .= $value;
-
-        return TRUE;
+        return $this->append($key, $value);
 
     }
 
@@ -205,15 +240,6 @@ class Parameters implements \Countable {
          * where a property is a key in the array as a value with a numeric index.
          */
         return array_key_exists($key, $this->params) || is_int(array_search($key, $this->params, true));
-
-    }
-
-    public function append($key, $value) {
-
-        if(array_key_exists($key, $this->params))
-            $this->params[$key] .= $value;
-        else
-            $this->params[$key] = $value;
 
     }
 
