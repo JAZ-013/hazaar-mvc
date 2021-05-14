@@ -204,7 +204,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         if($rules['id'] && $rules['id'] != $element->attr('id'))
             return false;
 
-        if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $element->attr('class')))) > 0)
+        if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], (array)$element->attr('class'))) > 0)
             return false;
 
         if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($element->parameters()->toArray()))) > 0)
