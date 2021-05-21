@@ -369,7 +369,7 @@ dataBinder.prototype._update = function (key, do_update) {
 };
 
 dataBinder.prototype._trigger = function (key, value) {
-    if (key in this._watchers) for (let x in this._watchers[key]) this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
+    if (key in this._watchers) for (let watcher of this._watchers[key]) watcher[0].call(this, key, value, watcher[1]);
 };
 
 dataBinder.prototype._trigger_diff = function (source) {
@@ -618,7 +618,7 @@ dataBinderArray.prototype.push = function (element, no_update) {
             newitem = this._newitem(key, element);
             jQuery(sel).append(newitem);
         }
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](element, newitem, this._watchers[x][1]);
+        if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](element, newitem, watcher[1]);
         this.resync();
         this._trigger(key, element);
     } else this._update(this._attr_name(), element, true);
@@ -651,7 +651,7 @@ dataBinderArray.prototype.unset = function (index, no_update) {
     if (no_update !== true && element instanceof dataBinder) jQuery(sel).children().eq(index).remove();
     this._cleanupItem(index);
     jQuery(sel).trigger('pop', [this._attr_name(), element, index]);
-    if (no_update !== true && this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](null, null, this._watchers[x][1]);
+    if (no_update !== true && this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](null, null, watcher[1]);
     this._update(this._attr_name(), element, true);
     this._trigger(key, element);
     return element;
@@ -688,7 +688,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](this._elements[x], newitem, this._watchers[x][1]);
+                if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](this._elements[x], newitem, watcher[1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
