@@ -665,6 +665,7 @@ dataBinderArray.prototype.save = function (no_label) {
             || elems[x] instanceof dataBinderValue)
             elems[x] = elems[x].save(no_label);
     }
+    if (this.other instanceof dataBinderArray) elems = elems.concat(this.other.save(no_label));
     return elems;
 };
 
