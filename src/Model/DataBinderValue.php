@@ -22,35 +22,7 @@ class DataBinderValue implements \JsonSerializable {
 
     function __construct($value, $label = null, $other = null){
 
-        if(is_array($value)){
-
-            if(array_key_exists('__hz_other', $value))
-                $other = $value['__hz_other'];
-
-            if(array_key_exists('__hz_label', $value))
-                $label = $value['__hz_label'];
-
-            if(array_key_exists('__hz_value', $value))
-                $value = $value['__hz_value'];
-
-        }elseif($value instanceof \stdClass){
-
-            if(property_exists($value, '__hz_other'))
-                $other = $value->__hz_other;
-
-            if(property_exists($value, '__hz_label'))
-                $label = $value->__hz_label;
-
-            if(property_exists($value, '__hz_value'))
-                $value = $value->__hz_value;
-
-        }
-
-        $this->value = $value;
-
-        $this->label = $label;
-
-        $this->other = $other;
+        \call_user_func_array([$this, 'set'], func_get_args());
 
     }
 
@@ -68,30 +40,6 @@ class DataBinderValue implements \JsonSerializable {
 
         if($value === null)
             return null;
-
-        if(is_array($value)){
-
-            if(array_key_exists('__hz_other', $value))
-                $other = $value['__hz_other'];
-
-            if(array_key_exists('__hz_label', $value))
-                $label = $value['__hz_label'];
-
-            if(array_key_exists('__hz_value', $value))
-                $value = $value['__hz_value'];
-
-        }elseif($value instanceof \stdClass){
-
-            if(property_exists($value, '__hz_other'))
-                $other = $value->__hz_other;
-
-            if(property_exists($value, '__hz_label'))
-                $label = $value->__hz_label;
-
-            if(property_exists($value, '__hz_value'))
-                $value = $value->__hz_value;
-
-        }
 
         return new DataBinderValue($value, $label, $other);
 
@@ -167,6 +115,40 @@ class DataBinderValue implements \JsonSerializable {
     public function export(){
 
         return coalesce($this->value, $this->other, $this->label);
+
+    }
+
+    public function set($value, $label = null, $other = null){
+
+        if(is_array($value)){
+
+            if(array_key_exists('__hz_other', $value))
+                $other = $value['__hz_other'];
+
+            if(array_key_exists('__hz_label', $value))
+                $label = $value['__hz_label'];
+
+            if(array_key_exists('__hz_value', $value))
+                $value = $value['__hz_value'];
+
+        }elseif($value instanceof \stdClass){
+
+            if(property_exists($value, '__hz_other'))
+                $other = $value->__hz_other;
+
+            if(property_exists($value, '__hz_label'))
+                $label = $value->__hz_label;
+
+            if(property_exists($value, '__hz_value'))
+                $value = $value->__hz_value;
+
+        }
+
+        $this->value = $value;
+
+        $this->label = $label;
+
+        $this->other = $other;
 
     }
 
