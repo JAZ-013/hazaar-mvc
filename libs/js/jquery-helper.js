@@ -369,7 +369,7 @@ dataBinder.prototype._update = function (key, do_update) {
 };
 
 dataBinder.prototype._trigger = function (key, value) {
-    if (key in this._watchers) for (let watcher of this._watchers[key]) watcher[0].call(this, key, value, watcher[1]);
+    if (key in this._watchers) for (let x in this._watchers[key]) this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
 };
 
 dataBinder.prototype._trigger_diff = function (source) {
